@@ -91,3 +91,15 @@ test('27 · commentary lines are short and follow the context',async()=>{
  const {run}=boot({name:'Antoine',games:1,goals:0,assists:0,xp:0});run("$('play').onclick();");assert.equal(run("$('commentary').hidden"),false);
  let g;for(let x=-3.2;x<=3.2&&!g;x+=.4){const b=boot({name:'Antoine',games:1,goals:0,assists:0,xp:0});b.run(`$('play').onclick();match.index=1;setup();windUp(action.hero,{x:${x},z:-21},'normal','hero');`);for(let i=0;i<650&&!b.run('action.ended');i++)b.run('tick(1/120)');if(b.run("action.outcomeKind==='goal'"))g=b;}
  assert.ok(g);assert.match(g.run("$('commentary').textContent"),/Antoine/,'the goal is announced with the player name');});
+
+test('28 · the crowd builds up with the match and reacts to goals and near misses',async()=>{
+ const {crowdLevel,Ambience}=await import('../dist/audio.js');
+ const calm=crowdLevel({minute:10,us:0,them:0});assert.ok(crowdLevel({minute:10,danger:1})>calm+.2,'danger near a box');assert.ok(crowdLevel({minute:86,us:1,them:1})>crowdLevel({minute:20,us:1,them:1}),'late in a tight match');
+ assert.ok(crowdLevel({minute:86,us:4,them:0})<crowdLevel({minute:86,us:1,them:1}),'a settled match is quieter');assert.ok(crowdLevel({minute:30,scenario:'derby'})>crowdLevel({minute:30}));
+ for(let i=0;i<200;i++){const v=crowdLevel({minute:Math.random()*90,danger:Math.random()*2,chance:Math.random()<.5,us:3,them:3,scenario:'derby'});assert.ok(v>=0&&v<=.95);}
+ // A minimal Web Audio stand-in records the scheduled gain targets.
+ const param=()=>({value:0,targets:[],setTargetAtTime(v,t){this.targets.push(v);},cancelScheduledValues(){}}),node=()=>({gain:param(),frequency:param(),Q:param(),connect(){},start(){},stop(){}});
+ globalThis.AudioContext=class{constructor(){this.currentTime=0;this.sampleRate=8000;this.destination={};}createBuffer(c,l){return {getChannelData:()=>new Float32Array(l)};}createBufferSource(){return node();}createBiquadFilter(){return node();}createGain(){return node();}createOscillator(){return node();}resume(){}};
+ try{const a=new Ambience();assert.equal(a.start(),true);a.setLevel(.8);const g=a.master.gain.targets;assert.ok(Math.abs(g.at(-1)-.45)<1e-9);a.goal();const roar=g.at(-2);assert.ok(roar>.9,'goal roar');a.setLevel(.1);assert.ok(Math.abs(g.at(-2)-roar)<1e-9,'the roar is not cut by the crowd bed');
+  a.setEnabled(false);assert.equal(g.at(-1),0,'muted');const n=g.length;a.goal();assert.equal(g.length,n,'no sound when muted');}finally{delete globalThis.AudioContext;}
+ const {run}=boot();assert.equal(run("$('soundToggle').textContent"),'🔊');run("$('soundToggle').onclick()");assert.equal(run('career.sound'),false);assert.equal(run("$('soundToggle').textContent"),'🔇');assert.equal(run('ambience.enabled'),false);run("$('play').onclick();");assert.equal(run('!!match'),true,'a match starts without Web Audio');});
