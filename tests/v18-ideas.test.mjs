@@ -24,3 +24,16 @@ test('21 · the position is saved, validated and drives the 3D set-up',()=>{
   if(kind==='wing'){assert.ok(run('Math.abs(action.hero.x)>=9'),'starts on the flank');assert.ok(run('action.defenders.some(d=>Math.hypot(d.x-action.hero.x,d.z-action.hero.z)<4.5&&d.z<action.hero.z)'),'a full-back stands goal-side');assert.ok(run('action.teammates.filter(t=>Math.abs(t.x)<4&&t.z<-11).length')>=2,'two forwards in the box');}
   else{assert.ok(goal>=19&&goal<=27,'shoots from distance: '+goal);assert.ok(run('action.teammates.filter(t=>t.z<action.hero.z-7).length')>=2,'forwards waiting on the last line');}
  }});
+
+test('22 · the coach gives a position-based instruction, counts it live and rewards it at full time',async()=>{
+ const {coachInstruction,instructionProgress,coachVerdict}=await import('../dist/career.js');
+ assert.notEqual(coachInstruction({position:'BU',games:0}),coachInstruction({position:'BU',games:1}),'it changes from one match to the next');
+ assert.equal(coachInstruction({position:'MOC',games:0}),'combine');assert.equal(instructionProgress('securite',{losses:2}).done,false);assert.equal(instructionProgress('combine',{passes:3}).done,true);
+ assert.deepEqual([coachVerdict('combine',{passes:3},7.2).trust,coachVerdict('combine',{passes:1},5).trust],[11,-8]);
+ for(const done of [true,false]){const {run}=boot();run("career.position='MOC';$('play').onclick();");assert.equal(run('match.instruction'),'combine');
+  run('updateCoach()');assert.match(run("$('coachLine').textContent"),/CONSIGNE · Combine.* 0 \/ 3/);assert.equal(run("$('coachLine').hidden"),false);
+  run(`match.passes=${done?3:1};updateCoach();`);if(done)assert.match(run("$('coachPlayback').textContent"),/3 \/ 3 ✓/);
+  const xp=run('career.xp'),earned=run('performance(match).earned'),change=run('coachVerdict(match.instruction,match,performance(match).rating).trust');run('finish()');
+  assert.equal(run('career.xp')-xp,earned+(done?35:0));assert.equal(run('career.trust'),50+change);assert.ok(done?change>0:change<0);assert.match(run("$('resultCoach').textContent"),done?/Respectée/:/Pas respectée/);}
+ const {run}=boot();run("$('play').onclick();windUp(action.hero,{x:4.4,z:-11.5},'low','hero');tick(1/2);beginRun({x:-2,z:-12});beginRun({x:-1,z:-13});");assert.equal(run('match.runs'),1,'adjusting the same run counts once');
+ run("$('practice').onclick();");assert.equal(run('match.instruction'),null,'no instruction in training');});

@@ -73,3 +73,9 @@ body.playing{overflow:hidden;overscroll-behavior:none}body.playing header,body.p
 
 /* V18 · profile grid holds the position select */
 .customgrid{grid-template-columns:1fr 1fr}
+/* V18 · 22 coach instruction: home card and a compact live line in the match */
+.coach-card{display:grid;gap:6px;padding:12px 0 4px}.coach-card>span{font-size:9px;letter-spacing:1.5px;color:var(--muted)}.coach-card>b{font-size:14px;color:var(--text)}.coach-card .track{margin-top:2px}
+#match .arena-context .coach-line{display:inline-block;margin-top:8px;font-size:9px;letter-spacing:.8px;background:#10271dd0;border:1px solid #d3f96a44;padding:5px 9px;border-radius:12px;color:#e3eddc;max-width:none}
+.coach-line.done{border-color:#d3f96a;color:var(--lime)}
+.match-playback .coach-line{font-size:10px;letter-spacing:.6px;color:#c8d9bd;margin:6px 0 0}
+#match.simulating .arena-context .coach-line{display:none}
