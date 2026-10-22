@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=19-8b';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-1';
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
 export const BALL_VISUAL=.15;
