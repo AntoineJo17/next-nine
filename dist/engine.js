@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=19-2';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=19-3';
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
 export const BALL_VISUAL=.15;
@@ -174,8 +174,8 @@ preview(start,end,mode,spin=0,power=null,ability=1){if(this.targetRing)this.targ
  else{const b=launch(start,end,mode,spin,power,ability);pts.push(new T.Vector3(b.x,b.y,b.z));const d=Math.hypot(end.x-start.x,end.z-start.z);for(let i=0;i<160;i++){stepBall(b,1/90);pts.push(new T.Vector3(b.x,b.y,b.z));if(Math.hypot(b.x-start.x,b.z-start.z)>=(Math.abs(spin)>.05?Math.max(2.5,d*.4):2.5)||b.bounces>0||b.z<-19)break;}}
  this.aim.material.color.set(Math.abs(spin)>.1?0x8cdbff:0xd3f96a);this.aim.geometry.dispose();this.aim.geometry=new T.BufferGeometry().setFromPoints(pts);this.aim.computeLineDistances();this.aim.visible=true;
 }
-posePlayer(p,a,dt,now){
- p.g.position.set(a.x,a.y||0,a.z);let angle=a.angle??0;let difference=Math.atan2(Math.sin(angle-p.lastAngle),Math.cos(angle-p.lastAngle));p.lastAngle+=difference*Math.min(1,dt*(Math.abs(difference)>1.2?24:14));p.g.rotation.y=p.lastAngle;
+posePlayer(p,a,dt,now,frozen=false){
+ p.g.position.set(a.x,a.y||0,a.z);if(frozen&&p.posed)return;p.posed=true;let angle=a.angle??0;let difference=Math.atan2(Math.sin(angle-p.lastAngle),Math.cos(angle-p.lastAngle));p.lastAngle+=difference*Math.min(1,dt*(Math.abs(difference)>1.2?24:14));p.g.rotation.y=p.lastAngle;
  const targetSpeed=a.speed||0;p.gaitSpeed=(p.gaitSpeed||0)+(targetSpeed-(p.gaitSpeed||0))*Math.min(1,dt*7);const speed=p.gaitSpeed,running=clamp((speed-1.2)/3.2,0,1),moving=clamp(speed/1.1,0,1);
  // V14 gait: stride length grows with speed, so feet stay planted instead of pedalling; flight phase when running,
  // pelvis dips twice per cycle, trunk leans with speed and acceleration, arms swing opposite with bent elbows.
@@ -203,13 +203,15 @@ posePlayer(p,a,dt,now){
   else if(c==='point'){p.arms[0].rotation.set(-.25,0,-2.85);p.arms[1].rotation.set(-.25,0,2.85);p.elbows.forEach(e=>e.rotation.x=0);p.pose.rotation.x=.12;}
   else if(c==='ears'){p.arms[0].rotation.set(0,0,-2.3);p.arms[1].rotation.set(0,0,2.3);p.elbows.forEach(e=>e.rotation.x=-2.1);}
   else if(c!=='run'){p.arms[0].rotation.z=-2.15;p.arms[1].rotation.z=2.15;p.elbows[0].rotation.x=-.2;p.elbows[1].rotation.x=-.2;}}
- if(p.keeper){p.g.rotation.y=Math.PI;p.pose.rotation.set(0,0,a.tilt||0);const dive=a.state==='dive'||a.state==='ground'||a.state==='recover';if(dive){p.arms.forEach((arm,i)=>{arm.rotation.z=(i?1:-1)*2.75;arm.rotation.x=-.25;});p.legs[0].rotation.x=.15;p.legs[1].rotation.x=-.25;}else{p.pose.position.y-=.12;p.legs.forEach(l=>l.rotation.x=.22);p.knees.forEach(k=>k.rotation.x=-.45);p.arms.forEach((arm,i)=>{arm.rotation.x=a.holding?.85:.55;arm.rotation.z=(i?-1:1)*(a.holding?.5:.35);p.elbows[i].rotation.x=a.holding?.18:-.15;});}}
+ if(p.keeper){p.g.rotation.y=Math.PI;p.pose.rotation.set(0,0,a.tilt||0);const dive=a.state==='dive'||a.state==='ground'||a.state==='recover';if(dive){p.arms.forEach((arm,i)=>{arm.rotation.z=(i?1:-1)*2.75;arm.rotation.x=-.25;});p.legs[0].rotation.x=.15;p.legs[1].rotation.x=-.25;}else if(a.holding){p.pose.position.y-=.12;p.legs.forEach(l=>l.rotation.x=.22);p.knees.forEach(k=>k.rotation.x=-.45);p.arms.forEach((arm,i)=>{arm.rotation.x=.85;arm.rotation.z=(i?-1:1)*.5;p.elbows[i].rotation.x=.18;});}
+  // V19 · Ready stance: low, feet apart, arms spread at hip height to cover the goal.
+  else{p.pose.position.y-=.17;p.pose.rotation.x=.14;p.legs.forEach((l,i)=>{l.rotation.x=.38;l.rotation.z=(i?-1:1)*.16;});p.knees.forEach(k=>k.rotation.x=-.7);p.arms.forEach((arm,i)=>{arm.rotation.x=.3;arm.rotation.z=(i?1:-1)*.85;p.elbows[i].rotation.x=.45;});}}
 
  const joints=[p.pose,...p.legs,...p.knees,...p.arms,...p.elbows];if(p.previousPose){const blend=1-Math.exp(-dt*22);joints.forEach((j,i)=>{for(const axis of ['x','y','z'])j.rotation[axis]=p.previousPose[i][axis]+(j.rotation[axis]-p.previousPose[i][axis])*blend;});}if(!(a.kickTimer>=0&&a.kickTimer<.65)&&!a.challenge&&!(a.skillTimer>=0&&a.skillTimer<.65))p.knees.forEach((k,i)=>k.children[1].rotation.x=-p.legs[i].rotation.x-k.rotation.x);p.previousPose=joints.map(j=>({x:j.rotation.x,y:j.rotation.y,z:j.rotation.z}));
 }
 heldBallPosition(){this.keeper.g.updateMatrixWorld(true);const left=this.keeper.hands[0].getWorldPosition(new T.Vector3()),right=this.keeper.hands[1].getWorldPosition(new T.Vector3());return left.add(right).multiplyScalar(.5).add(new T.Vector3(0,0,.12));}
 render(a,dt,now){if(a===this.action)this.followCamera(a,dt);this.stepRain(dt);this.animateCrowd(now,a.outcomeKind==='goal');const ball=a.ball;const turnover=a.ballControl==='defender'&&a.after<1.1;const travelling=a.phase==='interval'||a.phase==='incoming'||a.flying||a.phase==='dribble'||a.phase==='skill'||turnover;this.ball.position.set(ball.x,ball.y-(R-BALL_VISUAL),ball.z);if(travelling){this.ball.rotation.x-=dt*(a.phase==='dribble'||a.phase==='skill'||turnover?10:Math.abs(ball.vz)*1.8);this.ball.rotation.z+=dt*(ball.vx||0);}
  this.shadow.position.set(ball.x,.04,ball.z);this.shadow.scale.setScalar((1+ball.y*.12)*.72);this.shadow.material.opacity=Math.max(.06,.4-ball.y*.04);
- this.posePlayer(this.hero,a.hero,dt,now);(this.teammates||[]).forEach((p,i)=>this.posePlayer(p,(a.teammates||[a.receiver])[i],dt,now));this.defenders.forEach((p,i)=>this.posePlayer(p,a.defenders[i],dt,now));this.posePlayer(this.keeper,a.keeper,dt,now);if(a.ballControl==='held'){this.ball.position.copy(this.heldBallPosition());this.shadow.position.set(this.ball.position.x,.04,this.ball.position.z);}this.renderer.render(this.scene,this.camera);
+ const fz=!!a.frozen;this.posePlayer(this.hero,a.hero,dt,now,fz);(this.teammates||[]).forEach((p,i)=>this.posePlayer(p,(a.teammates||[a.receiver])[i],dt,now,fz));this.defenders.forEach((p,i)=>this.posePlayer(p,a.defenders[i],dt,now,fz));this.posePlayer(this.keeper,a.keeper,dt,now,fz);if(a.ballControl==='held'){this.ball.position.copy(this.heldBallPosition());this.shadow.position.set(this.ball.position.x,.04,this.ball.position.z);}this.renderer.render(this.scene,this.camera);
 }
 }

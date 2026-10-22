@@ -16,3 +16,9 @@ test('V19 · full stadium: two goals, every line, and stands standing outside th
  assert.ok(e.crowd.fans.every(f=>Math.abs(f.x)>PITCH.board||f.z<GOAL_Z-PITCH.boardEnd||f.z>PITCH.far+PITCH.boardEnd),'fans sit behind the boards');assert.ok(e.crowd.fans.some(f=>f.z>PITCH.far),'there is a crowd at the far end too');
  // The follow camera does not chase a ball that went into the stands.
  e.action={hero:{x:0,z:-8},ball:{x:0,y:14,z:-40},teammates:[]};e.resize();const far=e.camera.position.distanceTo(new T.Vector3(0,0,-8));e.action.ball={x:0,y:.22,z:-8};e.resize();assert.ok(far<e.camera.position.distanceTo(new T.Vector3(0,0,-8))*2.2,'the camera stays close');});
+
+test('V19 · the keeper waits low with his arms spread, not with his hands on his belly',()=>{const e=rig(),k=e.makePlayer(0,-19.3,0xe5c45c,1,false,true,'Gardien');for(let i=0;i<20;i++)e.posePlayer(k,{x:0,z:-19.3,state:'set'},1/60,i/60);k.g.updateMatrixWorld(true);
+ const l=k.hands[0].getWorldPosition(new T.Vector3()),r=k.hands[1].getWorldPosition(new T.Vector3());assert.ok(Math.abs(l.x-r.x)>.85,'hands at least 85 cm apart: '+Math.abs(l.x-r.x).toFixed(2));assert.ok(l.y<1.25&&r.y<1.25,'hands at hip height');});
+
+test('V19 · real running pace and freeze frame during decisions',async()=>{const {moveToward,PACE}=await import('../dist/movement.js');const a={x:0,z:0,vx:0,vz:0};for(let i=0;i<120;i++)moveToward(a,{x:100,z:0},4,1/60);assert.ok(Math.abs(a.speed-4*PACE)<.05,'top speed '+a.speed.toFixed(2));assert.ok(PACE>1.3);
+ const e=rig(),p=e.makePlayer(0,-10,0x63b9f4,9,true);for(let i=0;i<30;i++)e.posePlayer(p,{x:0,z:-10,speed:5,angle:0,kickTimer:-1},1/60,i/60);const hip=p.legs[0].rotation.x;for(let i=0;i<30;i++)e.posePlayer(p,{x:0,z:-10,speed:0,angle:0,kickTimer:-1},1/60,1+i/60,true);assert.equal(p.legs[0].rotation.x,hip,'a frozen player keeps his stride');});
