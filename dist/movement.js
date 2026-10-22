@@ -1,7 +1,7 @@
-import {clamp,GOAL_Z,G,R} from './physics.js?v=18-0';
+import {clamp,GOAL_Z,G,R,PITCH} from './physics.js?v=19-1';
 export function moveToward(actor,target,speed,dt,acceleration=12){const dx=target.x-actor.x,dz=target.z-actor.z,d=Math.hypot(dx,dz);if(d<.035){actor.speed=0;actor.vx=0;actor.vz=0;return true;}const desired=Math.min(speed,Math.sqrt(16*d)),tx=dx/d*desired,tz=dz/d*desired,cx=tx-(actor.vx||0),cz=tz-(actor.vz||0),change=Math.hypot(cx,cz)||1,gain=Math.min(1,acceleration*dt/change);actor.vx=(actor.vx||0)+cx*gain;actor.vz=(actor.vz||0)+cz*gain;const step=Math.hypot(actor.vx,actor.vz)*dt;if(step>=d&&actor.vx*dx+actor.vz*dz>0){actor.x=target.x;actor.z=target.z;actor.vx=actor.vz=actor.speed=0;return true;}actor.x+=actor.vx*dt;actor.z+=actor.vz*dt;actor.speed=Math.hypot(actor.vx,actor.vz);if(actor.speed>.03)actor.angle=Math.atan2(-actor.vx,-actor.vz);return false;}
 
-export function dribbleTarget(start,target){const dx=target.x-start.x,dz=target.z-start.z,len=Math.hypot(dx,dz)||1,d=clamp(len,.25,3.2);return {x:clamp(start.x+dx/len*d,-12,12),z:clamp(start.z+dz/len*d,-19.35,31)};}
+export function dribbleTarget(start,target){const dx=target.x-start.x,dz=target.z-start.z,len=Math.hypot(dx,dz)||1,d=clamp(len,.25,3.2);return {x:clamp(start.x+dx/len*d,-PITCH.W+1,PITCH.W-1),z:clamp(start.z+dz/len*d,-19.35,PITCH.far-1)};}
 export function createKeeper(){return {x:0,z:-19.25,y:0,vx:0,vz:0,speed:0,angle:Math.PI,state:'set',elapsed:0,shotTime:0,dir:0,tilt:0,reach:0,jump:0,diveStartX:0};}
 export function updateKeeper(k,ball,dt,flying){k.elapsed+=dt;if(k.holding&&k.state==='set'){k.speed=0;return;}if(k.state==='set'){
  const ideal=clamp(ball.x*.24,-1.2,1.2);const old=k.x;k.x+=clamp(ideal-k.x,-1.8*dt,1.8*dt);k.speed=Math.abs(k.x-old)/dt;

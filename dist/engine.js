@@ -1,61 +1,81 @@
 import * as T from './vendor/three.module.js';
-import {R,clamp,launch,stepBall} from './physics.js?v=18-0';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=19-1';
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
 export const BALL_VISUAL=.15;
 export function shirtInk(color){const c=new T.Color(color);return .2126*c.r+.7152*c.g+.0722*c.b>.35?'#10232b':'#ffffff';}
 export class Pitch3D{
-constructor(canvas,appearance){this.canvas=canvas;this.appearance=appearance;this.scene=new T.Scene();this.scene.background=new T.Color('#91b9c3');this.scene.fog=new T.Fog('#91b9c3',65,130);this.renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.7));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFShadowMap;this.renderer.outputColorSpace=T.SRGBColorSpace;this.camera=new T.PerspectiveCamera(48,1,.1,260);this.ray=new T.Raycaster();this.plane=new T.Plane(new T.Vector3(0,1,0),0);this.scene.add(new T.HemisphereLight(0xe7f4ff,0x466b35,2.4));const sun=new T.DirectionalLight(0xfff1cf,2.7);sun.position.set(-18,35,16);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-32;sun.shadow.camera.right=32;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;sun.shadow.normalBias=.04;this.scene.add(sun);this.staticWorld();this.ball=this.mesh(new T.SphereGeometry(BALL_VISUAL,20,12),0xffffff);this.ball.castShadow=true;this.scene.add(this.ball);const seam=new T.Mesh(new T.IcosahedronGeometry(BALL_VISUAL*1.005,0),new T.MeshBasicMaterial({color:0x26302e,wireframe:true}));this.ball.add(seam);this.shadow=new T.Mesh(new T.CircleGeometry(.3,20),new T.MeshBasicMaterial({color:0x10271b,transparent:true,opacity:.36,depthWrite:false}));this.shadow.rotation.x=-Math.PI/2;this.shadow.position.y=.025;this.scene.add(this.shadow);this.players=[];this.aim=new T.Line(new T.BufferGeometry(),new T.LineDashedMaterial({color:0xd3f96a,dashSize:.35,gapSize:.25}));this.scene.add(this.aim);this.aim.visible=false;this.targetRing=new T.Mesh(new T.RingGeometry(.27,.36,32),new T.MeshBasicMaterial({color:0xd3f96a,side:T.DoubleSide,depthTest:false}));this.targetRing.renderOrder=5;this.scene.add(this.targetRing);this.targetRing.visible=false;this.resize();this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(canvas.parentElement);}
+constructor(canvas,appearance){this.canvas=canvas;this.appearance=appearance;this.scene=new T.Scene();this.scene.background=new T.Color('#91b9c3');this.scene.fog=new T.Fog('#91b9c3',90,220);this.renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});this.renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.7));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFShadowMap;this.renderer.outputColorSpace=T.SRGBColorSpace;this.camera=new T.PerspectiveCamera(48,1,.1,320);this.ray=new T.Raycaster();this.plane=new T.Plane(new T.Vector3(0,1,0),0);this.scene.add(new T.HemisphereLight(0xe7f4ff,0x466b35,2.4));const sun=new T.DirectionalLight(0xfff1cf,2.7);sun.position.set(-18,35,16);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-40;sun.shadow.camera.right=40;sun.shadow.camera.top=45;sun.shadow.camera.bottom=-45;sun.shadow.normalBias=.04;this.scene.add(sun);this.staticWorld();this.ball=this.mesh(new T.SphereGeometry(BALL_VISUAL,20,12),0xffffff);this.ball.castShadow=true;this.scene.add(this.ball);const seam=new T.Mesh(new T.IcosahedronGeometry(BALL_VISUAL*1.005,0),new T.MeshBasicMaterial({color:0x26302e,wireframe:true}));this.ball.add(seam);this.shadow=new T.Mesh(new T.CircleGeometry(.3,20),new T.MeshBasicMaterial({color:0x10271b,transparent:true,opacity:.36,depthWrite:false}));this.shadow.rotation.x=-Math.PI/2;this.shadow.position.y=.025;this.scene.add(this.shadow);this.players=[];this.aim=new T.Line(new T.BufferGeometry(),new T.LineDashedMaterial({color:0xd3f96a,dashSize:.35,gapSize:.25}));this.scene.add(this.aim);this.aim.visible=false;this.targetRing=new T.Mesh(new T.RingGeometry(.27,.36,32),new T.MeshBasicMaterial({color:0xd3f96a,side:T.DoubleSide,depthTest:false}));this.targetRing.renderOrder=5;this.scene.add(this.targetRing);this.targetRing.visible=false;this.resize();this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(canvas.parentElement);}
 mesh(geo,color){return new T.Mesh(geo,new T.MeshStandardMaterial({color,roughness:.85}));}
 box(x,y,z,w,h,d,color){const m=this.mesh(new T.BoxGeometry(w,h,d),color);m.position.set(x,y,z);m.receiveShadow=true;this.scene.add(m);return m;}
 line(points,color=0xe2eac9){const g=new T.BufferGeometry().setFromPoints(points.map(p=>new T.Vector3(...p)));const l=new T.Line(g,new T.LineBasicMaterial({color,transparent:true,opacity:.85}));this.scene.add(l);return l;}
-staticWorld(){this.box(0,-.18,3,68,.3,85,0x476a40);this.buildGrass();const y=.035;this.line([[-16,y,-20],[16,y,-20],[16,y,32],[-16,y,32],[-16,y,-20]]);this.line([[-10,y,-20],[-10,y,-7],[10,y,-7],[10,y,-20]]);this.line([[-5.5,y,-20],[-5.5,y,-15],[5.5,y,-15],[5.5,y,-20]]);this.line([[-16,y,25],[16,y,25]]);for(const [x,z,r] of [[0,25,5],[0,-11,.12]]){const pts=[];for(let i=0;i<=80;i++){const a=i/80*Math.PI*2;pts.push([x+Math.cos(a)*r,y,z+Math.sin(a)*r]);}this.line(pts);}for(const x of [-3.66,3.66])this.box(x,1.22,-20,.12,2.44,.12,0xffffff);this.box(0,2.44,-20,7.44,.12,.12,0xffffff);const netMaterial=new T.LineBasicMaterial({color:0xe9ede6,transparent:true,opacity:.4});const pts=[];for(let x=-3.66;x<=3.7;x+=.3){pts.push(new T.Vector3(x,0,-22),new T.Vector3(x,2.44,-22),new T.Vector3(x,2.44,-22),new T.Vector3(x,2.44,-20));}for(let h=0;h<=2.44;h+=.3){pts.push(new T.Vector3(-3.66,h,-22),new T.Vector3(3.66,h,-22));for(const x of [-3.66,3.66])pts.push(new T.Vector3(x,h,-22),new T.Vector3(x,h,-20));}const net=new T.LineSegments(new T.BufferGeometry().setFromPoints(pts),netMaterial);this.scene.add(net);for(const side of [-1,1])this.box(side*17,.5,-5,.25,1,28,0x172c25);for(let z=-16;z<=12;z+=14){this.box(-17.2,.6,z,.18,1.2,8,0xc9ef68);}this.box(0,.45,-23.4,30,.9,.3,0x1a312b);this.buildCrowd();this.buildStadium();this.buildCity();}
-// V16 pitch: one textured surface — mowing stripes, fine blade noise and worn patches, sharp at grazing angles.
-buildGrass(){const c=document.createElement('canvas');if(!c.getContext)return;c.width=1024;c.height=2048;const g=c.getContext('2d');
- for(let i=0;i<14;i++){g.fillStyle=i%2?'#3f7d48':'#367041';g.fillRect(0,i*2048/14,1024,2048/14+1);}
+// V19 · Full pitch at real size (105 × 68 m): both goals and every line, advertising boards, four stands
+// standing outside the field, a roof behind the attacked goal, floodlights and the town around.
+staticWorld(){const W=PITCH.W,F=PITCH.far,mid=(F+GOAL_Z)/2,L=F-GOAL_Z,y=.035;
+ this.box(0,-.18,mid,W*2+34,.3,L+44,0x3b6236);this.buildGrass();
+ const arc=(cx,cz,r,a0,a1,n=64,sz=1)=>{const p=[];for(let i=0;i<=n;i++){const t=a0+(a1-a0)*i/n;p.push([cx+Math.cos(t)*r,y,cz+sz*Math.sin(t)*r]);}this.line(p);};
+ this.line([[-W,y,GOAL_Z],[W,y,GOAL_Z],[W,y,F],[-W,y,F],[-W,y,GOAL_Z]]);this.line([[-W,y,mid],[W,y,mid]]);arc(0,mid,9.15,0,Math.PI*2,96);arc(0,mid,.16,0,Math.PI*2,12);
+ for(const g of [GOAL_Z,F]){const s=g<mid?1:-1;
+  this.line([[-20.16,y,g],[-20.16,y,g+s*16.5],[20.16,y,g+s*16.5],[20.16,y,g]]);this.line([[-9.16,y,g],[-9.16,y,g+s*5.5],[9.16,y,g+s*5.5],[9.16,y,g]]);
+  arc(0,g+s*11,.16,0,Math.PI*2,12);const a=Math.asin(5.5/9.15);arc(0,g+s*11,9.15,a,Math.PI-a,40,s);
+  for(const x of [-W,W])arc(x,g,1,x<0?(s>0?0:-Math.PI/2):(s>0?Math.PI/2:Math.PI),x<0?(s>0?Math.PI/2:0):(s>0?Math.PI:Math.PI*1.5),10);
+  this.goal(g,-s);}
+ this.adBoards();this.buildCrowd();this.buildStadium();this.buildCity();}
+// A goal frame with its net; dir is the side the net extends to.
+goal(z,dir){for(const x of [-3.66,3.66])this.box(x,1.22,z,.12,2.44,.12,0xffffff);this.box(0,2.44,z,7.44,.12,.12,0xffffff);const pts=[],back=z+dir*2;
+ for(let x=-3.66;x<=3.7;x+=.3)pts.push(new T.Vector3(x,0,back),new T.Vector3(x,2.44,back),new T.Vector3(x,2.44,back),new T.Vector3(x,2.44,z));
+ for(let h=0;h<=2.44;h+=.3){pts.push(new T.Vector3(-3.66,h,back),new T.Vector3(3.66,h,back));for(const x of [-3.66,3.66])pts.push(new T.Vector3(x,h,back),new T.Vector3(x,h,z));}
+ this.scene.add(new T.LineSegments(new T.BufferGeometry().setFromPoints(pts),new T.LineBasicMaterial({color:0xe9ede6,transparent:true,opacity:.4})));}
+// Advertising boards around the field: the ball rebounds on them (physics.stadiumBounds).
+adBoards(){const c=document.createElement('canvas');let mat=new T.MeshStandardMaterial({color:0x173a33,roughness:.7});if(c.getContext){c.width=1024;c.height=64;const g=c.getContext('2d');const ads=['AC RIVAGE','NEXT NINE','STADE RIVAGE','LE TERRAIN T’APPARTIENT'];for(let i=0;i<4;i++){g.fillStyle=i%2?'#183f3a':'#d3f96a';g.fillRect?.(i*256,0,256,64);g.fillStyle=i%2?'#d3f96a':'#183f3a';g.font='bold 30px sans-serif';g.textAlign='center';g.fillText(ads[i],i*256+128,43,240);}const t=new T.CanvasTexture(c);t.wrapS=T.RepeatWrapping;t.colorSpace=T.SRGBColorSpace;mat=new T.MeshStandardMaterial({map:t,roughness:.6});}
+ const B=PITCH.board,F=PITCH.far,group=new T.Group();group.name='Panneaux';this.scene.add(group);const board=(x,z,len,alongX)=>{const m=new T.Mesh(new T.BoxGeometry(alongX?len:.18,.9,alongX?.18:len),mat.clone());if(m.material.map){m.material.map=m.material.map.clone();m.material.map.needsUpdate=true;m.material.map.repeat.set(len/16,1);}m.position.set(x,.45,z);m.receiveShadow=true;group.add(m);};
+ for(const x of [-B,B])board(x,(GOAL_Z+F)/2,F-GOAL_Z+6,false);for(const z of [GOAL_Z-3.5,F+3.5]){board(-21,z,26,true);board(21,z,26,true);}
+ for(const z of [26,39])this.box(-(B+1.8),1,z,1.6,2,9,0x1d3f45);}
+// Pitch texture: mowing stripes every 5.25 m, blade noise and worn goalmouths and centre circle.
+buildGrass(){const c=document.createElement('canvas');if(!c.getContext)return;c.width=1024;c.height=2048;const g=c.getContext('2d'),W=PITCH.W,F=PITCH.far,L=F-GOAL_Z;
+ for(let i=0;i<20;i++){g.fillStyle=i%2?'#3f7d48':'#367041';g.fillRect(0,i*2048/20,1024,2048/20+1);}
  const img=g.getImageData(0,0,1024,2048),d=img.data;let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
  for(let k=0;k<d.length;k+=4){const n=(rnd()-.5)*26;d[k]+=n*.6;d[k+1]+=n;d[k+2]+=n*.5;}g.putImageData(img,0,0);
- for(let i=0;i<9000;i++){const x=rnd()*1024,y=rnd()*2048;g.strokeStyle=rnd()<.5?'rgba(120,170,90,.35)':'rgba(20,60,30,.35)';g.lineWidth=1;g.beginPath();g.moveTo(x,y);g.lineTo(x+(rnd()-.5)*2,y-2-rnd()*4);g.stroke();}
- for(const [x,y,r] of [[512,1960,90],[512,330,70],[512,1200,60]]){const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(120,110,60,.14)');gr.addColorStop(1,'rgba(120,110,60,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,2*r,2*r);}
+ for(let i=0;i<14000;i++){const x=rnd()*1024,y=rnd()*2048;g.strokeStyle=rnd()<.5?'rgba(120,170,90,.35)':'rgba(20,60,30,.35)';g.lineWidth=1;g.beginPath();g.moveTo(x,y);g.lineTo(x+(rnd()-.5)*2,y-2-rnd()*4);g.stroke();}
+ for(const [x,v,r] of [[512,6/L,70],[512,1-6/L,70],[512,.5,60]]){const y=v*2048,gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(120,110,60,.14)');gr.addColorStop(1,'rgba(120,110,60,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,2*r,2*r);}
  const tex=new T.CanvasTexture(c);tex.colorSpace=T.SRGBColorSpace;tex.anisotropy=this.renderer?.capabilities?.getMaxAnisotropy?.()||8;tex.generateMipmaps=true;tex.minFilter=T.LinearMipmapLinearFilter;
- const pitch=new T.Mesh(new T.PlaneGeometry(32,56),new T.MeshStandardMaterial({map:tex,roughness:.95}));pitch.rotation.x=-Math.PI/2;pitch.position.set(0,-.001,5);pitch.receiveShadow=true;this.scene.add(pitch);}
-// V16 surroundings: a second tier behind the goal, taller side stands, floodlight masts and a town around the ground.
-buildCity(){const group=new T.Group();group.name='Ville autour du stade';this.scene.add(group);const add=(x,y,z,w,h,d,c,mat)=>{const m=new T.Mesh(new T.BoxGeometry(w,h,d),mat||new T.MeshStandardMaterial({color:c,roughness:.9}));m.position.set(x,y,z);group.add(m);return m;};
- const win=document.createElement('canvas');let winMat=null;if(win.getContext){win.width=64;win.height=128;const g=win.getContext('2d');g.fillStyle='#8c9aa0';g.fillRect(0,0,64,128);for(let y=6;y<128;y+=14)for(let x=5;x<64;x+=15){g.fillStyle=Math.random()<.25?'#f2e3a6':'#3c4e57';g.fillRect(x,y,9,8);}const t=new T.CanvasTexture(win);t.wrapS=t.wrapT=T.RepeatWrapping;t.colorSpace=T.SRGBColorSpace;winMat=t;}
- const palette=[0xb9b0a2,0x9fa7a8,0xc7b79c,0x8e9a9e,0xa69384,0xd0c6b6];let seed=3;const r=()=>(seed=(seed*48271)%2147483647)/2147483647;
- for(let i=0;i<46;i++){const a=i/46*Math.PI*2,dist=62+r()*24,x=Math.cos(a)*dist*.85,z=8+Math.sin(a)*dist,w=6+r()*10,h=7+r()*22,d=6+r()*9;let mat;if(winMat){const t=winMat.clone();t.needsUpdate=true;t.repeat.set(Math.round(w/3),Math.round(h/3));mat=new T.MeshStandardMaterial({map:t,color:palette[i%palette.length],roughness:.85});}const b=add(x,h/2-.2,z,w,h,d,palette[i%palette.length],mat);b.rotation.y=-a;}
- for(let i=0;i<70;i++){const a=r()*Math.PI*2,dist=40+r()*16,x=Math.cos(a)*dist*.8,z=6+Math.sin(a)*dist;if(Math.abs(x)<26&&z>-33&&z<40)continue;const h=3+r()*3;const trunk=add(x,h*.3,z,.35,h*.6,.35,0x5b4632);const top=new T.Mesh(new T.SphereGeometry(1.3+r()*.9,8,6),new T.MeshStandardMaterial({color:r()<.5?0x2f5a34:0x3b6b3a,roughness:1}));top.position.set(x,h*.75,z);group.add(top);}
- // Upper tier behind the goal and higher side stands.
- for(let row=0;row<5;row++)add(0,7.2+row*.75,-31.5-row*1.05,34,.75,1.08,row%2?0x3e5159:0x4b6268);add(0,11.6,-34,36,.3,7,0x173f40);
- for(const side of [-1,1]){for(let row=0;row<4;row++)add(side*(21.5+row*1.1),2.6+row*.8,-6,1.1,1+row*.8,40,row%2?0x536773:0x3c525d);add(side*24.5,6.4,-6,3.5,.25,42,0x173f40);}
- for(const [x,z] of [[-22,-26],[22,-26],[-22,28],[22,28]]){add(x,11,z,.5,22,.5,0x55646a);add(x,22.2,z,3.6,1.6,.4,0xf3f0dc);}
-}
-buildStadium(){
- const group=new T.Group();group.name='Stade Rivage';this.scene.add(group);const part=(x,y,z,w,h,d,c)=>{const m=this.box(x,y,z,w,h,d,c);this.scene.remove(m);group.add(m);return m;};
- part(0,6.5,-30,30,.22,4.8,0x173f40);for(const x of [-14,0,14])part(x,3.25,-29,.17,6.5,.17,0x263f42);
- for(const side of [-1,1]){for(let row=0;row<3;row++)part(side*(18.5+row*.9),.45+row*.35,-10,1, .9+row*.7,23,row%2?0x536773:0x354d59);part(side*18,1,-9,.15,.8,24,0x214350);for(const z of [-22,-1]){part(side*19,4.2,z,.15,8.4,.15,0x7c9197);part(side*19,8.3,z,2,.7,.24,0xf5f0d0);}}
- for(const side of [-1,1])for(const end of [-1,1]){const z=end<0?-24:30;for(let row=0;row<4;row++){const m=part(side*(16.5+row*.7),.5+row*.4,z,6,1+row*.8,1.15,row%2?0x536773:0x354d59);m.rotation.y=side*end*Math.PI/4;m.name='Tribune d’angle';}}for(let row=0;row<4;row++)part(0,.5+row*.4,35+row,34,1+row*.8,1.1,0x354d59);for(const side of [-1,1])for(let row=0;row<3;row++)part(side*(18.5+row*.9),.45+row*.35,17,1,.9+row*.7,23,0x354d59);
- // The club name is legible on the covered home stand.
- const c=document.createElement('canvas');c.width=1024;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle='#153f40';ctx.fillRect?.(0,0,1024,128);ctx.fillStyle='#d3f96a';ctx.font='bold 62px sans-serif';ctx.textAlign='center';ctx.fillText('AC RIVAGE • LE TERRAIN T’APPARTIENT',512,85);const sign=new T.Mesh(new T.PlaneGeometry(23,1.1),new T.MeshBasicMaterial({map:new T.CanvasTexture(c),side:T.DoubleSide}));sign.position.set(0,6.1,-27.7);group.add(sign);this.stadium=group;
-}
-buildCrowd(){
- const group=new T.Group();group.name='Public de test';this.scene.add(group);const fans=[];
- const stand=(...args)=>{const m=this.box(...args);this.scene.remove(m);group.add(m);return m;};
- for(let row=0;row<6;row++){
-  const z=-24.6-row*1.05,base=.55+row*.65;
-  stand(0,base/2,z,28,base,1.08,row%2?0x3e5159:0x4b6268);
-  for(let col=0;col<32;col++){const x=-13.2+col*.85+(row%2)*.2;if(Math.abs(x)<.6)continue;fans.push({x,z,base,phase:(row*7+col)*.71,colour:[0x63b9f4,0xe8f3fa,0x2373a4,0x63b9f4,0x183e59][(row+col*3)%5]});}
- }
- for(const side of [-1,1])for(let row=0;row<2;row++)for(let col=0;col<24;col++)fans.push({x:side*(18.5+row*.9),z:-20+col*.8,base:.9+row*.7,phase:col*.8+row,colour:[0x63b9f4,0xe8f3fa,0x2373a4,0x63b9f4][col%4]});
- for(const side of [-1,1])for(const end of [-1,1])for(let row=0;row<3;row++)for(let col=0;col<8;col++){const u=(col-3.5)*.65;fans.push({x:side*(16.5+row*.7)+u*.707,z:(end<0?-24:30)-u*.707*side*end,base:1+row*.8,phase:col*.7,colour:col%2?0x63b9f4:0xe8f3fa});}
+ const pitch=new T.Mesh(new T.PlaneGeometry(W*2+4,L+4),new T.MeshStandardMaterial({map:tex,roughness:.95}));pitch.rotation.x=-Math.PI/2;pitch.position.set(0,-.001,(F+GOAL_Z)/2);pitch.receiveShadow=true;this.scene.add(pitch);}
+// Stand geometry shared by the stadium and the crowd: rows rising away from the field.
+standRows(){const B=PITCH.board,F=PITCH.far,rows=[];for(let r=0;r<10;r++){const base=.6+r*.55,off=2.4+r*.9;
+  rows.push({side:'near',r,base,z:GOAL_Z-3.5-off,x0:-34,x1:34},{side:'far',r,base,z:F+3.5+off,x0:-34,x1:34},{side:'left',r,base,x:-B-off,z0:GOAL_Z-1,z1:F+1},{side:'right',r,base,x:B+off,z0:GOAL_Z-1,z1:F+1});}return rows;}
+buildStadium(){const group=new T.Group();group.name='Stade Rivage';this.scene.add(group);const part=(x,y,z,w,h,d,c)=>{const m=this.box(x,y,z,w,h,d,c);this.scene.remove(m);group.add(m);return m;};
+ for(const row of this.standRows()){const c=row.r%2?0x3e5159:0x4b6268;if(row.x0!=null)part(0,row.base/2,row.z,row.x1-row.x0,row.base,.92,c);else part(row.x,row.base/2,(row.z0+row.z1)/2,.92,row.base,row.z1-row.z0,c);}
+ const B=PITCH.board,F=PITCH.far,back=GOAL_Z-3.5-2.4-9.4;
+ // Back walls close each stand so the ball and the camera never see through.
+ part(0,4,back,72,8,.4,0x2d4048);part(0,4,F+3.5+2.4+9.4,72,8,.4,0x2d4048);for(const x of [-1,1])part(x*(B+2.4+9.4),4,(GOAL_Z+F)/2,.4,8,F-GOAL_Z+2,0x2d4048);
+ // Corner stands join the four sides.
+ for(const sx of [-1,1])for(const end of [-1,1]){const z=end<0?GOAL_Z-7:F+7;for(let row=0;row<4;row++){const m=part(sx*(B+3.5+row*1.6),1+row*1.1,z+end*row*1.6,9,2+row*2.2,1.6,row%2?0x536773:0x354d59);m.rotation.y=sx*end*Math.PI/4;m.name='Tribune d’angle';}}
+ // Covered home stand behind the attacked goal, with the club sign under the roof.
+ part(0,9,back+4.6,74,.3,10,0x173f40);for(const x of [-30,-10,10,30])part(x,4.5,back+.6,.3,9,.3,0x263f42);
+ const c=document.createElement('canvas');c.width=1024;c.height=128;const ctx=c.getContext('2d');ctx.fillStyle='#153f40';ctx.fillRect?.(0,0,1024,128);ctx.fillStyle='#d3f96a';ctx.font='bold 62px sans-serif';ctx.textAlign='center';ctx.fillText('AC RIVAGE • LE TERRAIN T’APPARTIENT',512,85);const sign=new T.Mesh(new T.PlaneGeometry(40,2),new T.MeshBasicMaterial({map:new T.CanvasTexture(c),side:T.DoubleSide}));sign.position.set(0,8,back+9.4);group.add(sign);
+ // Floodlights at the four corners.
+ for(const [x,z] of [[-B-14,GOAL_Z-18],[B+14,GOAL_Z-18],[-B-14,F+18],[B+14,F+18]]){part(x,14,z,.6,28,.6,0x55646a);part(x,28.4,z,4.4,2,.5,0xf3f0dc).rotation.y=Math.atan2(-x,-(z-(GOAL_Z+F)/2));}
+ this.stadium=group;}
+buildCrowd(){const group=new T.Group();group.name='Public de test';this.scene.add(group);const fans=[],palette=[0x63b9f4,0xe8f3fa,0x2373a4,0x63b9f4,0x183e59];
+ for(const row of this.standRows()){if(row.r<1||row.r>8)continue;const spacing=1.3,along=row.x0!=null;const a0=along?row.x0:row.z0,a1=along?row.x1:row.z1;
+  for(let u=a0+.6+(row.r%2)*.5;u<a1-.4;u+=spacing){if(along&&Math.abs(u)<.7)continue;const k=fans.length;fans.push({x:along?u:row.x,z:along?row.z:u,base:row.base,phase:(row.r*7+k)*.71,colour:palette[(row.r+k*3)%5]});}}
  const inst=(geo,count)=>{const m=new T.InstancedMesh(geo,new T.MeshStandardMaterial({color:0xffffff,roughness:.9}),count);m.frustumCulled=false;group.add(m);return m;};
  const bodies=inst(new T.CylinderGeometry(.22,.18,.53,6),fans.length),heads=inst(new T.SphereGeometry(.17,8,6),fans.length),arms=inst(new T.CylinderGeometry(.055,.055,.42,5),fans.length*2),legs=inst(new T.CylinderGeometry(.075,.065,.5,5),fans.length*2);
  const dummy=new T.Object3D();
- fans.forEach((f,i)=>{dummy.position.set(f.x,f.base+.87,f.z);dummy.rotation.set(0,0,0);dummy.updateMatrix();bodies.setMatrixAt(i,dummy.matrix);bodies.setColorAt(i,new T.Color(f.colour));dummy.position.y=f.base+1.32;dummy.updateMatrix();heads.setMatrixAt(i,dummy.matrix);heads.setColorAt(i,new T.Color([0xe2b387,0xa77350,0x614837][i%3]));for(let side=0;side<2;side++){dummy.position.set(f.x+(side?1:-1)*.11,f.base+.3,f.z);dummy.updateMatrix();legs.setMatrixAt(i*2+side,dummy.matrix);legs.setColorAt(i*2+side,new T.Color(0x22352e));arms.setColorAt(i*2+side,new T.Color(f.colour));}});
- for(let i=0;i<fans.length;i+=13){const f=fans[i];stand(f.x,f.base+1.14,f.z-.18,.58,.08,.04,0x63b9f4);stand(f.x-.2,f.base+1.03,f.z-.18,.07,.24,.04,0xe8f3fa);}
- const flags=[];for(const side of [-1,1]){stand(side*13.5,2.6,-24.1,.06,5.2,.06,0xdce4d0);const flag=new T.Mesh(new T.PlaneGeometry(1.6,.9),new T.MeshStandardMaterial({color:side<0?0x63b9f4:0xd3f96a,side:T.DoubleSide}));flag.position.set(side*12.7,4.7,-24.1);group.add(flag);flags.push(flag);}
- this.crowd={group,fans,bodies,heads,arms,legs,dummy,flags};this.animateCrowd(0,false);
-}
+ fans.forEach((f,i)=>{bodies.setColorAt(i,new T.Color(f.colour));heads.setColorAt(i,new T.Color([0xe2b387,0xa77350,0x614837][i%3]));for(let side=0;side<2;side++){legs.setColorAt(i*2+side,new T.Color(0x22352e));arms.setColorAt(i*2+side,new T.Color(f.colour));}});
+ const flags=[];for(const side of [-1,1]){const pole=this.box(side*24,2.6,GOAL_Z-5.4,.06,5.2,.06,0xdce4d0);this.scene.remove(pole);group.add(pole);const flag=new T.Mesh(new T.PlaneGeometry(1.6,.9),new T.MeshStandardMaterial({color:side<0?0x63b9f4:0xd3f96a,side:T.DoubleSide}));flag.position.set(side*23.2,4.7,GOAL_Z-5.4);group.add(flag);flags.push(flag);}
+ this.crowd={group,fans,bodies,heads,arms,legs,dummy,flags};this.animateCrowd(0,false,true);}
+// The crowd animates at 20 Hz: thousands of fans, kept light for phones.
+animateCrowd(time,goal,force=false){const c=this.crowd;if(!c||!c.group.visible)return;if(!force&&Math.abs(time-(c.at??-9))<.05)return;c.at=time;const d=c.dummy;
+ c.fans.forEach((f,i)=>{const excitement=goal?.6:.16,bob=Math.max(0,Math.sin(time*(goal?6:2)+f.phase))*(goal?.14:.025);d.position.set(f.x,f.base+.87+bob,f.z);d.rotation.set(0,0,0);d.updateMatrix();c.bodies.setMatrixAt(i,d.matrix);d.position.y=f.base+1.32+bob;d.updateMatrix();c.heads.setMatrixAt(i,d.matrix);
+  for(let side=0;side<2;side++){const sign=side?1:-1;d.position.set(f.x+sign*.11,f.base+.3+bob,f.z);d.rotation.set(0,0,0);d.updateMatrix();c.legs.setMatrixAt(i*2+side,d.matrix);d.position.set(f.x+sign*.28,f.base+.96+bob,f.z);d.rotation.set(Math.sin(time*2+f.phase)*.18,0,sign*(i%4===0||goal?2.6+Math.sin(time*4+f.phase)*excitement:.2));d.updateMatrix();c.arms.setMatrixAt(i*2+side,d.matrix);}
+ });c.heads.instanceMatrix.needsUpdate=true;c.bodies.instanceMatrix.needsUpdate=true;c.legs.instanceMatrix.needsUpdate=true;c.arms.instanceMatrix.needsUpdate=true;c.flags.forEach((f,i)=>f.rotation.y=Math.sin(time*2+i)*.25);}
+// Town around the ground: buildings on a wide ring and trees between them and the stands.
+buildCity(){const group=new T.Group();group.name='Ville autour du stade';this.scene.add(group);const mid=(GOAL_Z+PITCH.far)/2,add=(x,y,z,w,h,d,c,mat)=>{const m=new T.Mesh(new T.BoxGeometry(w,h,d),mat||new T.MeshStandardMaterial({color:c,roughness:.9}));m.position.set(x,y,z);group.add(m);return m;};
+ const win=document.createElement('canvas');let winMat=null;if(win.getContext){win.width=64;win.height=128;const g=win.getContext('2d');g.fillStyle='#8c9aa0';g.fillRect(0,0,64,128);for(let y=6;y<128;y+=14)for(let x=5;x<64;x+=15){g.fillStyle=Math.random()<.25?'#f2e3a6':'#3c4e57';g.fillRect(x,y,9,8);}const t=new T.CanvasTexture(win);t.wrapS=t.wrapT=T.RepeatWrapping;t.colorSpace=T.SRGBColorSpace;winMat=t;}
+ const palette=[0xb9b0a2,0x9fa7a8,0xc7b79c,0x8e9a9e,0xa69384,0xd0c6b6];let seed=3;const r=()=>(seed=(seed*48271)%2147483647)/2147483647;
+ for(let i=0;i<56;i++){const a=i/56*Math.PI*2,k=1+r()*.25,x=Math.cos(a)*78*k,z=mid+Math.sin(a)*100*k,w=8+r()*12,h=9+r()*26,d=8+r()*10;let mat;if(winMat){const t=winMat.clone();t.needsUpdate=true;t.repeat.set(Math.round(w/3),Math.round(h/3));mat=new T.MeshStandardMaterial({map:t,color:palette[i%palette.length],roughness:.85});}const b=add(x,h/2-.2,z,w,h,d,palette[i%palette.length],mat);b.rotation.y=-a;}
+ for(let i=0;i<90;i++){const a=r()*Math.PI*2,k=.78+r()*.12,x=Math.cos(a)*72*k,z=mid+Math.sin(a)*92*k,h=3+r()*3;if(Math.abs(x)<52&&z>GOAL_Z-20&&z<PITCH.far+20)continue;add(x,h*.3,z,.35,h*.6,.35,0x5b4632);const top=new T.Mesh(new T.SphereGeometry(1.5+r()*1,8,6),new T.MeshStandardMaterial({color:r()<.5?0x2f5a34:0x3b6b3a,roughness:1}));top.position.set(x,h*.75,z);group.add(top);}}
 setCrowdVisible(show){if(this.crowd)this.crowd.group.visible=!!show;}
 animateCrowd(time,goal){const c=this.crowd;if(!c||!c.group.visible)return;const d=c.dummy;
  c.fans.forEach((f,i)=>{const excitement=goal?.6:.16,bob=Math.max(0,Math.sin(time*(goal?6:2)+f.phase))*(goal?.14:.025);d.position.set(f.x,f.base+.87+bob,f.z);d.rotation.set(0,0,0);d.updateMatrix();c.bodies.setMatrixAt(i,d.matrix);d.position.y=f.base+1.32+bob;d.updateMatrix();c.heads.setMatrixAt(i,d.matrix);
@@ -104,7 +124,7 @@ makePlayer(x,z,color,num,own=false,keeper=false,displayName="Rivage"){
 }
 clearPlayers(){for(const p of this.players){this.scene.remove(p.g);p.g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(o.material.map)o.material.map.dispose();o.material.dispose();}});}this.players=[];}
 setup(a){this.action=a;this.camPos=null;this.clearPlayers();this.hero=this.makePlayer(a.hero.x,a.hero.z,0x63b9f4,this.appearance.number,true,false,this.appearance.name||'Espoir');this.teammates=(a.teammates||[a.receiver]).filter(Boolean).map((t,i)=>this.makePlayer(t.x,t.z,0x63b9f4,t.number||11+i,false,false,t.name||['Martin','Lopez','Morel','Diallo','Petit','Garcia','Leroy','Roux','Faye','Blanc'][i%10]));this.receiver=this.teammates[0]||null;this.defenders=a.defenders.map((d,i)=>this.makePlayer(d.x,d.z,0xd96955,d.number||4+i,false,false,d.name||['Bernard','Thomas','Robert','Dubois','Laurent','Michel','Simon','Durand','Adam','Henry'][i%10]));this.keeper=this.makePlayer(a.keeper.x,a.keeper.z,0xe5c45c,1,false,true,'Gardien');this.aim.visible=false;if(this.targetRing)this.targetRing.visible=false;this.ball.position.set(a.ball.x,R,a.ball.z);}
-resize(){const w=this.canvas.parentElement.clientWidth,h=this.canvas.parentElement.clientHeight;if(!w||!h)return;this.renderer.setSize(w,h,false);const a=w/h;this.camera.aspect=a;this.camera.position.set(0,a<.85?27:26,a<.85?25:22);this.camera.fov=a<.85?Math.min(92,2*Math.atan(Math.tan(47*Math.PI/360)*.85/a)*180/Math.PI):45;this.camera.lookAt(0,0,-6);this.camera.far=180;if(this.scene.fog){this.scene.fog.near=65;this.scene.fog.far=130;}this.camera.updateProjectionMatrix();this.camera.updateMatrixWorld();
+resize(){const w=this.canvas.parentElement.clientWidth,h=this.canvas.parentElement.clientHeight;if(!w||!h)return;this.renderer.setSize(w,h,false);const a=w/h;this.camera.aspect=a;this.camera.position.set(0,a<.85?27:26,a<.85?25:22);this.camera.fov=a<.85?Math.min(92,2*Math.atan(Math.tan(47*Math.PI/360)*.85/a)*180/Math.PI):45;this.camera.lookAt(0,0,-6);this.camera.far=180;if(this.scene.fog){this.scene.fog.near=90;this.scene.fog.far=220;}this.camera.updateProjectionMatrix();this.camera.updateMatrixWorld();
  if(this.action){this.fitTeamCamera();}
 }
 fitTeamCamera(){this.followCamera(this.action,0,true);}
@@ -122,17 +142,19 @@ setRunCursor(p,waiting=false){if(!this.runRing){this.runRing=new T.Group();const
  this.runRing.visible=!!p;if(p){this.runRing.position.set(p.x,.05,p.z);this.runRing.scale.setScalar(1+(waiting?.15*Math.sin(performance.now()/160):0));}}
 actorNDC(actor){const v=new T.Vector3(actor.x,1,actor.z).project(this.camera);return {x:v.x,y:v.y,behind:v.z>1};}
 followCamera(a,dt,snap=false){
- if(!a?.hero)return;const cam=this.camera,h=a.hero,ball=a.ball||h,pts=[];
+ if(!a?.hero)return;const cam=this.camera,h=a.hero,raw=a.ball||h,pts=[];
+ // The camera never follows a ball into the stands: it stays inside the boards and below 9 m.
+ const ball={x:clamp(raw.x,-PITCH.board,PITCH.board),y:Math.min(raw.y||0,9),z:clamp(raw.z,GOAL_Z-PITCH.boardEnd,PITCH.far+PITCH.boardEnd)};
  const add=(x,y,z)=>pts.push(new T.Vector3(x,y,z));
  for(const x of [-3.66,3.66]){add(x,0,-20.6);add(x,2.44,-20);}
  for(const dx of [-1,1])for(const dz of [-1,1])add(h.x+dx,dz<0?1.9:0,h.z+dz);
  add(ball.x,(ball.y||0)+.3,ball.z);add(ball.x,0,ball.z);
  // Partners up to 12 m ahead or alongside stay in view (a ball out to the wing); the wide view shows the whole attacking half.
- for(const t of a.teammates||[])if(t&&(this.wideView?t.z<h.z+6:Math.hypot(t.x-h.x,t.z-h.z)<12&&t.z<h.z+3))add(t.x,1.8,t.z);
- if(this.wideView)for(const x of [-15,15])for(const z of [-20,h.z+4])add(x,0,z);
+ for(const t of a.teammates||[])if(t&&(this.wideView?t.z<h.z+6&&Math.abs(t.x)<30:Math.hypot(t.x-h.x,t.z-h.z)<16&&t.z<h.z+3))add(t.x,1.8,t.z);
+ if(this.wideView)for(const x of [-26,26])for(const z of [-20,h.z+4])add(x,0,z);
  const near=(h.x+ball.x)/2,nz=Math.max(h.z,ball.z);add(near-6,0,nz);add(near+6,0,nz);
  let x0=Infinity,x1=-Infinity,z0=Infinity,z1=-Infinity;for(const p of pts){x0=Math.min(x0,p.x);x1=Math.max(x1,p.x);z0=Math.min(z0,p.z);z1=Math.max(z1,p.z);}
- const cx=clamp((x0+x1)/2,-9,9),cz=(z0+z1)/2,elev=.66,wide=cam.aspect>1.2,top=wide?.5:.5,bottom=wide?-.9:-.66;
+ const cx=clamp((x0+x1)/2,-20,20),cz=(z0+z1)/2,elev=.66,wide=cam.aspect>1.2,top=wide?.5:.5,bottom=wide?-.9:-.66;
  cam.fov=wide?42:50;const place=d=>{cam.position.set(cx*.85,Math.sin(elev)*d,cz+Math.cos(elev)*d);cam.lookAt(cx,0,cz);cam.far=d+200;cam.updateMatrixWorld();cam.updateProjectionMatrix();};
  const fits=()=>pts.every(p=>{const v=p.clone().project(cam);return Math.abs(v.x)<.9&&v.y<top&&v.y>bottom&&v.z<1;});
  let lo=6,hi=160;for(let i=0;i<26;i++){const d=(lo+hi)/2;place(d);if(fits())hi=d;else lo=d;}
@@ -144,7 +166,7 @@ followCamera(a,dt,snap=false){
  if(this.scene.fog){this.scene.fog.near=hi+45;this.scene.fog.far=hi+170;}
 }
 
-groundAtScreen(x,y){const r=this.canvas.getBoundingClientRect();const v=new T.Vector2((x-r.left)/r.width*2-1,-(y-r.top)/r.height*2+1);this.ray.setFromCamera(v,this.camera);const p=new T.Vector3();if(!this.ray.ray.intersectPlane(this.plane,p))return null;return{x:clamp(p.x,-17,17),z:clamp(p.z,-26,31)};}
+groundAtScreen(x,y){const r=this.canvas.getBoundingClientRect();const v=new T.Vector2((x-r.left)/r.width*2-1,-(y-r.top)/r.height*2+1);this.ray.setFromCamera(v,this.camera);const p=new T.Vector3();if(!this.ray.ray.intersectPlane(this.plane,p))return null;return{x:clamp(p.x,-PITCH.W-2,PITCH.W+2),z:clamp(p.z,GOAL_Z-6,PITCH.far+2)};}
 actorScreen(actor){const p=new T.Vector3(actor.x,1.15,actor.z).project(this.camera),r=this.canvas.getBoundingClientRect();return{x:r.left+(p.x+1)/2*r.width,y:r.top+(1-p.y)/2*r.height};}
 ballScreen(){const p=this.ball.position.clone().project(this.camera),r=this.canvas.getBoundingClientRect();return{x:r.left+(p.x+1)/2*r.width,y:r.top+(1-p.y)/2*r.height};}
 preview(start,end,mode,spin=0,power=null,ability=1){if(this.targetRing)this.targetRing.visible=false;if(!end){this.aim.visible=false;return;}const pts=[];

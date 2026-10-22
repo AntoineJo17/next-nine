@@ -1,8 +1,10 @@
-import {clamp} from './physics.js?v=18-0';
+import {clamp,PITCH,GOAL_Z} from './physics.js?v=19-1';
 const formation=[[.5,.025],[.16,.25],[.39,.21],[.61,.21],[.84,.25],[.24,.44],[.5,.40],[.76,.44],[.17,.62],[.5,.66],[.83,.62]];
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-export const tacticalToWorld=p=>({x:(p.x-.5)*32,z:32-p.y*52});
-export const worldToTactical=p=>({x:clamp(p.x/32+.5,.015,.985),y:clamp((32-p.z)/52,.008,.992)});
+// V19 · The whole simulated pitch maps onto the real 105 × 68 m field.
+const LEN=PITCH.far-GOAL_Z;
+export const tacticalToWorld=p=>({x:(p.x-.5)*PITCH.W*2,z:PITCH.far-p.y*LEN});
+export const worldToTactical=p=>({x:clamp(p.x/(PITCH.W*2)+.5,.015,.985),y:clamp((PITCH.far-p.z)/LEN,.008,.992)});
 // 21 · The career player's position picks his dot: striker 9, right winger 10, playmaker 6.
 export const HERO_INDEX={BU:9,AIL:10,MOC:6};
 // 23 · Team tactics change the simulation itself: block height, pressing, ball-winning, passing choices and tempo.
@@ -22,7 +24,8 @@ export function heroOff(s){if(!s.onPitch)return;s.onPitch=false;s.left=true;s.al
 const legs=(s,p)=>1-.16*clamp((s.minute-(p.since||0))/90,0,1);
 // A winger on his flank gets a one-against-one, a playmaker the last pass; a striker keeps the box chances.
 export function chanceKindFor(s,p){return s.position==='AIL'&&Math.abs(p.x-.5)>.2?'wing':s.position==='MOC'?'playmaker':'open';}
-const OPEN_FROM={BU:.65,AIL:.6,MOC:.56};
+// V19 · On the real pitch a chance starts 18–30 m from goal for a striker.
+const OPEN_FROM={BU:.76,AIL:.72,MOC:.7};
 export function restartTactical(s,team){for(const p of s.players){p.x=p.homeX;p.y=p.homeY;p.vx=p.vy=0;}s.owner=s.players[team*11+9];s.owner.x=.5;s.owner.y=.5;s.ball={x:.5,y:.5};s.pass=null;s.shot=null;s.decision=.4;s.paused=false;s.lastPasser=null;s.recent=[];}
 export function tacticalGoal(s,team){s.pass=null;s.shot=null;s.goalHold=1.1;s.ball={x:.5,y:team===0?.997:.003};s.event=team===0?'BUT · AC RIVAGE':'BUT · ADVERSAIRE';s.comment=team===0?'Rivage trouve le chemin des filets !':'But adverse… Il faudra réagir.';s.restart=1-team;}
 function lane(s,from,to,team){const dx=to.x-from.x,dy=to.y-from.y,ll=dx*dx+dy*dy;return s.players.filter(p=>p.team!==team&&p.i!==0&&!p.out).reduce((best,p)=>{const u=((p.x-from.x)*dx+(p.y-from.y)*dy)/(ll||1);if(u<.08||u>.95)return best;return Math.min(best,Math.hypot(p.x-from.x-u*dx,p.y-from.y-u*dy));},1);}
@@ -32,7 +35,9 @@ function choosePass(s){const o=s.owner,dir=o.team===0?1:-1,t=tac(s,o.team);const
 export function resumeTactical(s,actors,outcome,ball,ownerId){for(const a of actors){const p=s.players.find(p=>p.id===a.tacticalId);if(p)Object.assign(p,worldToTactical(a));}s.paused=false;s.pass=null;s.shot=null;s.event='';s.lastChance=s.minute;s.decision=.45;if(outcome==='goal'){s.score[0]++;tacticalGoal(s,0);return;}s.owner=s.players.find(p=>p.id===ownerId)||s.players[11];s.ball=worldToTactical(ball);if(outcome==='save'||outcome==='miss'){s.ball={x:s.owner.x,y:s.owner.y};s.comment='Le gardien relance. Le match continue.';}else{s.owner.x=s.ball.x;s.owner.y=s.ball.y;s.comment='Ballon récupéré : attention à la transition adverse.';}}
 // V14: a chance carries its kind and the player who serves the ball, so the 3D action
 // starts from the real passer (pass, cross) or from a set piece (free kick, penalty).
-function chanceEvent(s,kind,passer){const hero=s.players[s.hero];s.paused=true;s.chances++;s.lastChance=s.minute;s.comment=kind==='penalty'?'Faute dans la surface : penalty !':kind==='freekick'?'Faute ! Coup franc bien placé.':kind==='cross'?'Le centre arrive !':kind==='wing'?'Espoir est lancé sur son aile !':kind==='playmaker'?'Espoir lève la tête au milieu…':'Une ouverture ! À toi de jouer.';const from=passer&&passer!==hero&&passer.team===0?passer:null;return {type:'chance',kind,minute:s.minute,heroId:hero.id,passerId:from?.id??null,passer:from?{x:from.x,y:from.y}:null,ball:{...s.ball},hero:{x:hero.x,y:hero.y}};}
+function chanceEvent(s,kind,passer){const hero=s.players[s.hero];
+ // V19 · Open play: if the player is still far from goal, he has made a run into his zone before the ball arrives.
+ if(['open','wing','playmaker'].includes(kind)){const want=OPEN_FROM[s.position]+.02;if(hero.y<want)hero.y=want+s.random()*.03;}s.paused=true;s.chances++;s.lastChance=s.minute;s.comment=kind==='penalty'?'Faute dans la surface : penalty !':kind==='freekick'?'Faute ! Coup franc bien placé.':kind==='cross'?'Le centre arrive !':kind==='wing'?'Espoir est lancé sur son aile !':kind==='playmaker'?'Espoir lève la tête au milieu…':'Une ouverture ! À toi de jouer.';const from=passer&&passer!==hero&&passer.team===0?passer:null;return {type:'chance',kind,minute:s.minute,heroId:hero.id,passerId:from?.id??null,passer:from?{x:from.x,y:from.y}:null,ball:{...s.ball},hero:{x:hero.x,y:hero.y}};}
 // Minimum pace of playable chances: about one every 25 minutes, at least three per match.
 export const chancesDue=(minute,entry=0)=>Math.min(3,Math.floor((minute-entry+8)/25));
 export function stepTactical(s,dt){if(s.paused)return null;s.elapsed+=dt;
@@ -64,7 +69,7 @@ export function stepTactical(s,dt){if(s.paused)return null;s.elapsed+=dt;
  s.decision-=dt;if(s.decision>0)return null;
  // The career striker never finishes alone in the simulation: a shooting position becomes a playable chance.
  const behind=s.allowChances&&s.chances<chancesDue(s.minute,s.chanceFrom)&&s.minute-s.lastChance>2;
- if(team===0&&o.i===s.hero&&s.allowChances&&(progress>OPEN_FROM[s.position]&&(s.minute-s.lastChance>5&&s.random()<.3+s.energy/300||progress>.8&&s.minute-s.lastChance>2)||behind&&progress>Math.min(.5,OPEN_FROM[s.position])))return chanceEvent(s,chanceKindFor(s,o),null);
+ if(team===0&&o.i===s.hero&&s.allowChances&&(progress>OPEN_FROM[s.position]&&(s.minute-s.lastChance>5&&s.random()<.3+s.energy/300||progress>.8&&s.minute-s.lastChance>2)||behind&&progress>OPEN_FROM[s.position]-.08))return chanceEvent(s,chanceKindFor(s,o),null);
  // 12 · An opposing defender building from the back near the career striker: a pressing chance.
  if(team===1&&o.i>=1&&o.i<=7&&s.allowChances&&progress<.45&&s.minute-s.lastChance>5&&dist(o,s.players[s.hero])<.2&&s.random()<.2){const e=chanceEvent(s,'press',null);e.carrierId=o.id;return e;}
  // Wide Rivage players in the final third can cross for the career striker (a winger attacks the far post; a playmaker is not in the box).

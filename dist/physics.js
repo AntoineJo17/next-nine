@@ -1,5 +1,14 @@
 export const G=9.81,R=.22,GOAL_Z=-20,GOAL_HALF=3.66,GOAL_HEIGHT=2.44;
 export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+// V19 · Real pitch, 105 × 68 m: the attacked goal line is z=-20, the other one z=85. Boards stand 2.5 m outside
+// the lines; the stands start just behind them.
+export const PITCH={W:34,far:85,board:36.5,boardEnd:3.5};
+// The ball rebounds on the advertising boards and dies in the stands instead of flying through them.
+export function stadiumBounds(ball){const B=PITCH.board,lo=GOAL_Z-PITCH.boardEnd,hi=PITCH.far+PITCH.boardEnd,goalMouth=Math.abs(ball.x)<3.9&&ball.y<2.6;
+ const hitX=Math.abs(ball.x)>B,hitZ=ball.z<lo&&!goalMouth||ball.z>hi;if(!hitX&&!hitZ)return false;
+ if(ball.y<1){if(hitX){ball.x=Math.sign(ball.x)*B;ball.vx*=-.35;}if(hitZ){ball.z=ball.z<lo?lo:hi;ball.vz*=-.35;}ball.spin=0;return true;}
+ // Above the boards: into the stands, where the ball is stopped by the seats.
+ const deep=Math.abs(ball.x)>B+2.4||ball.z<lo-2.4||ball.z>hi+2.4;if(deep){ball.x=clamp(ball.x,-B-2.4,B+2.4);ball.z=clamp(ball.z,lo-2.4,hi+2.4);ball.vx*=.1;ball.vz*=.1;ball.vy=Math.min(ball.vy,0);ball.spin=0;}return true;}
 export function launch(start,target,mode,spin=0,power=null,ability=1){
  if(mode==='normal'&&power!==null){const dx=target.x-start.x,dz=target.z-start.z,d=Math.hypot(dx,dz)||1,p=clamp(power,.08,1),speed=(9+22*p)*ability;return {x:start.x,y:R,z:start.z,vx:dx/d*speed,vz:dz/d*speed,vy:1.2+2.8*p+Math.max(0,p-.72)*32,bounces:0,age:0,spin:clamp(spin,-1,1)};}
  const distance=Math.hypot(target.x-start.x,target.z-start.z);
@@ -10,7 +19,7 @@ export function launch(start,target,mode,spin=0,power=null,ability=1){
 }
 export function stepBall(ball,dt){const before={...ball};ball.age+=dt;
  if(ball.spin){const turn=ball.spin*.75*Math.min(1,Math.hypot(ball.vx,ball.vz)/20)*(ball.y>R+.02?1:.12)*dt,c=Math.cos(turn),s=Math.sin(turn),vx=ball.vx;ball.vx=vx*c-ball.vz*s;ball.vz=vx*s+ball.vz*c;ball.spin*=Math.exp(-.35*dt);}
- const g=ball.dip&&ball.vy<0&&ball.y>R+.05?G*1.9:G;ball.x+=ball.vx*dt;ball.z+=ball.vz*dt;ball.y+=ball.vy*dt-g*dt*dt/2;ball.vy-=g*dt;if(ball.y<=R+.02)ball.dip=false;if(ball.y<R){ball.y=R;if(ball.vy<-.7){ball.vy=-ball.vy*.42;ball.bounces++;}else ball.vy=0;ball.vx*=Math.exp(-.55*dt);ball.vz*=Math.exp(-.55*dt);}return before;}
+ const g=ball.dip&&ball.vy<0&&ball.y>R+.05?G*1.9:G;ball.x+=ball.vx*dt;ball.z+=ball.vz*dt;ball.y+=ball.vy*dt-g*dt*dt/2;ball.vy-=g*dt;if(ball.y<=R+.02)ball.dip=false;if(ball.y<R){ball.y=R;if(ball.vy<-.7){ball.vy=-ball.vy*.42;ball.bounces++;}else ball.vy=0;ball.vx*=Math.exp(-.55*dt);ball.vz*=Math.exp(-.55*dt);}stadiumBounds(ball);return before;}
 export function goalCrossing(before,after){if(before.z>GOAL_Z-R&&after.z<=GOAL_Z-R){const k=(before.z-(GOAL_Z-R))/(before.z-after.z);const x=before.x+(after.x-before.x)*k,y=before.y+(after.y-before.y)*k;return {x,y,inside:Math.abs(x)<GOAL_HALF-R&&y<GOAL_HEIGHT-R};}return null;}
 export function hitPlayer(ball,p,radius=.55,height=1.8){return Math.hypot(ball.x-p.x,ball.z-p.z)<radius+R&&ball.y<height+R;}
 
