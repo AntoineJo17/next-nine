@@ -95,3 +95,24 @@ body.playing{overflow:hidden;overscroll-behavior:none}body.playing header,body.p
 .replay-btn{pointer-events:auto;display:block;max-width:430px;width:100%;margin:10px auto 0;min-height:40px}
 .replay-badge{position:absolute;z-index:11;top:calc(env(safe-area-inset-top,0px) + 104px);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:6px 8px 6px 14px;border-radius:18px;background:#0d1f17ee;border:1px solid #d3f96a88}
 .replay-badge b{color:var(--lime);font-size:12px;letter-spacing:3px}.replay-badge .textbtn{min-height:34px;padding:4px 10px;color:#eaf4ff;text-decoration:none;border:1px solid #63b9f466;border-radius:14px}
+/* V19 · Clean match HUD: one compact bar, a single context line, tools in a menu, curve control at the bottom */
+#match .arena-top{min-height:0;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 8px) 10px 18px;background:linear-gradient(#091b21aa,transparent)}
+#match .arena-icon{width:38px;height:38px;font-size:18px}
+#match .scoreglass{padding:5px 14px 6px;border-radius:14px;max-width:60%;min-width:150px}
+#match .scoreglass .eyebrow{font-size:7px;margin:0 0 1px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#match .scoreline{gap:10px}#match .scoreline h2{font-size:24px}#match .scoreline b{font-size:12px}
+#match .scoreglass small{display:none}
+#match .energy-hud{position:static;width:auto;background:none;border:0;padding:0;margin-top:4px}
+#match .energy-hud span{display:none}#match .energy-hud .track{margin:0;height:3px}
+#match .arena-tools{position:relative;gap:6px}
+.tool-menu{position:absolute;top:44px;right:0;display:flex;flex-direction:column;gap:6px;padding:6px;border-radius:24px;background:#0b1f19e6;border:1px solid #ffffff22;pointer-events:auto;z-index:20}
+#match:not(.simulating) .arena-context{top:calc(env(safe-area-inset-top,0px) + 62px);left:10px;right:10px;max-width:none;background:none;padding:0;backdrop-filter:none;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+#match .arena-context>span{margin:0;padding:3px 8px;font-size:8px;background:#0b1f19b0}
+#match .arena-context .coach-line{margin:0;padding:3px 8px;font-size:8px}
+#match .arena-context #timeline{display:none}
+#match .arena-bottom .curve-slider{position:static;display:flex;align-items:center;gap:10px;width:auto;max-width:none;margin:0 0 8px;padding:0;background:none;border:0;pointer-events:auto}
+#match .arena-bottom .curve-slider label{font-size:8px;white-space:nowrap;margin:0;display:flex;gap:6px}#match .arena-bottom .curve-slider input{flex:1;margin:0}
+#match .commentary{bottom:calc(env(safe-area-inset-bottom,0px) + 140px)}
+#match.simulating .arena-bottom .curve-slider{display:none}
+#match .replay-badge,#match .announce{top:calc(env(safe-area-inset-top,0px) + 90px)}
+#match .announce{top:34%}
