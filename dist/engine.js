@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=19-5b';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=19-6';
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
 export const BALL_VISUAL=.15;
@@ -178,7 +178,7 @@ preview(start,end,mode,spin=0,power=null,ability=1){if(this.targetRing)this.targ
 }
 posePlayer(p,a,dt,now,frozen=false){
  p.g.position.set(a.x,a.y||0,a.z);if(frozen&&p.posed)return;p.posed=true;let angle=a.angle??0;let difference=Math.atan2(Math.sin(angle-p.lastAngle),Math.cos(angle-p.lastAngle));p.lastAngle+=difference*Math.min(1,dt*(Math.abs(difference)>1.2?24:14));p.g.rotation.y=p.lastAngle;
- const targetSpeed=a.speed||0;p.gaitSpeed=(p.gaitSpeed||0)+(targetSpeed-(p.gaitSpeed||0))*Math.min(1,dt*7);const speed=p.gaitSpeed,running=clamp((speed-1.2)/3.2,0,1),moving=clamp(speed/1.1,0,1);
+ const targetSpeed=a.speed||0;p.gaitSpeed=(p.gaitSpeed||0)+(targetSpeed-(p.gaitSpeed||0))*Math.min(1,dt*11);const speed=p.gaitSpeed,running=clamp((speed-.9)/2.6,0,1),moving=clamp(speed/1.1,0,1);
  // V14 gait: stride length grows with speed, so feet stay planted instead of pedalling; flight phase when running,
  // pelvis dips twice per cycle, trunk leans with speed and acceleration, arms swing opposite with bent elbows.
  const cycleLen=1.15+.34*speed;p.stride+=dt*speed/cycleLen*Math.PI*2;const cycle=p.stride,stanceFrac=.62-.24*running,step=Math.min(stanceFrac*cycleLen/2,.46)*moving;

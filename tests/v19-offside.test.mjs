@@ -8,7 +8,7 @@ test('V19 · offside in the simulated match: about three a match, and the defend
  assert.ok(total/30>1&&total/30<6,'offsides per match: '+(total/30).toFixed(2));});
 
 // A clear set-up: the hero 25 m out, the line of defenders at z=-8, the keeper on his line.
-const scene=(run,mateZ)=>run(`$('play').onclick();action.started=true;const h=action.hero;h.x=0;h.z=5;attachBall(h);action.defenders.forEach((d,i)=>{d.x=-30+i*4;d.z=i<4?-8:20;});action.keeper.z=-19.3;const m=action.teammates[0];m.x=6;m.z=${mateZ};globalThis.M=m;action.receiver=m;`);
+const scene=(run,mateZ)=>run(`$('play').onclick();action.started=true;const h=action.hero;h.x=0;h.z=5;attachBall(h);action.defenders.forEach((d,i)=>{d.x=-30+i*4;d.z=i<4?-8:20;});action.keeper.z=-19.3;action.teammates.forEach((t,i)=>{t.x=-25+i*3;t.z=25;});const m=action.teammates[0];m.x=6;m.z=${mateZ};globalThis.M=m;action.receiver=m;`);
 const play=run=>{for(let i=0;i<500&&!run('action.ended')&&!run("action.phase==='choice'||action.phase==='teammateRun'||action.shotBy==='teammate'");i++){run('action.callPause=false');run('tick(1/120)');}};
 
 test('V19 · a pass to a team-mate beyond the second-last defender is flagged offside',()=>{const {run}=boot();scene(run,-12);run("windUp(action.hero,{x:M.x,z:M.z},'low','hero');");play(run);

@@ -1,4 +1,4 @@
-import {clamp,PITCH,GOAL_Z} from './physics.js?v=19-5b';
+import {clamp,PITCH,GOAL_Z} from './physics.js?v=19-6';
 const formation=[[.5,.025],[.16,.25],[.39,.21],[.61,.21],[.84,.25],[.24,.44],[.5,.40],[.76,.44],[.17,.62],[.5,.66],[.83,.62]];
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 // V19 · The whole simulated pitch maps onto the real 105 × 68 m field.
@@ -8,7 +8,7 @@ export const worldToTactical=p=>({x:clamp(p.x/(PITCH.W*2)+.5,.015,.985),y:clamp(
 // 21 · The career player's position picks his dot: striker 9, right winger 10, playmaker 6.
 export const HERO_INDEX={BU:9,AIL:10,MOC:6};
 // 23 · Team tactics change the simulation itself: block height, pressing, ball-winning, passing choices and tempo.
-export const TACTICS={equilibre:{label:'Équilibrée',line:0,press:1,win:1,keep:1,forward:2.8,safe:1,length:0,tempo:1},pressing:{label:'Pressing haut',line:.08,press:1.4,win:1.5,keep:1,forward:2.8,safe:1,length:0,tempo:.9},contre:{label:'Contre-attaque',line:-.09,press:.8,win:.85,keep:1.1,forward:4.6,safe:.8,length:.25,tempo:.55},possession:{label:'Possession',line:.02,press:1.05,win:1.1,keep:.6,forward:1.3,safe:1.8,length:-.2,tempo:1.1}};
+export const TACTICS={equilibre:{label:'Équilibrée',line:0,press:1,win:1,keep:1,forward:2.8,safe:1,length:0,tempo:1},pressing:{label:'Pressing haut',line:.08,press:1.4,win:1.5,keep:1,forward:2.8,safe:1,length:0,tempo:.9},contre:{label:'Contre-attaque',line:-.09,press:.8,win:.85,keep:1.1,forward:4.6,safe:.8,length:.25,tempo:.55},possession:{label:'Possession',line:0,press:1.05,win:1.1,keep:.55,forward:1.7,safe:1.8,length:-.2,tempo:1.1}};
 export function setTactic(s,id,team=0){s.tactics[team]=TACTICS[id]?id:'equilibre';}
 // A high press fades after the hour: the legs go, the line stays high.
 const tac=(s,team)=>{const t=TACTICS[s.tactics?.[team]]||TACTICS.equilibre;if(t.press<=1.2||s.minute<55)return t;const f=1-Math.min(1,(s.minute-55)/35)*.7;return {...t,press:1+(t.press-1)*f,win:1+(t.win-1)*f};};
@@ -42,7 +42,7 @@ function chanceEvent(s,kind,passer){const hero=s.players[s.hero];
  // V19 · Open play: if the player is still far from goal, he has made a run into his zone before the ball arrives.
  if(['open','wing','playmaker'].includes(kind)){const want=OPEN_FROM[s.position]+.02;if(hero.y<want)hero.y=want+s.random()*.03;}s.paused=true;s.chances++;s.lastChance=s.minute;s.comment=kind==='penalty'?'Faute dans la surface : penalty !':kind==='freekick'?'Faute ! Coup franc bien placé.':kind==='cross'?'Le centre arrive !':kind==='wing'?'Espoir est lancé sur son aile !':kind==='playmaker'?'Espoir lève la tête au milieu…':'Une ouverture ! À toi de jouer.';const from=passer&&passer!==hero&&passer.team===0?passer:null;return {type:'chance',kind,minute:s.minute,heroId:hero.id,passerId:from?.id??null,passer:from?{x:from.x,y:from.y}:null,ball:{...s.ball},hero:{x:hero.x,y:hero.y}};}
 // Minimum pace of playable chances: about one every 25 minutes, at least three per match.
-export const chancesDue=(minute,entry=0)=>Math.min(3,Math.floor((minute-entry+8)/25));
+export const chancesDue=(minute,entry=0)=>Math.min(3,Math.floor((minute-entry+14)/25));
 export function stepTactical(s,dt){if(s.paused)return null;s.elapsed+=dt;
  if(s.goalHold>0){s.goalHold-=dt;if(s.goalHold<=0){s.event='';restartTactical(s,s.restart);}return null;}
  s.minute=Math.min(90,s.minute+dt*1.05);if(s.minute>=90){s.paused=true;return {type:'finish'};}
@@ -79,10 +79,10 @@ export function stepTactical(s,dt){if(s.paused)return null;s.elapsed+=dt;
  // Wide Rivage players in the final third can cross for the career striker (a winger attacks the far post; a playmaker is not in the box).
  if(team===0&&o.i!==s.hero&&s.allowChances&&s.position!=='MOC'&&(s.position!=='AIL'||(o.x-.5)*(s.players[s.hero].x-.5)<0)&&progress>.62&&Math.abs(o.x-.5)>.24&&s.minute-s.lastChance>6&&s.random()<.22)return chanceEvent(s,'cross',o);
  // Behind schedule: a Rivage attack in the opposing half is turned into a ball for the player.
- if(team===0&&o.i!==s.hero&&o.i>=5&&behind&&progress>.52){const wide=Math.abs(o.x-.5)>.27&&progress>.6;return chanceEvent(s,s.position!=='BU'?chanceKindFor(s,s.players[s.hero]):wide&&s.random()<.3?'cross':'open',o);}
+ if(team===0&&o.i!==s.hero&&o.i>=5&&behind&&progress>(s.entry?.45:.52)){const wide=Math.abs(o.x-.5)>.27&&progress>.6;return chanceEvent(s,s.position!=='BU'?chanceKindFor(s,s.players[s.hero]):wide&&s.random()<.3?'cross':'open',o);}
  const heroDot=team===0&&o.i===s.hero&&s.allowChances;
  // Against a deep block, the attackers try their luck from further out (lower quality).
- if(!heroDot&&progress>.80+Math.min(0,theirs.line)*1.1&&Math.abs(o.x-.5)<.36){s.shots[team]++;s.shot={from:{...s.ball},target:{x:.5+(s.random()-.5)*.13,y:team===0?1:0},elapsed:0,duration:.65,probability:clamp(.15+quality*.17+(progress-.8)*.8+theirs.line*1.6+(s.elapsed-s.wonAt[team]<7?.06*(1+mine.length*4):0),.06,.55)};s.comment=team===0?'Rivage frappe !':'Attention, frappe adverse !';s.event='TIR';return {type:'shot',team,minute:s.minute};}
+ if(!heroDot&&progress>.80+Math.min(0,theirs.line)*1.1&&Math.abs(o.x-.5)<.36){s.shots[team]++;s.shot={from:{...s.ball},target:{x:.5+(s.random()-.5)*.13,y:team===0?1:0},elapsed:0,duration:.65,probability:clamp(.15+quality*.17+(progress-.8)*.8+theirs.line*1.6-(theirs.keep<.7?.05:0)+(s.elapsed-s.wonAt[team]<7?.06*(1+mine.length*4):0),.06,.55)};s.comment=team===0?'Rivage frappe !':'Attention, frappe adverse !';s.event='TIR';return {type:'shot',team,minute:s.minute};}
  const to=choosePass(s);if(to&&team===0&&to.i===s.hero&&s.allowChances&&to.y>OPEN_FROM[s.position]-.05&&s.minute-s.lastChance>5&&s.random()<.4)return chanceEvent(s,s.position!=='BU'?chanceKindFor(s,to):Math.abs(o.x-.5)>.24&&to.y>.7&&Math.abs(to.x-.5)<.2?'cross':'open',o);if(to){const spread=.015*(1-quality)*(s.rain?1.5:1),target={x:clamp(to.x+(s.random()-.5)*spread,.04,.96),y:clamp(to.y+(s.random()-.5)*spread,.04,.96)};s.pass={from:{...s.ball},to,target,elapsed:0,duration:.25+dist(o,to)*1.1,offside:isOffside(s,to,o,team)||!!to.early&&(to.y-o.y)*dir>.04&&(to.y-.5)*dir>0};s.comment=team===1&&progress>.6?'L’adversaire se rapproche de notre surface…':team===0&&progress>.55?'Rivage avance : une ouverture peut se présenter.':Math.abs(to.x-o.x)>.30?'Renversement de jeu vers l’autre aile.':'Le ballon circule au milieu de terrain.';}s.decision=(.3+s.random()*.4)*mine.tempo;return null;
 }
 
