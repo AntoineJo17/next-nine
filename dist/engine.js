@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {R,clamp,launch,stepBall} from './physics.js';
+import {R,clamp,launch,stepBall} from './physics.js?v=18-26';
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
 export const BALL_VISUAL=.15;
@@ -111,6 +111,9 @@ fitTeamCamera(){this.followCamera(this.action,0,true);}
 // V13.2: close camera behind the career player. It frames the player, the ball, the goal and
 // partners close by, then follows the action smoothly (passes, runs, rebounds).
 setWideView(on){this.wideView=!!on;}
+// 26 · Rain: falling streaks around the action and a greyer sky.
+setRain(on){this.raining=!!on;if(on&&!this.rain){const n=1400,pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[i*3]=(Math.random()-.5)*44;pos[i*3+1]=Math.random()*20;pos[i*3+2]=(Math.random()-.5)*44;}const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(pos,3));this.rain=new T.Points(g,new T.PointsMaterial({color:0xdbe8f0,size:2.2,sizeAttenuation:false,transparent:true,opacity:.7,depthWrite:false}));this.rain.frustumCulled=false;this.scene.add(this.rain);}if(this.rain)this.rain.visible=!!on;const sky=new T.Color(on?'#7d8f97':'#91b9c3');this.scene.background=sky;if(this.scene.fog)this.scene.fog.color=sky;}
+stepRain(dt){if(!this.raining||!this.rain)return;const p=this.rain.geometry.attributes.position,a=p.array,c=this.camLook||{x:0,z:-8};this.rain.position.set(c.x,0,c.z);for(let i=1;i<a.length;i+=3){a[i]-=dt*14;if(a[i]<0)a[i]+=20;}p.needsUpdate=true;}
 setLookYaw(v){this.lookYaw=v;}
 // Run cursor: where the player is heading after a pass (pulses while the game waits for the call).
 setRunCursor(p,waiting=false){if(!this.runRing){this.runRing=new T.Group();const ring=new T.Mesh(new T.RingGeometry(.45,.6,40),new T.MeshBasicMaterial({color:0x63b9f4,side:T.DoubleSide,transparent:true,opacity:.9,depthTest:false}));ring.rotation.x=-Math.PI/2;const dot=new T.Mesh(new T.CircleGeometry(.14,20),new T.MeshBasicMaterial({color:0x63b9f4,side:T.DoubleSide,depthTest:false}));dot.rotation.x=-Math.PI/2;this.runRing.add(ring,dot);this.runRing.renderOrder=6;this.scene.add(this.runRing);}
@@ -175,7 +178,7 @@ posePlayer(p,a,dt,now){
  const joints=[p.pose,...p.legs,...p.knees,...p.arms,...p.elbows];if(p.previousPose){const blend=1-Math.exp(-dt*22);joints.forEach((j,i)=>{for(const axis of ['x','y','z'])j.rotation[axis]=p.previousPose[i][axis]+(j.rotation[axis]-p.previousPose[i][axis])*blend;});}if(!(a.kickTimer>=0&&a.kickTimer<.65)&&!a.challenge&&!(a.skillTimer>=0&&a.skillTimer<.65))p.knees.forEach((k,i)=>k.children[1].rotation.x=-p.legs[i].rotation.x-k.rotation.x);p.previousPose=joints.map(j=>({x:j.rotation.x,y:j.rotation.y,z:j.rotation.z}));
 }
 heldBallPosition(){this.keeper.g.updateMatrixWorld(true);const left=this.keeper.hands[0].getWorldPosition(new T.Vector3()),right=this.keeper.hands[1].getWorldPosition(new T.Vector3());return left.add(right).multiplyScalar(.5).add(new T.Vector3(0,0,.12));}
-render(a,dt,now){if(a===this.action)this.followCamera(a,dt);this.animateCrowd(now,a.outcomeKind==='goal');const ball=a.ball;const turnover=a.ballControl==='defender'&&a.after<1.1;const travelling=a.phase==='interval'||a.phase==='incoming'||a.flying||a.phase==='dribble'||a.phase==='skill'||turnover;this.ball.position.set(ball.x,ball.y-(R-BALL_VISUAL),ball.z);if(travelling){this.ball.rotation.x-=dt*(a.phase==='dribble'||a.phase==='skill'||turnover?10:Math.abs(ball.vz)*1.8);this.ball.rotation.z+=dt*(ball.vx||0);}
+render(a,dt,now){if(a===this.action)this.followCamera(a,dt);this.stepRain(dt);this.animateCrowd(now,a.outcomeKind==='goal');const ball=a.ball;const turnover=a.ballControl==='defender'&&a.after<1.1;const travelling=a.phase==='interval'||a.phase==='incoming'||a.flying||a.phase==='dribble'||a.phase==='skill'||turnover;this.ball.position.set(ball.x,ball.y-(R-BALL_VISUAL),ball.z);if(travelling){this.ball.rotation.x-=dt*(a.phase==='dribble'||a.phase==='skill'||turnover?10:Math.abs(ball.vz)*1.8);this.ball.rotation.z+=dt*(ball.vx||0);}
  this.shadow.position.set(ball.x,.04,ball.z);this.shadow.scale.setScalar((1+ball.y*.12)*.72);this.shadow.material.opacity=Math.max(.06,.4-ball.y*.04);
  this.posePlayer(this.hero,a.hero,dt,now);(this.teammates||[]).forEach((p,i)=>this.posePlayer(p,(a.teammates||[a.receiver])[i],dt,now));this.defenders.forEach((p,i)=>this.posePlayer(p,a.defenders[i],dt,now));this.posePlayer(this.keeper,a.keeper,dt,now);if(a.ballControl==='held'){this.ball.position.copy(this.heldBallPosition());this.shadow.position.set(this.ball.position.x,.04,this.ball.position.z);}this.renderer.render(this.scene,this.camera);
 }

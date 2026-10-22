@@ -31,7 +31,7 @@ test('22 · the coach gives a position-based instruction, counts it live and rew
  assert.equal(coachInstruction({position:'MOC',games:0}),'combine');assert.equal(instructionProgress('securite',{losses:2}).done,false);assert.equal(instructionProgress('combine',{passes:3}).done,true);
  assert.deepEqual([coachVerdict('combine',{passes:3},7.2).trust,coachVerdict('combine',{passes:1},5).trust],[11,-8]);
  for(const done of [true,false]){const {run}=boot();run("career.position='MOC';$('play').onclick();");assert.equal(run('match.instruction'),'combine');
-  run('updateCoach()');assert.match(run("$('coachLine').textContent"),/CONSIGNE · Combine.* 0 \/ 3/);assert.equal(run("$('coachLine').hidden"),false);
+  run('updateCoach()');assert.match(run("$('coachLine').textContent"),/CONSIGNE · Passes réussies 0 \/ 3/);assert.match(run("$('coachPlayback').textContent"),/Combine/);assert.equal(run("$('coachLine').hidden"),false);
   run(`match.passes=${done?3:1};updateCoach();`);if(done)assert.match(run("$('coachPlayback').textContent"),/3 \/ 3 ✓/);
   const xp=run('career.xp'),earned=run('performance(match).earned'),change=run('coachVerdict(match.instruction,match,performance(match).rating).trust');run('finish()');
   assert.equal(run('career.xp')-xp,earned+(done?35:0));assert.equal(run('career.trust'),50+change);assert.ok(done?change>0:change<0);assert.match(run("$('resultCoach').textContent"),done?/Respectée/:/Pas respectée/);}
@@ -66,3 +66,18 @@ test('25 · both sides make three changes, and the coach can take the player off
  for(let i=0;i<60000&&run('match&&match.tactical.minute<61');i++)run('tick(1/60)');run('match.energy=25;');for(let i=0;i<600&&run('!match.left');i++)run('tick(1/60)');
  assert.ok(run('match.left')>=60);assert.equal(run("$('announceTitle').textContent"),'SORTIE');assert.match(run("$('announceText').textContent"),/À bout de forces/);const energy=run('match.energy');
  for(let i=0;i<80000&&run('!!match');i++)run('tick(1/60)');assert.equal(run('!!match'),false);assert.match(run("$('resultDetail').textContent"),/Sorti à la \d+′/);assert.ok(Math.abs(run('career.energy')-energy)<.01,'no energy spent after going off');});
+
+test('26 · special scenarios: derby, comeback, last matchday, rain and red cards',async()=>{
+ const {matchScenario,scenarioBonus}=await import('../dist/career.js');
+ assert.deepEqual([0,1,2,4,5,6,8,10,11].map(matchScenario),[null,null,'remontada','derby','finale',null,'remontada','derby','finale']);const rain=Array.from({length:30},(_,g)=>matchScenario(g)).filter(x=>x==='pluie').length;assert.ok(rain>=3&&rain<=8,'rain now and then: '+rain);
+ assert.equal(scenarioBonus('remontada',{us:2,them:1},100).xp,60);assert.equal(scenarioBonus('remontada',{us:1,them:1},100).xp,0);assert.equal(scenarioBonus('derby',{us:0,them:0},100).xp,20);
+ // Comeback: the match starts at the 55th minute, 0–1, and the score stays consistent with the goal list.
+ const {run}=boot({name:'Comeback',games:2,goals:0,assists:0,xp:0});assert.match(run("$('scenarioNote').textContent"),/REMONTADA/);run("$('play').onclick();beginInterval=originalInterval;beginInterval();");
+ assert.ok(run('match.tactical.minute')>=55);assert.equal(run('match.them'),1);assert.equal(run("$('announceTitle').textContent"),'REMONTADA');
+ for(let i=0;i<200000&&run('!!match');i++){if(run('action.ready&&!action.ended'))run("windUp(action.hero,{x:0,z:-21},'normal','hero',0,.6)");if(run('action.ended&&action.after>1')){run("$('continue').onclick()");continue;}run('tick(1/60)');}
+ const [us,them]=run('career.last').match(/(\d+) – (\d+)/).slice(1).map(Number),ev=run("$('resultEvents').textContent");assert.ok(them>=1);assert.equal((ev.match(/Adversaire/g)||[]).length,them,ev);assert.equal((ev.match(/AC Rivage/g)||[]).length,us,ev);assert.match(run("$('resultScenario').textContent"),/Remontada/);
+ // Red card: the player leaves the pitch, is never served again and is not drawn.
+ let reds=0;for(let seed=1;seed<=60;seed++){const s=createTactical(seed*131+7,{levels:[60,60],energy:90,allowChances:false,redCards:true});for(let i=0;i<20000;i++){const e=stepTactical(s,1/60);if(e?.type==='red'){reds++;const p=s.players.find(q=>q.out);assert.ok(p&&p.i>=1&&p.i<=7&&!(p.team===0&&p.i===9));}if(s.pass)assert.ok(!s.pass.to.out);assert.ok(!s.owner.out);if(e?.type==='finish')break;}}
+ assert.ok(reds>=2&&reds<=12,'red cards stay rare: '+reds+' in 60 matches');
+ const rainy=boot({name:'Pluie',games:3,goals:0,assists:0,xp:0});rainy.run("$('play').onclick();");assert.equal(rainy.run('match.scenario'),'pluie');assert.equal(rainy.run('match.tactical.rain'),true);
+ const derby=boot({name:'Derby',games:4,goals:0,assists:0,xp:0});derby.run("$('play').onclick();");assert.equal(derby.run('match.levels[1]'),derby.run('teamLevels(4)[1]')+3);});

@@ -1,4 +1,4 @@
-import {clamp} from './physics.js';
+import {clamp} from './physics.js?v=18-26';
 export const LEVEL_XP=700;
 // 21 · Playing position: it decides where the player's chances come from.
 export const POSITIONS={BU:{label:'Avant-centre',short:'BU'},AIL:{label:'Ailier droit',short:'AIL'},MOC:{label:'Meneur de jeu',short:'MOC'}};
@@ -18,12 +18,17 @@ export const matchStartEnergy=energy=>Math.max(85,Number.isFinite(energy)?clamp(
 export const teamLevels=games=>[60+Math.min(8,Math.floor(games/12)),[58,64,61,55,67,60][games%6]];
 
 // 22 · Coach instructions: one per match, chosen from the position's pool. Respecting it earns XP and the coach's trust.
-export const INSTRUCTIONS={appels:{text:'Fais des appels après tes passes.',goal:2,stat:m=>m.runs||0},combine:{text:'Combine : réussis tes passes.',goal:3,stat:m=>m.passes||0},tir:{text:'Tente ta chance : frappe au but.',goal:3,stat:m=>m.shots||0},dribble:{text:'Provoque : élimine en dribble.',goal:3,stat:m=>m.dribbles||0},decisif:{text:'Sois décisif : marque ou fais marquer.',goal:1,stat:m=>(m.goals||0)+(m.assists||0)},securite:{text:'Pas de cadeau : une perte de balle au plus.',goal:1,stat:m=>m.losses||0,max:true}};
+export const INSTRUCTIONS={appels:{short:'Appels',text:'Fais des appels après tes passes.',goal:2,stat:m=>m.runs||0},combine:{short:'Passes réussies',text:'Combine : réussis tes passes.',goal:3,stat:m=>m.passes||0},tir:{short:'Frappes',text:'Tente ta chance : frappe au but.',goal:3,stat:m=>m.shots||0},dribble:{short:'Dribbles',text:'Provoque : élimine en dribble.',goal:3,stat:m=>m.dribbles||0},decisif:{short:'Buts et passes D.',text:'Sois décisif : marque ou fais marquer.',goal:1,stat:m=>(m.goals||0)+(m.assists||0)},securite:{short:'Pertes',text:'Pas de cadeau : une perte de balle au plus.',goal:1,stat:m=>m.losses||0,max:true}};
 const COACH_POOL={BU:['tir','appels','decisif','securite'],AIL:['dribble','combine','decisif','tir'],MOC:['combine','securite','appels','decisif']};
 export function coachInstruction(career){const pool=COACH_POOL[career.position]||COACH_POOL.BU;return pool[(career.games||0)%pool.length];}
-export function instructionProgress(id,m){const r=INSTRUCTIONS[id];if(!r)return null;const value=r.stat(m);return {id,text:r.text,value,goal:r.goal,max:!!r.max,done:r.max?value<=r.goal:value>=r.goal,label:r.max?`${value} perte(s) · ${r.goal} au plus`:`${Math.min(value,r.goal)} / ${r.goal}`};}
+export function instructionProgress(id,m){const r=INSTRUCTIONS[id];if(!r)return null;const value=r.stat(m);return {id,text:r.text,short:r.short,value,goal:r.goal,max:!!r.max,done:r.max?value<=r.goal:value>=r.goal,label:r.max?`${value} perte(s) · ${r.goal} au plus`:`${Math.min(value,r.goal)} / ${r.goal}`};}
 // Trust moves with the instruction and the rating; it decides who starts (24) and who is taken off (25).
 export function coachVerdict(id,m,rating){const p=instructionProgress(id,m);if(!p)return {bonus:0,trust:0,done:false};return {bonus:p.done?35:0,trust:(p.done?8:-5)+(rating>=7?3:rating<5.5?-3:0),done:p.done,text:p.text};}
 
 // 24 · Squad role, decided before the pre-match recovery: low trust or tired legs start on the bench.
 export function squadRole(career){const trust=Number.isFinite(career.trust)?career.trust:50,energy=Number.isFinite(career.energy)?career.energy:100;if(trust>=40&&energy>=45)return {starter:true,entry:0,reason:''};return {starter:false,entry:58+((career.games||0)*17)%15,reason:trust<40?'Le coach te laisse sur le banc : regagne sa confiance.':'Tu manques de fraîcheur : le coach te garde pour la fin du match.'};}
+
+// 26 · Special scenarios, fixed by the fixture: derby, comeback from the 55th minute, last matchday, rain.
+export const SCENARIOS={derby:{title:'DERBY',text:'Contre l’Étoile du Port, tout le stade pousse. XP ×1,2.'},remontada:{title:'REMONTADA',text:'Mené 0–1 à la 55e : renverse le match. +60 XP en cas de victoire.'},finale:{title:'DERNIÈRE JOURNÉE',text:'La victoire ou rien : +50 XP si Rivage gagne.'},pluie:{title:'SOUS LA PLUIE',text:'Terrain glissant : contrôles et passes plus difficiles.'}};
+export function matchScenario(games=0){const d=games%6;if(games>0&&d===2)return 'remontada';if(d===4)return 'derby';if(d===5)return 'finale';if(games>0&&(d===1||d===3)&&(games*7)%5<2)return 'pluie';return null;}
+export function scenarioBonus(id,m,earned){if(id==='derby')return {xp:Math.round(earned*.2),text:'Derby : +'+Math.round(earned*.2)+' XP'};if(id==='remontada')return m.us>m.them?{xp:60,text:'Remontada réussie : +60 XP'}:{xp:0,text:'Remontada manquée'};if(id==='finale')return m.us>m.them?{xp:50,text:'Dernière journée gagnée : +50 XP'}:{xp:0,text:'Dernière journée sans victoire'};return {xp:0,text:''};}
