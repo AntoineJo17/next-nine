@@ -82,3 +82,8 @@ body.playing{overflow:hidden;overscroll-behavior:none}body.playing header,body.p
 /* V18 · 23 team tactic: home select and a live switch in the simulation panel */
 .tactic-option{display:grid;gap:6px;margin:4px 0 14px;font-size:9px;letter-spacing:1.5px;color:var(--muted)}.tactic-option select{width:100%;background:#26372c;color:var(--text);border:1px solid #4b5b4d;border-radius:6px;padding:10px 8px;font:inherit;font-size:13px;letter-spacing:0}
 .match-playback .tactic-btn{float:left;margin:4px 0 10px;min-height:40px;padding:8px 12px;border:1px solid #63b9f477;border-radius:20px;background:#173a2c;color:#bfe3fb;font-size:10px;font-weight:700;letter-spacing:.8px}
+/* V18 · 24-26 announcements: bench, coming on, going off, match scenario */
+.announce{position:absolute;z-index:12;left:50%;top:38%;transform:translate(-50%,-50%);width:min(320px,86%);padding:20px 22px;text-align:center;background:#10271df5;border:1px solid #d3f96a88;border-radius:18px;box-shadow:0 12px 40px #0005;pointer-events:none}
+.announce small{display:block;letter-spacing:2px;color:var(--lime);margin:0 0 10px;font-size:10px;font-weight:700}
+.announce strong{display:block;font-size:18px;line-height:1.3;color:#eff5ea}
+.role-note{color:#c8d9bd}

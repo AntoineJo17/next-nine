@@ -46,3 +46,12 @@ test('23 · team tactics change the simulated match, not just a label',async()=>
  assert.ok(counter.against<eq.against,'a deep block concedes less than the balanced side');
  const {TACTICS,setTactic}=await import('../dist/tactical.js');const s=createTactical(5,{tactic:'pressing'});assert.equal(s.tactics[0],'pressing');setTactic(s,'nope');assert.equal(s.tactics[0],'equilibre');assert.equal(Object.keys(TACTICS).length,4);
  const {run}=boot();run("career.tactic='contre';$('play').onclick();");assert.equal(run('match.tactical.tactics[0]'),'contre');run("$('tacticBtn').onclick()");assert.equal(run('match.tactical.tactics[0]'),'possession','changed live during the match');assert.equal(run('career.tactic'),'possession');assert.match(run("$('tacticBtn').textContent"),/Possession/);});
+
+test('24 · a substitute comes on during the match and his chances only start then',async()=>{
+ const {squadRole}=await import('../dist/career.js');assert.equal(squadRole({trust:50,energy:90,games:3}).starter,true);
+ const low=squadRole({trust:30,energy:90,games:3}),tired=squadRole({trust:60,energy:30,games:4});assert.equal(low.starter,false);assert.equal(tired.starter,false);assert.ok(low.entry>=58&&low.entry<=72);assert.match(low.reason,/confiance/);assert.match(tired.reason,/fraîcheur/);
+ let after=0;for(let seed=1;seed<=30;seed++){const s=createTactical(seed*71+9,{levels:[60,60],energy:90,entryMinute:62});assert.equal(s.players[9].name,'Lambert');let subs=0;for(let i=0;i<20000;i++){const e=stepTactical(s,1/60);if(e?.type==='sub'){subs++;assert.ok(e.minute>=62);assert.equal(s.players[9].name,'Espoir');}if(e?.type==='chance'){assert.ok(s.minute>=62,'no chance before coming on');after++;resumeTactical(s,[],'miss',s.ball,11);}if(e?.type==='finish')break;}assert.equal(subs,1);}
+ assert.ok(after>=30,'about one chance or more after coming on: '+after);
+ const {run}=boot({name:'Remplaçant',games:3,goals:0,assists:0,xp:0,trust:20});assert.match(run("$('roleNote').textContent"),/Remplaçant/);
+ run("$('play').onclick();beginInterval=originalInterval;beginInterval();");assert.equal(run('match.role.starter'),false);const energy=run('match.energy');
+ for(let i=0;i<60000&&run("action.phase==='interval'&&!match.entered");i++)run('tick(1/60)');assert.ok(run('match.entered')>=58);assert.ok(energy-run('match.energy')<.01,'no energy spent on the bench');assert.equal(run("$('announceTitle').textContent"),'ENTRÉE EN JEU');assert.equal(run("$('announce').hidden"),false);});

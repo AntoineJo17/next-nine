@@ -24,3 +24,6 @@ export function coachInstruction(career){const pool=COACH_POOL[career.position]|
 export function instructionProgress(id,m){const r=INSTRUCTIONS[id];if(!r)return null;const value=r.stat(m);return {id,text:r.text,value,goal:r.goal,max:!!r.max,done:r.max?value<=r.goal:value>=r.goal,label:r.max?`${value} perte(s) · ${r.goal} au plus`:`${Math.min(value,r.goal)} / ${r.goal}`};}
 // Trust moves with the instruction and the rating; it decides who starts (24) and who is taken off (25).
 export function coachVerdict(id,m,rating){const p=instructionProgress(id,m);if(!p)return {bonus:0,trust:0,done:false};return {bonus:p.done?35:0,trust:(p.done?8:-5)+(rating>=7?3:rating<5.5?-3:0),done:p.done,text:p.text};}
+
+// 24 · Squad role, decided before the pre-match recovery: low trust or tired legs start on the bench.
+export function squadRole(career){const trust=Number.isFinite(career.trust)?career.trust:50,energy=Number.isFinite(career.energy)?career.energy:100;if(trust>=40&&energy>=45)return {starter:true,entry:0,reason:''};return {starter:false,entry:58+((career.games||0)*17)%15,reason:trust<40?'Le coach te laisse sur le banc : regagne sa confiance.':'Tu manques de fraîcheur : le coach te garde pour la fin du match.'};}
