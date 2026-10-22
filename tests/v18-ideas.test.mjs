@@ -115,3 +115,15 @@ test('29 · celebrations follow the context of the goal',async()=>{
  for(let i=0;i<300;i++)late.run('tick(1/120)');assert.ok(late.run('Math.hypot(action.hero.x-action.celebration.target.x,action.hero.z-action.celebration.target.z)')<start-3,'the scorer runs to the corner flag');
  for(let i=0;i<300;i++)late.run('tick(1/120)');assert.equal(late.run('action.hero.celebrate'),'slide','and slides on his knees');
  const level=scored("match.minute=50;match.us=0;match.them=1;");assert.equal(level.run('action.celebration.type'),'ball');assert.equal(level.run('action.hero.celebrate'),false,'no celebration after an equaliser');});
+
+test('30 · an optional replay plays the recorded action at normal speed without touching the match',()=>{
+ let g;for(let x=-3.2;x<=3.2&&!g;x+=.4){const b=boot({name:'Antoine',games:1,goals:4,assists:0,xp:0});b.run(`$('play').onclick();engine.render=function(f){this.rendered=f;};engine.replayView=function(){this.views=(this.views||0)+1;};match.index=1;setup();windUp(action.hero,{x:${x},z:-21},'normal','hero');`);
+  // Frames are recorded as the real loop does: one call per rendered frame.
+  for(let i=0;i<400&&!(b.run('action.ended')&&b.run('action.after')>1);i++)b.run('tick(1/60);recordFrame(action,1/60)');if(b.run("action.outcomeKind==='goal'"))g=b;}
+ assert.ok(g);const {run}=g;const frames=run('action.tape.length');assert.ok(frames>=30,'at least one second recorded: '+frames);assert.ok(run('action.tape.every(f=>Number.isFinite(f.ball.x)&&f.defenders.length===action.defenders.length)'));
+ assert.equal(run("$('replayBtn').hidden"),false,'the replay is offered once the action is over');
+ const ball=run('JSON.stringify(action.ball)'),after=run('action.after');run('startReplay()');assert.equal(run("$('replayBadge').hidden"),false);assert.equal(run("$('continue').hidden"),true);
+ let steps=0;while(run('!!replay')&&steps<2000){run('playReplay(1/60)');steps++;}
+ assert.ok(Math.abs(steps-frames*2)<=3,`real-time playback: ${steps} frames at 60 Hz for ${frames} recorded at 30 Hz`);assert.ok(run('engine.views')>=frames);
+ assert.equal(run('JSON.stringify(action.ball)'),ball,'the match did not move during the replay');assert.ok(run('action.after')<=after);assert.equal(run("$('continue').hidden"),false);assert.equal(run('match.us'),1,'no goal counted twice');
+ run('startReplay();stopReplay();');assert.equal(run('!!replay'),false,'the replay can be skipped');});

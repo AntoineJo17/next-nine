@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {R,clamp,launch,stepBall} from './physics.js?v=18-29';
+import {R,clamp,launch,stepBall} from './physics.js?v=18-30';
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
 export const BALL_VISUAL=.15;
@@ -111,6 +111,8 @@ fitTeamCamera(){this.followCamera(this.action,0,true);}
 // V13.2: close camera behind the career player. It frames the player, the ball, the goal and
 // partners close by, then follows the action smoothly (passes, runs, rebounds).
 setWideView(on){this.wideView=!!on;}
+// 30 · Replay camera: just behind the net, under the stand roof, following the ball smoothly.
+replayView(a,dt){const cam=this.camera,b=a.ball,look=new T.Vector3(clamp(b.x,-13,13)*.8,.6,clamp(b.z,-19,24)+1.5),pos=new T.Vector3(look.x*.45,7,-23.3);if(!this.replayPos){this.replayPos=pos;this.replayLook=look;}else{const k=1-Math.exp(-dt*3);this.replayPos.lerp(pos,k);this.replayLook.lerp(look,k);}cam.fov=cam.aspect>1.2?40:64;cam.far=260;cam.position.copy(this.replayPos);cam.lookAt(this.replayLook);cam.updateProjectionMatrix();cam.updateMatrixWorld();if(this.scene.fog){this.scene.fog.near=60;this.scene.fog.far=170;}}
 // 26 · Rain: falling streaks around the action and a greyer sky.
 setRain(on){this.raining=!!on;if(on&&!this.rain){const n=1400,pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[i*3]=(Math.random()-.5)*44;pos[i*3+1]=Math.random()*20;pos[i*3+2]=(Math.random()-.5)*44;}const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(pos,3));this.rain=new T.Points(g,new T.PointsMaterial({color:0xdbe8f0,size:2.2,sizeAttenuation:false,transparent:true,opacity:.7,depthWrite:false}));this.rain.frustumCulled=false;this.scene.add(this.rain);}if(this.rain)this.rain.visible=!!on;const sky=new T.Color(on?'#7d8f97':'#91b9c3');this.scene.background=sky;if(this.scene.fog)this.scene.fog.color=sky;}
 stepRain(dt){if(!this.raining||!this.rain)return;const p=this.rain.geometry.attributes.position,a=p.array,c=this.camLook||{x:0,z:-8};this.rain.position.set(c.x,0,c.z);for(let i=1;i<a.length;i+=3){a[i]-=dt*14;if(a[i]<0)a[i]+=20;}p.needsUpdate=true;}

@@ -91,3 +91,7 @@ body.playing{overflow:hidden;overscroll-behavior:none}body.playing header,body.p
 /* V18 · 27 contextual commentary: one short line above the controls */
 .commentary{position:absolute;z-index:9;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 108px);transform:translateX(-50%);max-width:88%;margin:0;padding:7px 14px;border-radius:16px;background:#0d1f17e8;border:1px solid #63b9f466;color:#eaf4ff;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 #match.simulating .commentary{bottom:calc(env(safe-area-inset-bottom,0px) + 200px)}
+/* V18 · 30 optional replay */
+.replay-btn{pointer-events:auto;display:block;max-width:430px;width:100%;margin:10px auto 0;min-height:40px}
+.replay-badge{position:absolute;z-index:11;top:calc(env(safe-area-inset-top,0px) + 104px);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:6px 8px 6px 14px;border-radius:18px;background:#0d1f17ee;border:1px solid #d3f96a88}
+.replay-badge b{color:var(--lime);font-size:12px;letter-spacing:3px}.replay-badge .textbtn{min-height:34px;padding:4px 10px;color:#eaf4ff;text-decoration:none;border:1px solid #63b9f466;border-radius:14px}
