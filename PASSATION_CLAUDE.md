@@ -1,4 +1,4 @@
-# Passation à Claude — NEXT NINE V18 (idées 21 à 30)
+# Passation à Claude — NEXT NINE V19 (étape 8)
 
 Tu reprends un jeu existant avec son créateur et Codex. Lis README.md et PROJECT.md, puis le code avant toute modification. Préserve le fonctionnement existant et explique tes changements. Rends une archive complète modifiée ou un patch unifié, avec la liste des fichiers touchés, les tests exécutés et les limites constatées. Ne prétends pas avoir testé visuellement si tu ne l’as pas fait. Aucun canal automatique ne synchronise Claude et Codex : le créateur transfère les fichiers.
 
@@ -25,7 +25,7 @@ Terrain plein écran, geste de frappe tiré vers soi puis relâché, visée cour
 - career.js : énergie, sauvegarde et progression.
 
 ## Points sensibles et limites
-Les tests automatisés passent (152/152 en V18), mais cette livraison n’a pas fait l’objet d’une validation visuelle complète dans un navigateur ou sur téléphone. Priorité : tester réellement la caméra, les commandes tactiles, les décisions défensives et la fluidité des animations.
+Les tests automatisés passent (172/172 en V19), mais cette livraison n’a pas fait l’objet d’une validation visuelle complète dans un navigateur ou sur téléphone. Priorité : tester réellement la caméra, les commandes tactiles, les décisions défensives et la fluidité des animations.
 Les personnages sont des modèles procéduraux stylisés, pas des modèles réalistes animés par capture de mouvement. Leur naturel reste à améliorer avec le créateur.
 Le système d’effet actuel est un petit sélecteur gauche/droit/tout droit près du score. Plusieurs gestes d’effet précédents ont été rejetés par le créateur : faire valider toute nouvelle interaction avant de la généraliser.
 Les collisions doivent rester cohérentes pour tirs, passes et lobs : arrêt = ballon bloqué ou repoussé ; but = ballon dans les filets ; rebond = pas de maintien artificiel de l’effet initial.
@@ -42,3 +42,13 @@ Préserver les sauvegardes existantes, le passage exact simulation/occasion et l
 ## État V18
 Idées 21 à 30 livrées (détail dans PROJECT.md) : poste du joueur, consignes et confiance du coach, tactique d’équipe active dans la simulation, banc, entrées et sorties, changements, scénarios (derby, remontada, dernière journée, pluie, carton rouge), commentaires courts, son du stade synthétisé, célébrations selon le contexte, replay facultatif. Le créateur a demandé la mise en ligne : un workflow GitHub Pages est prêt, à activer depuis son compte GitHub. Nouvelles données de carrière (position, trust, tactic, sound) : les anciennes sauvegardes reçoivent des valeurs par défaut.
 À évaluer en jeu : équilibre des tactiques avec les occasions jouées, fréquence des sorties décidées par le coach, volume et timbre du son sur téléphone, lisibilité des poses de célébration, intérêt du point de vue du replay.
+
+## État V19 (étapes 1 à 8, en ligne)
+Terrain réel 105 × 68 m et stade complet ; interface du match épurée (menu ⋯) ; gardien en position, vraie course (rythme × 1,35, touches de 5 m), arrêt sur image pendant les décisions ; jeu aérien (têtes, retournée, lobs, moins de centres) ; duels d'épaule, tacles glissés, fautes et cartons ; hors-jeu avec juge de touche ; 15 célébrations aléatoires en cinématique ; compte à rebours et lecteur de replay à quatre caméras ; quartier vivant autour du stade. Détail et chiffres dans PROJECT.md, section V19.
+
+## Publier une mise à jour
+1. `npm run check` (172 tests, environ 1 min 30).
+2. `npm run stamp -- "<libellé>" <jeton>`.
+3. Commit, puis envoi via GitHub Desktop (« Push origin ») : le terminal n'a pas d'identifiants GitHub.
+4. GitHub Actions relance les tests et publie dist/ sur https://antoinejo17.github.io/next-nine/.
+Les commits sont signés « AJ <aj@next-nine.invalid> » pour ne pas exposer l'adresse du créateur sur le dépôt public.
