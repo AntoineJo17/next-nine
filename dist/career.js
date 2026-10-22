@@ -1,4 +1,4 @@
-import {clamp} from './physics.js?v=19-6';
+import {clamp} from './physics.js?v=19-7';
 export const LEVEL_XP=700;
 // 21 · Playing position: it decides where the player's chances come from.
 export const POSITIONS={BU:{label:'Avant-centre',short:'BU'},AIL:{label:'Ailier droit',short:'AIL'},MOC:{label:'Meneur de jeu',short:'MOC'}};
@@ -33,14 +33,9 @@ export const SCENARIOS={derby:{title:'DERBY',text:'Contre l’Étoile du Port, t
 export function matchScenario(games=0){const d=games%6;if(games>0&&d===2)return 'remontada';if(d===4)return 'derby';if(d===5)return 'finale';if(games>0&&(d===1||d===3)&&(games*7)%5<2)return 'pluie';return null;}
 export function scenarioBonus(id,m,earned){if(id==='derby')return {xp:Math.round(earned*.2),text:'Derby : +'+Math.round(earned*.2)+' XP'};if(id==='remontada')return m.us>m.them?{xp:60,text:'Remontada réussie : +60 XP'}:{xp:0,text:'Remontada manquée'};if(id==='finale')return m.us>m.them?{xp:50,text:'Dernière journée gagnée : +50 XP'}:{xp:0,text:'Dernière journée sans victoire'};return {xp:0,text:''};}
 
-// 29 · Goal celebrations depend on the moment: first goal, brace, hat-trick, late winner, equaliser, derby, team goal.
-export function celebrationFor(c={}){const diff=(c.us||0)-(c.them||0);
- if(c.teammate)return {type:'hug',pose:true,label:'ENSEMBLE'};
- if(diff<0)return {type:'ball',pose:false,label:'VITE, LE BALLON !'};
- if(c.goals>=3)return {type:'hat',pose:'hat',label:'TRIPLÉ'};
- if((c.minute||0)>=80&&diff===1)return {type:'slide',pose:'run',label:'GLISSADE À GENOUX'};
- if(diff===0)return {type:'ball',pose:false,label:'VITE, LE BALLON !'};
- if(c.goals===1&&c.careerGoals===0)return {type:'jump',pose:'fist',label:'PREMIER BUT'};
- if(c.goals===2)return {type:'point',pose:'point',label:'DOUBLÉ'};
- if(c.scenario==='derby')return {type:'crowd',pose:'ears',label:'DEVANT SES SUPPORTERS'};
- return {type:'plane',pose:'plane',label:'L’AVION'};}
+// 29 · V19: 15 goal celebrations drawn at random: dances, acrobatic figures (the team comes after) and classics.
+export const CELEBRATIONS=[{id:'robot',label:'LE ROBOT',kind:'danse'},{id:'floss',label:'LE FLOSS',kind:'danse'},{id:'disco',label:'DISCO',kind:'danse'},{id:'salsa',label:'SALSA',kind:'danse'},
+ {id:'salto',label:'SALTO ARRIÈRE',kind:'figure'},{id:'roue',label:'LA ROUE',kind:'figure'},{id:'vrille',label:'LA VRILLE',kind:'figure'},
+ {id:'glissade',label:'GLISSADE À GENOUX',kind:'classique'},{id:'avion',label:'L’AVION',kind:'classique'},{id:'poing',label:'POING RAGEUR',kind:'classique'},{id:'ciel',label:'VERS LE CIEL',kind:'classique'},
+ {id:'oreilles',label:'J’ENTENDS RIEN',kind:'classique'},{id:'chut',label:'CHUT !',kind:'classique'},{id:'coeur',label:'LE CŒUR',kind:'classique'},{id:'salut',label:'LE SALUT',kind:'classique'}];
+export function pickCelebration(random=Math.random){return CELEBRATIONS[Math.floor(random()*CELEBRATIONS.length)%CELEBRATIONS.length];}

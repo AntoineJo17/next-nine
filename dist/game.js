@@ -1,21 +1,21 @@
-import {laneClearance,refreshDefence,assignMarkers,defensiveTarget,teamDecision,sweptPlayerContact} from './football-ai.js?v=19-6';
-import {createTactical,stepTactical,drawTactical,tacticalGoal,tacticalToWorld,worldToTactical,resumeTactical,TACTICS,setTactic,heroOff} from './tactical.js?v=19-6';
-import {attributes,performance,progressionLevel,LEVEL_XP,parseCareer,makeTimeline,advanceMatch,profiles,matchScenarios,fatigueFactor,spendEnergy,matchStartEnergy,teamLevels,POSITIONS,INSTRUCTIONS,coachInstruction,instructionProgress,coachVerdict,squadRole,SCENARIOS,matchScenario,scenarioBonus,celebrationFor} from './career.js?v=19-6';
-import {launch,stepBall,goalCrossing,hitPlayer,R,clamp,PITCH,containGoalBall,stepNetBall,frameContact} from './physics.js?v=19-6';
-import {moveToward,PACE,dribbleTarget,createKeeper,updateKeeper,keeperTouches,slingPoint,pressDefender,keeperGrip,sweptKeeperTouch,separateBodies,beginChallenge,updateChallenge,challengeHits} from './movement.js?v=19-6';
-import {commentLine} from './commentary.js?v=19-6';
-import {Ambience,crowdLevel} from './audio.js?v=19-6';
-import {gestureSpin,targetGesture,LOB_HOLD_MS,hookedShot,lateralSkill,assistedShot,heldShot} from './gestures.js?v=19-6';
+import {laneClearance,refreshDefence,assignMarkers,defensiveTarget,teamDecision,sweptPlayerContact} from './football-ai.js?v=19-7';
+import {createTactical,stepTactical,drawTactical,tacticalGoal,tacticalToWorld,worldToTactical,resumeTactical,TACTICS,setTactic,heroOff} from './tactical.js?v=19-7';
+import {attributes,performance,progressionLevel,LEVEL_XP,parseCareer,makeTimeline,advanceMatch,profiles,matchScenarios,fatigueFactor,spendEnergy,matchStartEnergy,teamLevels,POSITIONS,INSTRUCTIONS,coachInstruction,instructionProgress,coachVerdict,squadRole,SCENARIOS,matchScenario,scenarioBonus,pickCelebration} from './career.js?v=19-7';
+import {launch,stepBall,goalCrossing,hitPlayer,R,clamp,PITCH,containGoalBall,stepNetBall,frameContact} from './physics.js?v=19-7';
+import {moveToward,PACE,dribbleTarget,createKeeper,updateKeeper,keeperTouches,slingPoint,pressDefender,keeperGrip,sweptKeeperTouch,separateBodies,beginChallenge,updateChallenge,challengeHits} from './movement.js?v=19-7';
+import {commentLine} from './commentary.js?v=19-7';
+import {Ambience,crowdLevel} from './audio.js?v=19-7';
+import {gestureSpin,targetGesture,LOB_HOLD_MS,hookedShot,lateralSkill,assistedShot,heldShot} from './gestures.js?v=19-7';
 'use strict';
 // Shown on the home screen: tells which build the phone is running.
-const BUILD='V19 · étape 6 (hors-jeu, course)';
+const BUILD='V19 · étape 7 (célébrations, replay)';
 const $=id=>document.getElementById(id),KEY='nextnine-career-v1',clubs=['AS Montclair','FC des Dunes','Olympique Valmont','Union Bellevue','Étoile du Port','Sporting des Pins'];
 const fresh=()=>({name:'Jeune espoir',games:0,goals:0,assists:0,xp:0,last:'',skin:'#c98b62',hair:'#28231e',number:9,baseXP:0,baseLevel:0,energy:100,position:'BU',trust:50,tactic:'equilibre',sound:true});let career=fresh(),storageOK=true;
 try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&typeof saved.name==='string'&&['games','goals','assists','xp'].every(k=>Number.isFinite(saved[k])&&saved[k]>=0))career={...fresh(),...parseCareer(saved)};}catch(e){storageOK=false;}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(career));}catch(e){storageOK=false;}refresh();}
 function developmentXP(){return career.baseLevel*LEVEL_XP+Math.max(0,career.xp-career.baseXP);}
 function refresh(){$('recoveryNote').textContent='Prochain match : '+matchStartEnergy(career.energy)+' % après récupération entre les journées.';$('teamLevels').textContent='Rivage '+teamLevels(career.games)[0]+' · Adversaire '+teamLevels(career.games)[1];$('homeEnergy').textContent=Math.round(career.energy)+' %';$('homeEnergyBar').style.width=career.energy+'%';$('rest').disabled=career.energy>=100;const stats=attributes(developmentXP());$('abilities').textContent=`Finition ${stats.finishing} · Passe ${stats.passing} · Contrôle ${stats.control}`; document.querySelector('.jersey b').textContent=career.number;$('position').value=career.position||'BU';$('tactic').value=career.tactic||'equilibre';$('soundHome').checked=career.sound!==false;$('soundToggle').textContent=career.sound!==false?'🔊':'🔇';$('soundToggle').setAttribute('aria-pressed',String(career.sound!==false));$('coachText').textContent=INSTRUCTIONS[coachInstruction(career)].text;$('trust').textContent=career.trust+' %';{const sc=matchScenario(career.games);$('scenarioNote').hidden=!sc;$('scenarioNote').textContent=sc?SCENARIOS[sc].title+' · '+SCENARIOS[sc].text:'';}{const role=squadRole(career);$('roleNote').textContent=role.starter?'Titulaire au prochain match.':'Remplaçant au prochain match, entrée prévue vers la '+role.entry+'′. '+role.reason;}$('trustBar').style.width=career.trust+'%';$('positionPill').textContent=(POSITIONS[career.position]||POSITIONS.BU).short+' · 17 ANS'; for(const k of ['skin','hair','number'])$(k).value=career[k]; $('playername').textContent=career.name;$('name').value=career.name==='Jeune espoir'?'':career.name;$('games').textContent=career.games;$('goals').textContent=career.goals;$('assists').textContent=career.assists;$('overall').textContent=60+progressionLevel(developmentXP());$('season').textContent=1+Math.floor(career.games/6);$('xpLabel').textContent=developmentXP()%LEVEL_XP+' / '+LEVEL_XP+' XP';$('xpBar').style.width=(developmentXP()%LEVEL_XP/LEVEL_XP*100)+'%';$('day').textContent='JOURNÉE '+(career.games%6+1)+' / 6';$('opponent').textContent=clubs[career.games%6];$('crestAway').textContent=clubs[career.games%6].split(' ').pop()[0];$('last').textContent=career.last||'Ton histoire commence au prochain coup d’envoi.';$('storage').textContent=storageOK?'Progression enregistrée sur cet appareil.':'Sauvegarde indisponible : la progression reste dans cette session.';}
-function screen(id){showMenu(false);replay=null;$('replayBadge').hidden=true;$('goalCelebration').hidden=true;$('commentary').hidden=true;$('announce').hidden=true;$('skipPlayback').disabled=false;if(id!=='match'&&document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});guideOpen=false;$('gestureGuide').hidden=true;for(const s of ['home','match','result'])$(s).hidden=s!==id;document.body.classList.toggle('playing',id==='match');window.scrollTo(0,0);}
+function screen(id){showMenu(false);replay=null;$('replayBadge').hidden=true;$('replayPanel').hidden=true;$('match').classList.toggle('replaying',false);$('goalCelebration').hidden=true;$('commentary').hidden=true;$('announce').hidden=true;$('skipPlayback').disabled=false;if(id!=='match'&&document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});guideOpen=false;$('gestureGuide').hidden=true;for(const s of ['home','match','result'])$(s).hidden=s!==id;document.body.classList.toggle('playing',id==='match');window.scrollTo(0,0);}
 $('name').addEventListener('change',()=>{career.name=$('name').value.trim()||'Jeune espoir';save();});$('reset').onclick=()=>{if(confirm('Recommencer ta carrière et effacer cette progression ?')){career=fresh();save();}};
 $('tactic').addEventListener('change',()=>{chooseTactic($('tactic').value);});
 $('position').addEventListener('change',()=>{career.position=POSITIONS[$('position').value]?$('position').value:'BU';save();});
@@ -302,25 +302,48 @@ function resolve(success,message,scorer=action?.shotBy,kind=success?'goal':'miss
  else if(kind==='save')say('save');else if(kind==='tackle')say('tackle');else if(kind==='miss'&&a.shotBy==='hero')say('miss');
  $('combination').hidden=true;$('feedback').textContent=message;updateScore();$('continue').textContent='Reprendre le match →';$('continue').hidden=true;
 }
-// 29 · The scorer runs to the corner, slides on his knees, jumps, points to the sky or salutes the fans;
-// team-mates join him. After a goal that only levels or reduces the gap, he fetches the ball from the net instead.
-function startCelebration(a,scorer){const by=scorer==='teammate'&&a.receiver?a.receiver:a.hero,c=celebrationFor({goals:match.goals,careerGoals:career.goals,minute:match.minute,us:match.us,them:match.them,scenario:match.scenario,teammate:scorer==='teammate'});
- c.scorer=by;c.time=0;c.target=c.type==='ball'?{x:0,z:-19.3}:c.type==='crowd'?{x:clamp(by.x,-6,6),z:-18.9}:['slide','plane','hug'].includes(c.type)?{x:(Math.sign(by.x)||1)*14.6,z:-18.6}:null;a.celebration=c;by.celebrate=c.pose;if(by!==a.hero)a.hero.celebrate=true;
- if(c.type==='ball')for(const t of [a.hero,...a.teammates])t.celebrate=false;announce('BUT !',c.label+' · '+match.us+' — '+match.them,2.2);}
-function celebrate(a,p,dt){const c=a.celebration;if(!c||!p.celebrate&&c.type!=='ball'){p.speed=0;return;}c.time+=p===a.hero?dt:0;
- if(p===c.scorer){if(c.type==='jump'||c.type==='hat'||c.type==='point'){p.speed=0;p.y=c.type==='point'?0:Math.abs(Math.sin(c.time*5.5))*.3*(c.time<2.4?1:0);return;}
-  if(c.target){const d=Math.hypot(p.x-c.target.x,p.z-c.target.z);if(c.type==='slide'&&d<3.2)p.celebrate='slide';moveToward(p,c.target,c.type==='slide'&&d<3.2?Math.max(1,d*1.8):c.type==='ball'?5.2:4.8,dt);return;}p.speed=0;return;}
- if(c.type==='ball'&&p!==a.hero){p.speed=0;return;}
- // Team-mates within reach run to the scorer and stop just short of him.
- const s=c.scorer,d=Math.hypot(p.x-s.x,p.z-s.z);if(d>1.3&&d<24)moveToward(p,{x:s.x+(p.x-s.x)/d*1.1,z:s.z+(p.z-s.z)/d*1.1},5,dt);else p.speed=0;}
+// 29 · V19 celebration cinematic, 5–10 s: the scorer runs to the fans behind the goal and performs one of 15 routines
+// drawn at random. After a figure the team comes afterwards; otherwise they join him straight away. Still behind
+// after the goal: no time to celebrate, he fetches the ball from the net.
+const POSE_OF={avion:'plane',glissade:'slide',poing:'fist',ciel:'point',oreilles:'ears'};
+// The curve control is useless once the action is over: a countdown shows how long the replay stays available.
+function updateReplayTimer(){const a=action,on=!!(a?.ended&&!match?.training&&!replay&&a.tape?.length>=TAPE_HZ);$('match').classList.toggle('action-over',on);if($('replayTimer').hidden===on)$('replayTimer').hidden=!on;if(!on)return;const total=continueDelay(a),rem=Math.max(0,total-a.after),txt=Math.ceil(rem)+' s';if($('replayTimeText').textContent!==txt)$('replayTimeText').textContent=txt;$('replayTimeBar').style.width=(rem/total*100).toFixed(1)+'%';}
+function continueDelay(a){return a.celebration?.duration??(a.outcomeKind==='goal'?3.8:2.6);}
+function startCelebration(a,scorer){const by=scorer==='teammate'&&a.receiver?a.receiver:a.hero,behind=match.us<match.them;
+ const c=behind?{id:'ball',label:'VITE, LE BALLON !',kind:'ball',duration:3.2}:{...pickCelebration(Math.random),duration:5+Math.random()*5};
+ c.scorer=by;c.time=0;c.phase='run';c.target=behind?{x:0,z:-19.3}:{x:clamp(by.x*.5,-9,9)+(Math.sign(by.x)||1)*4,z:-18.4};a.celebration=c;a.cinematic=!behind;
+ for(const t of [a.hero,...a.teammates])t.celebrate=behind?false:t===by?false:true;announce('BUT !',c.label+' · '+match.us+' — '+match.them,2.2);}
+function celebrate(a,p,dt){const c=a.celebration;if(!c){p.speed=0;return;}
+ if(p===c.scorer){c.time+=dt;
+  if(c.kind==='ball'){moveToward(p,c.target,5.2,dt);return;}
+  if(c.phase==='run'){const d=Math.hypot(p.x-c.target.x,p.z-c.target.z);if(c.id==='glissade'&&d<3.2){p.celebrate='slide';moveToward(p,c.target,Math.max(.8,d*1.6),dt);}else moveToward(p,c.target,5,dt);
+   if(d<.45||c.time>2.6){c.phase='perform';c.performAt=c.time;p.angle=0;p.speed=0;p.celebrate=POSE_OF[c.id]||c.id;}return;}
+  const t=c.time-c.performAt;p.celebrateTime=t;
+  if(c.phase==='perform'){
+   if(c.id==='salto')p.y=t<1.1?1.1*Math.sin(Math.PI*t/1.1):0;else if(c.id==='vrille')p.y=t<.9?.65*Math.sin(Math.PI*t/.9):0;else if(c.id==='poing'||c.id==='salsa')p.y=Math.abs(Math.sin(t*5))*(c.id==='poing'?.3:.06);
+   if(c.id==='roue'&&t<1){p.x+=(Math.sign(p.x)||1)*2.6*dt;p.speed=0;}else if(c.id==='avion'){const ang=t*1.3;moveToward(p,{x:c.target.x+Math.sin(ang)*3,z:c.target.z+3-Math.cos(ang)*3},4,dt);}else p.speed=0;
+   if(t>(c.kind==='figure'?2.2:3.2)){c.phase='group';p.y=0;}return;}
+  p.speed=0;p.y=0;p.celebrate=true;return;}
+ // Team-mates: arms up where they are, then they run to the scorer and stop just short of him.
+ if(c.kind==='ball'||c.kind==='figure'&&c.phase!=='group'){p.speed=0;return;}
+ const s=c.scorer,d=Math.hypot(p.x-s.x,p.z-s.z);if(d>1.3&&d<40)moveToward(p,{x:s.x+(p.x-s.x)/d*1.1,z:s.z+(p.z-s.z)/d*1.1},5,dt);else p.speed=0;}
 // 30 · Optional replay: the action is recorded (decision pauses excluded) and can be watched again,
 // at normal speed and from behind the goal. Nothing in the match moves while it plays.
 const TAPE_HZ=30,TAPE_MAX=270;let replay=null;
 function snapActor(p){return p&&{x:p.x,z:p.z,y:p.y||0,angle:p.angle,speed:p.speed,kickTimer:p.kickTimer,skillTimer:p.skillTimer,skillSide:p.skillSide,challenge:p.challenge?{time:p.challenge.time,kind:p.challenge.kind}:null,celebrate:p.celebrate,state:p.state,tilt:p.tilt,holding:p.holding};}
 function recordFrame(a,dt){if(!a||a.phase==='interval'||a.callPause||a.ready&&!a.ended||a.ended&&a.after>1.8)return;a.tapeClock=(a.tapeClock||0)+dt;if(a.tapeClock<1/TAPE_HZ)return;a.tapeClock=0;const tape=a.tape||(a.tape=[]);tape.push({ball:{...a.ball},hero:snapActor(a.hero),teammates:(a.teammates||[]).map(snapActor),defenders:a.defenders.map(snapActor),keeper:snapActor(a.keeper),phase:a.phase,flying:a.flying,ballControl:a.ballControl,after:a.after,outcomeKind:a.outcomeKind,ended:a.ended});if(tape.length>TAPE_MAX)tape.shift();}
-function startReplay(){const a=action;if(!a?.ended||replay||!(a.tape?.length>=TAPE_HZ))return;replay={frames:a.tape.slice(),t:0};engine.replayPos=null;for(const id of ['replayBtn','continue','offscreen'])$(id).hidden=true;$('replayBadge').hidden=false;}
-function playReplay(dt){replay.t+=dt;const i=Math.floor(replay.t*TAPE_HZ);if(i>=replay.frames.length){stopReplay();return;}const f=replay.frames[i];engine.replayView?.(f,dt);engine.render(f,dt,time);}
-function stopReplay(){if(!replay)return;replay=null;$('replayBadge').hidden=true;$('offscreen').hidden=false;if(action?.ended){$('replayBtn').hidden=false;if(!match?.training)$('continue').hidden=false;action.after=Math.min(action.after,1.2);}}
+// V19 · Replay player: watch as often as you like, move through it and switch camera. Normal speed only.
+const REPLAY_CAMS={goal:'rpCamGoal',side:'rpCamSide',hero:'rpCamHero',air:'rpCamAir'};let replayCam='goal';
+function startReplay(){const a=action;if(!a?.ended||replay||!(a.tape?.length>=TAPE_HZ))return;replay={frames:a.tape.slice(),t:0,playing:true};engine.replayPos=null;for(const id of ['replayBtn','continue','offscreen','replayTimer'])$(id).hidden=true;$('replayBadge').hidden=false;$('replayPanel').hidden=false;$('match').classList.toggle('replaying',true);showReplayCam();}
+const replayLength=()=>(replay.frames.length-1)/TAPE_HZ;
+function seekReplay(t,play){if(!replay)return;replay.t=clamp(t,0,replayLength());if(play!=null)replay.playing=play;}
+function showReplayCam(){for(const [cam,id] of Object.entries(REPLAY_CAMS))$(id).setAttribute('aria-pressed',String(cam===replayCam));}
+$('rpPlay').onclick=()=>{if(!replay)return;if(!replay.playing&&replay.t>=replayLength()-.01)replay.t=0;replay.playing=!replay.playing;};$('rpRestart').onclick=()=>seekReplay(0,true);$('rpBack').onclick=()=>seekReplay((replay?.t||0)-2);$('rpFwd').onclick=()=>seekReplay((replay?.t||0)+2);
+$('replayScrub').addEventListener('input',e=>{if(replay)seekReplay(Number(e.target.value)/1000*replayLength(),false);});
+for(const [cam,id] of Object.entries(REPLAY_CAMS))$(id).onclick=()=>{replayCam=cam;engine.replayPos=null;showReplayCam();};
+function playReplay(dt){const max=replayLength();if(replay.playing){replay.t+=dt;if(replay.t>=max){replay.t=max;replay.playing=false;}}const f=replay.frames[Math.min(replay.frames.length-1,Math.floor(replay.t*TAPE_HZ))];engine.replayView?.(f,dt,replayCam);engine.render(f,dt,time);
+ $('replayScrub').value=String(Math.round(replay.t/Math.max(max,.001)*1000));const label=replay.playing?'⏸':'▶';if($('rpPlay').textContent!==label)$('rpPlay').textContent=label;}
+function stopReplay(){if(!replay)return;replay=null;$('replayBadge').hidden=true;$('replayPanel').hidden=true;$('match').classList.toggle('replaying',false);$('offscreen').hidden=false;if(action?.ended){$('replayBtn').hidden=false;if(!match?.training)$('continue').hidden=false;action.after=Math.min(action.after,1.2);}}
 $('replayBtn').onclick=startReplay;$('replaySkip').onclick=stopReplay;
 // V19 · A slide either takes the ball (won or deflected), catches the player first (foul) or misses: the defender is then on the ground.
 function slideContact(d){const a=action,c=d.challenge;if(c?.kind!=='slide'||a.ended||c.done)return false;
@@ -441,8 +464,8 @@ function tick(dt){if(!action||guideOpen)return;const a=action;if(a.phase==='inte
  }
  resolveBodyContacts(a);
 }
-function loop(t){const dt=Math.min((t-lastTime)/1000,.04);lastTime=t;time+=dt;if(action&&!document.hidden&&replay)playReplay(dt);else if(action&&!document.hidden){if(drag&&(drag.kind==='ball'||drag.kind==='target'&&Date.now()-drag.began>=LOB_HOLD_MS))updateAim(drag.current);let remaining=dt;while(remaining>0){const d=Math.min(remaining,1/120);tick(d);remaining-=d;}if(!guideOpen)recordFrame(action,dt);if(action){if(action.phase==='interval')drawTactical($('tacticalPitch'),match.tactical);else engine.render(action,dt,time);}updateOffscreen();updateCoach();updateCrowd();if(match?.commentAt!=null&&time-match.commentAt>3.4&&!$('commentary').hidden)$('commentary').hidden=true;engine.setRunCursor?.(action&&action.runTarget&&!action.ended&&action.phase!=='interval'?action.runTarget:null,!!action?.callPause);if(action?.ended&&!match?.training&&action.after>(action.outcomeKind==='goal'?3.8:2.6)&&!action.autoNext){action.autoNext=true;$('continue').onclick();}}frameHandle=requestAnimationFrame(loop);}
-async function init(){$('fullscreen').hidden=!$('match').requestFullscreen;refresh();setMode('normal');try{const {Pitch3D}=await import('./engine.js?v=19-6');engine=new Pitch3D(canvas,career);engine.setCrowdVisible($('crowdToggle').checked);$('engineStatus').textContent='Prêt à entrer sur le terrain · '+BUILD;$('play').disabled=false;$('practice').disabled=false;frameHandle=requestAnimationFrame(loop);}catch(e){console.error(e);$('engineStatus').textContent='La 3D est indisponible. Essaie Safari ou Chrome avec WebGL activé.';$('play').disabled=true;}}
+function loop(t){const dt=Math.min((t-lastTime)/1000,.04);lastTime=t;time+=dt;if(action&&!document.hidden&&replay)playReplay(dt);else if(action&&!document.hidden){if(drag&&(drag.kind==='ball'||drag.kind==='target'&&Date.now()-drag.began>=LOB_HOLD_MS))updateAim(drag.current);let remaining=dt;while(remaining>0){const d=Math.min(remaining,1/120);tick(d);remaining-=d;}if(!guideOpen)recordFrame(action,dt);if(action){if(action.phase==='interval')drawTactical($('tacticalPitch'),match.tactical);else engine.render(action,dt,time);}updateOffscreen();updateCoach();updateCrowd();updateReplayTimer();if(match?.commentAt!=null&&time-match.commentAt>3.4&&!$('commentary').hidden)$('commentary').hidden=true;engine.setRunCursor?.(action&&action.runTarget&&!action.ended&&action.phase!=='interval'?action.runTarget:null,!!action?.callPause);if(action?.ended&&!match?.training&&action.after>continueDelay(action)&&!action.autoNext){action.autoNext=true;$('continue').onclick();}}frameHandle=requestAnimationFrame(loop);}
+async function init(){$('fullscreen').hidden=!$('match').requestFullscreen;refresh();setMode('normal');try{const {Pitch3D}=await import('./engine.js?v=19-7');engine=new Pitch3D(canvas,career);engine.setCrowdVisible($('crowdToggle').checked);$('engineStatus').textContent='Prêt à entrer sur le terrain · '+BUILD;$('play').disabled=false;$('practice').disabled=false;frameHandle=requestAnimationFrame(loop);}catch(e){console.error(e);$('engineStatus').textContent='La 3D est indisponible. Essaie Safari ou Chrome avec WebGL activé.';$('play').disabled=true;}}
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();if(action){action=null;match=null;screen('home');}$('play').disabled=true;$('engineStatus').textContent='Affichage 3D interrompu. Recharge la page pour reprendre.';});init();
 
 $('exportSave').onclick=()=>{const blob=new Blob([JSON.stringify({format:'next-nine',version:1,career},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='next-nine-carriere.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
