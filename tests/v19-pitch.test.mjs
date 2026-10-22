@@ -29,3 +29,10 @@ test('V19 · real running pace and freeze frame during decisions',async()=>{cons
 
 test('V19 · a dribble looks like running: long touches and a full running stride from 4 m/s',async()=>{const {dribbleTarget}=await import('../dist/movement.js');const t=dribbleTarget({x:0,z:0},{x:0,z:-20});assert.ok(Math.abs(t.z+5)<1e-9,'touches up to 5 m');
  const e=rig(),p=e.makePlayer(0,-10,0x63b9f4,9,true);let lean=0,lift=0;for(let i=0;i<60;i++){e.posePlayer(p,{x:0,z:-10,speed:4,angle:0,kickTimer:-1},1/60,i/60);lean=Math.min(lean,p.pose.rotation.x);lift=Math.max(lift,p.knees[0].rotation.x<0?-p.knees[0].rotation.x:0);}assert.ok(lean<-.15,'trunk leans like a runner: '+lean.toFixed(2));assert.ok(lift>.9,'knees lift: '+lift.toFixed(2));});
+
+test('V19 · a living neighbourhood: ring road, traffic lights, cars that stop on red, shops, car park and playground',()=>{const e=rig();e.buildCity();const city=e.scene.children.find(o=>o.name==='Ville autour du stade');const named=n=>{const out=[];city.traverse(o=>{if(o.name===n)out.push(o);});return out;};
+ assert.ok(named('Route').length>=4);assert.equal(named('Feu tricolore').length,4);assert.ok(named('Voiture').length>=12);assert.ok(named('Commerce').length>=5);assert.equal(named('Parking').length,1);assert.equal(named('Aire de jeux').length,1);
+ for(const o of [...named('Route'),...named('Commerce'),...named('Parking')]){const b=new T.Box3().setFromObject(o);assert.ok(!(b.max.x>-PITCH.board-12&&b.min.x<PITCH.board+12&&b.max.z>-32&&b.min.z<PITCH.far+12),o.name+' stays outside the stadium');}
+ const car=e.cars[0],start=car.g.position.clone();for(let i=0;i<60;i++)e.stepCity(i/60,1/60);assert.ok(car.g.position.distanceTo(start)>1,'cars drive');
+ // Force every light to red: cars waiting in front of a corner come to a stop.
+ e.lights.forEach(l=>l.offset=10.5);const waiting=e.cars.find(c=>true);let t=0;for(let i=0;i<1800;i++){t+=1/60;e.stepCity(t,1/60);e.lights.forEach(l=>{l.offset=12-t;});}assert.ok(e.cars.some(c=>c.v<.3),'at least one car stopped at a red light');assert.ok(e.lights.every(l=>l.state==='red'));});

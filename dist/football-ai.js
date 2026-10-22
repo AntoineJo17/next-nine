@@ -1,4 +1,4 @@
-import {clamp,R,PITCH} from './physics.js?v=19-7';
+import {clamp,R,PITCH} from './physics.js?v=19-8b';
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export function laneClearance(from,to,defenders){const dx=to.x-from.x,dz=to.z-from.z,ll=dx*dx+dz*dz;return defenders.reduce((best,d)=>{const u=((d.x-from.x)*dx+(d.z-from.z)*dz)/(ll||1);if(u<.08||u>.96)return best;return Math.min(best,Math.hypot(d.x-from.x-u*dx,d.z-from.z-u*dz));},20);}
 export function canShoot(p,defenders){return p.z< -9&&Math.abs(p.x)<8&&distance(p,{x:0,z:-20})<13&&[-2.7,0,2.7].some(x=>laneClearance(p,{x,z:-20},defenders)>.38);}
