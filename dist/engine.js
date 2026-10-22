@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {R,clamp,launch,stepBall} from './physics.js?v=18-28';
+import {R,clamp,launch,stepBall} from './physics.js?v=18-29';
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
 export const BALL_VISUAL=.15;
@@ -172,7 +172,13 @@ posePlayer(p,a,dt,now){
  if(a.kickTimer>=0&&a.kickTimer<.65){const t=a.kickTimer;const swing=t<.16?-.65*(t/.16):t<.32?-.65+(t-.16)/.16*1.9:1.25*(1-(t-.32)/.33);p.legs[1].rotation.x=swing;p.knees[1].rotation.x=t<.16?-.55:-.12;p.pose.rotation.y=-swing*.14;p.arms[0].rotation.z=-.7;}
  if(a.skillTimer>=0&&a.skillTimer<.65){const t=Math.min(a.skillTimer/.62,1),wave=Math.sin(t*Math.PI),side=a.skillSide||1,leg=side<0?0:1;p.legs[leg].rotation.x=.75*wave;p.legs[leg].rotation.z=-side*.55*wave;p.knees[leg].rotation.x=-.3*wave;p.pose.rotation.y=side*.4*wave;p.pose.rotation.z=-side*.16*wave;p.arms[1-leg].rotation.z=-side*.6;}
  if(a.challenge){const c=a.challenge,t=c.time,extend=t<.12?0:t<.32?(t-.12)/.2:t<.55?1-(t-.32)/.23:0;p.pose.rotation.x=-.35*extend;p.pose.position.y-=.12*extend;p.legs[1].rotation.x=(c.kind==='block'?1.4:.95)*extend;p.knees[1].rotation.x=-.08;p.legs[0].rotation.x=-.18*extend;p.knees[0].rotation.x=-.35*extend;p.arms[0].rotation.z=-.7*extend;p.arms[1].rotation.z=.7*extend;}
- if(a.celebrate){p.arms[0].rotation.z=-2.15;p.arms[1].rotation.z=2.15;p.elbows[0].rotation.x=-.2;p.elbows[1].rotation.x=-.2;}
+ // 29 · Celebration poses: arms up (default), aeroplane, knee slide, fist, pointing to the sky, three fingers, hands to the ears.
+ if(a.celebrate){const c=a.celebrate;if(c==='plane'){p.arms[0].rotation.set(0,0,-1.45);p.arms[1].rotation.set(0,0,1.45);p.elbows.forEach(e=>e.rotation.x=0);p.pose.rotation.z=Math.sin(now*3)*.25;}
+  else if(c==='slide'){p.pose.position.y=.42;p.pose.rotation.x=.38;p.legs.forEach(l=>l.rotation.x=1.25);p.knees.forEach(k=>{k.rotation.x=-2;k.children[1].rotation.x=.75;});p.arms[0].rotation.set(-.3,0,-1.9);p.arms[1].rotation.set(-.3,0,1.9);p.elbows.forEach(e=>e.rotation.x=0);}
+  else if(c==='fist'||c==='hat'){p.arms[1].rotation.set(0,0,2.75);p.elbows[1].rotation.x=c==='hat'?0:-.5;p.arms[0].rotation.set(-.4,0,-.5);p.elbows[0].rotation.x=1.2;}
+  else if(c==='point'){p.arms[0].rotation.set(-.25,0,-2.85);p.arms[1].rotation.set(-.25,0,2.85);p.elbows.forEach(e=>e.rotation.x=0);p.pose.rotation.x=.12;}
+  else if(c==='ears'){p.arms[0].rotation.set(0,0,-2.3);p.arms[1].rotation.set(0,0,2.3);p.elbows.forEach(e=>e.rotation.x=-2.1);}
+  else if(c!=='run'){p.arms[0].rotation.z=-2.15;p.arms[1].rotation.z=2.15;p.elbows[0].rotation.x=-.2;p.elbows[1].rotation.x=-.2;}}
  if(p.keeper){p.g.rotation.y=Math.PI;p.pose.rotation.set(0,0,a.tilt||0);const dive=a.state==='dive'||a.state==='ground'||a.state==='recover';if(dive){p.arms.forEach((arm,i)=>{arm.rotation.z=(i?1:-1)*2.75;arm.rotation.x=-.25;});p.legs[0].rotation.x=.15;p.legs[1].rotation.x=-.25;}else{p.pose.position.y-=.12;p.legs.forEach(l=>l.rotation.x=.22);p.knees.forEach(k=>k.rotation.x=-.45);p.arms.forEach((arm,i)=>{arm.rotation.x=a.holding?.85:.55;arm.rotation.z=(i?-1:1)*(a.holding?.5:.35);p.elbows[i].rotation.x=a.holding?.18:-.15;});}}
 
  const joints=[p.pose,...p.legs,...p.knees,...p.arms,...p.elbows];if(p.previousPose){const blend=1-Math.exp(-dt*22);joints.forEach((j,i)=>{for(const axis of ['x','y','z'])j.rotation[axis]=p.previousPose[i][axis]+(j.rotation[axis]-p.previousPose[i][axis])*blend;});}if(!(a.kickTimer>=0&&a.kickTimer<.65)&&!a.challenge&&!(a.skillTimer>=0&&a.skillTimer<.65))p.knees.forEach((k,i)=>k.children[1].rotation.x=-p.legs[i].rotation.x-k.rotation.x);p.previousPose=joints.map(j=>({x:j.rotation.x,y:j.rotation.y,z:j.rotation.z}));

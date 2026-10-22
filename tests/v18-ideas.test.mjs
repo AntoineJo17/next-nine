@@ -103,3 +103,15 @@ test('28 · the crowd builds up with the match and reacts to goals and near miss
  try{const a=new Ambience();assert.equal(a.start(),true);a.setLevel(.8);const g=a.master.gain.targets;assert.ok(Math.abs(g.at(-1)-.45)<1e-9);a.goal();const roar=g.at(-2);assert.ok(roar>.9,'goal roar');a.setLevel(.1);assert.ok(Math.abs(g.at(-2)-roar)<1e-9,'the roar is not cut by the crowd bed');
   a.setEnabled(false);assert.equal(g.at(-1),0,'muted');const n=g.length;a.goal();assert.equal(g.length,n,'no sound when muted');}finally{delete globalThis.AudioContext;}
  const {run}=boot();assert.equal(run("$('soundToggle').textContent"),'🔊');run("$('soundToggle').onclick()");assert.equal(run('career.sound'),false);assert.equal(run("$('soundToggle').textContent"),'🔇');assert.equal(run('ambience.enabled'),false);run("$('play').onclick();");assert.equal(run('!!match'),true,'a match starts without Web Audio');});
+
+test('29 · celebrations follow the context of the goal',async()=>{
+ const {celebrationFor}=await import('../dist/career.js');
+ assert.equal(celebrationFor({goals:1,careerGoals:0,us:1,them:0}).type,'jump');assert.equal(celebrationFor({goals:2,careerGoals:5,us:2,them:0}).type,'point');assert.equal(celebrationFor({goals:3,us:3,them:0}).type,'hat');
+ assert.equal(celebrationFor({goals:1,careerGoals:4,us:2,them:1,minute:86}).type,'slide');assert.equal(celebrationFor({goals:1,careerGoals:4,us:1,them:1,minute:40}).type,'ball');assert.equal(celebrationFor({goals:1,careerGoals:4,us:1,them:2}).type,'ball');
+ assert.equal(celebrationFor({goals:1,careerGoals:4,us:1,them:0,scenario:'derby'}).type,'crowd');assert.equal(celebrationFor({teammate:true,us:1,them:0}).type,'hug');assert.equal(celebrationFor({goals:1,careerGoals:4,us:1,them:0}).type,'plane');
+ const scored=(prep)=>{for(let x=-3.2;x<=3.2;x+=.4){const g=boot({name:'Antoine',games:1,goals:4,assists:0,xp:0});g.run(`$('play').onclick();match.index=1;setup();${prep}windUp(action.hero,{x:${x},z:-21},'normal','hero');`);for(let i=0;i<650&&!g.run('action.ended');i++)g.run('tick(1/120)');if(g.run("action.outcomeKind==='goal'"))return g;}};
+ const late=scored("match.minute=86;match.us=1;match.them=1;");assert.ok(late);assert.equal(late.run('action.celebration.type'),'slide');assert.match(late.run("$('announceText').textContent"),/GLISSADE/);
+ const start=late.run('Math.hypot(action.hero.x-action.celebration.target.x,action.hero.z-action.celebration.target.z)'),mates=late.run('action.teammates.map(t=>Math.hypot(t.x-action.hero.x,t.z-action.hero.z)).filter(d=>d<20).reduce((s,d)=>s+d,0)');
+ for(let i=0;i<300;i++)late.run('tick(1/120)');assert.ok(late.run('Math.hypot(action.hero.x-action.celebration.target.x,action.hero.z-action.celebration.target.z)')<start-3,'the scorer runs to the corner flag');
+ for(let i=0;i<300;i++)late.run('tick(1/120)');assert.equal(late.run('action.hero.celebrate'),'slide','and slides on his knees');
+ const level=scored("match.minute=50;match.us=0;match.them=1;");assert.equal(level.run('action.celebration.type'),'ball');assert.equal(level.run('action.hero.celebrate'),false,'no celebration after an equaliser');});

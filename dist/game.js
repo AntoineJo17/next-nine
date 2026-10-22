@@ -1,14 +1,14 @@
-import {laneClearance,refreshDefence,assignMarkers,defensiveTarget,teamDecision,sweptPlayerContact} from './football-ai.js?v=18-28';
-import {createTactical,stepTactical,drawTactical,tacticalGoal,tacticalToWorld,worldToTactical,resumeTactical,TACTICS,setTactic,heroOff} from './tactical.js?v=18-28';
-import {attributes,performance,progressionLevel,LEVEL_XP,parseCareer,makeTimeline,advanceMatch,profiles,matchScenarios,fatigueFactor,spendEnergy,matchStartEnergy,teamLevels,POSITIONS,INSTRUCTIONS,coachInstruction,instructionProgress,coachVerdict,squadRole,SCENARIOS,matchScenario,scenarioBonus} from './career.js?v=18-28';
-import {launch,stepBall,goalCrossing,hitPlayer,R,clamp,containGoalBall,stepNetBall,frameContact} from './physics.js?v=18-28';
-import {moveToward,dribbleTarget,createKeeper,updateKeeper,keeperTouches,slingPoint,pressDefender,keeperGrip,sweptKeeperTouch,separateBodies,beginChallenge,updateChallenge,challengeHits} from './movement.js?v=18-28';
-import {commentLine} from './commentary.js?v=18-28';
-import {Ambience,crowdLevel} from './audio.js?v=18-28';
-import {gestureSpin,targetGesture,LOB_HOLD_MS,hookedShot,lateralSkill,assistedShot,heldShot} from './gestures.js?v=18-28';
+import {laneClearance,refreshDefence,assignMarkers,defensiveTarget,teamDecision,sweptPlayerContact} from './football-ai.js?v=18-29';
+import {createTactical,stepTactical,drawTactical,tacticalGoal,tacticalToWorld,worldToTactical,resumeTactical,TACTICS,setTactic,heroOff} from './tactical.js?v=18-29';
+import {attributes,performance,progressionLevel,LEVEL_XP,parseCareer,makeTimeline,advanceMatch,profiles,matchScenarios,fatigueFactor,spendEnergy,matchStartEnergy,teamLevels,POSITIONS,INSTRUCTIONS,coachInstruction,instructionProgress,coachVerdict,squadRole,SCENARIOS,matchScenario,scenarioBonus,celebrationFor} from './career.js?v=18-29';
+import {launch,stepBall,goalCrossing,hitPlayer,R,clamp,containGoalBall,stepNetBall,frameContact} from './physics.js?v=18-29';
+import {moveToward,dribbleTarget,createKeeper,updateKeeper,keeperTouches,slingPoint,pressDefender,keeperGrip,sweptKeeperTouch,separateBodies,beginChallenge,updateChallenge,challengeHits} from './movement.js?v=18-29';
+import {commentLine} from './commentary.js?v=18-29';
+import {Ambience,crowdLevel} from './audio.js?v=18-29';
+import {gestureSpin,targetGesture,LOB_HOLD_MS,hookedShot,lateralSkill,assistedShot,heldShot} from './gestures.js?v=18-29';
 'use strict';
 // Shown on the home screen: tells which build the phone is running.
-const BUILD='V18 · idée 28';
+const BUILD='V18 · idée 29';
 const $=id=>document.getElementById(id),KEY='nextnine-career-v1',clubs=['AS Montclair','FC des Dunes','Olympique Valmont','Union Bellevue','Étoile du Port','Sporting des Pins'];
 const fresh=()=>({name:'Jeune espoir',games:0,goals:0,assists:0,xp:0,last:'',skin:'#c98b62',hair:'#28231e',number:9,baseXP:0,baseLevel:0,energy:100,position:'BU',trust:50,tactic:'equilibre',sound:true});let career=fresh(),storageOK=true;
 try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&typeof saved.name==='string'&&['games','goals','assists','xp'].every(k=>Number.isFinite(saved[k])&&saved[k]>=0))career={...fresh(),...parseCareer(saved)};}catch(e){storageOK=false;}
@@ -284,10 +284,21 @@ function resolve(success,message,scorer=action?.shotBy,kind=success?'goal':'miss
  else if(kind==='save'){a.ballControl='held';a.keeper.holding=true;Object.assign(a.ball,keeperGrip(a.keeper),{vx:0,vy:0,vz:0});}
  else if(kind==='tackle'){a.ballControl='dead';Object.assign(a.ball,{vx:0,vy:0,vz:0,y:R});}
  else a.ballControl='loose';
- if(kind==='tackle')match.losses++;if(success){match.success++;match.us++;if(!match.training)match.events.push({minute:Math.floor(match.minute),side:'us',applied:true,scorer:scorer==='teammate'?(a.receiver?.name||'Un partenaire'):career.name});if(scorer==='teammate'){if(a.goalAssist!==false)match.assists++;}else if(scorer==='hero'||scorer==='return')match.goals++;a.hero.celebrate=true;for(const t of a.teammates||[a.receiver])if(t)t.celebrate=true;say(scorer==='teammate'?(a.goalAssist!==false?'assist':'goal_us'):'hero_goal');}
+ if(kind==='tackle')match.losses++;if(success){match.success++;match.us++;if(!match.training)match.events.push({minute:Math.floor(match.minute),side:'us',applied:true,scorer:scorer==='teammate'?(a.receiver?.name||'Un partenaire'):career.name});if(scorer==='teammate'){if(a.goalAssist!==false)match.assists++;}else if(scorer==='hero'||scorer==='return')match.goals++;a.hero.celebrate=true;for(const t of a.teammates||[a.receiver])if(t)t.celebrate=true;if(!match.training)startCelebration(a,scorer);say(scorer==='teammate'?(a.goalAssist!==false?'assist':'goal_us'):'hero_goal');}
  else if(kind==='save')say('save');else if(kind==='tackle')say('tackle');else if(kind==='miss'&&a.shotBy==='hero')say('miss');
  $('combination').hidden=true;$('feedback').textContent=message;updateScore();$('continue').textContent='Reprendre le match →';$('continue').hidden=true;
 }
+// 29 · The scorer runs to the corner, slides on his knees, jumps, points to the sky or salutes the fans;
+// team-mates join him. After a goal that only levels or reduces the gap, he fetches the ball from the net instead.
+function startCelebration(a,scorer){const by=scorer==='teammate'&&a.receiver?a.receiver:a.hero,c=celebrationFor({goals:match.goals,careerGoals:career.goals,minute:match.minute,us:match.us,them:match.them,scenario:match.scenario,teammate:scorer==='teammate'});
+ c.scorer=by;c.time=0;c.target=c.type==='ball'?{x:0,z:-19.3}:c.type==='crowd'?{x:clamp(by.x,-6,6),z:-18.9}:['slide','plane','hug'].includes(c.type)?{x:(Math.sign(by.x)||1)*14.6,z:-18.6}:null;a.celebration=c;by.celebrate=c.pose;if(by!==a.hero)a.hero.celebrate=true;
+ if(c.type==='ball')for(const t of [a.hero,...a.teammates])t.celebrate=false;announce('BUT !',c.label+' · '+match.us+' — '+match.them,2.2);}
+function celebrate(a,p,dt){const c=a.celebration;if(!c||!p.celebrate&&c.type!=='ball'){p.speed=0;return;}c.time+=p===a.hero?dt:0;
+ if(p===c.scorer){if(c.type==='jump'||c.type==='hat'||c.type==='point'){p.speed=0;p.y=c.type==='point'?0:Math.abs(Math.sin(c.time*5.5))*.3*(c.time<2.4?1:0);return;}
+  if(c.target){const d=Math.hypot(p.x-c.target.x,p.z-c.target.z);if(c.type==='slide'&&d<3.2)p.celebrate='slide';moveToward(p,c.target,c.type==='slide'&&d<3.2?Math.max(1,d*1.8):c.type==='ball'?5.2:4.8,dt);return;}p.speed=0;return;}
+ if(c.type==='ball'&&p!==a.hero){p.speed=0;return;}
+ // Team-mates within reach run to the scorer and stop just short of him.
+ const s=c.scorer,d=Math.hypot(p.x-s.x,p.z-s.z);if(d>1.3&&d<24)moveToward(p,{x:s.x+(p.x-s.x)/d*1.1,z:s.z+(p.z-s.z)/d*1.1},5,dt);else p.speed=0;}
 function deflectBall(defender){const c=defender.challenge,ball=action.ball,dot=ball.vx*c.dx+ball.vz*c.dz;ball.vx-=1.6*dot*c.dx;ball.vz-=1.6*dot*c.dz;ball.vy=Math.max(ball.vy,1.6);makeLoose('Contré ! Le ballon reste en jeu : cours vers lui.',defender);}
 function makeLoose(message,ignore=null){action.ball.spin=0;action.runTarget=null;action.combination=false;action.followTarget=null;action.loose=true;action.flying=true;action.phase='flight';action.ballControl='loose';action.outcomeKind='deflection';action.contactIgnore=ignore;action.ignoreUntil=action.sim+.22;action.ball.age=0;action.looseTime=0;$('feedback').textContent=message;}
 function winBall(defender,message){defender.challenge=null;resolve(false,message,action.shotBy,'tackle');action.newOwner=defender;action.ballControl='defender';defender.kickTimer=.18;action.escapeTarget={x:clamp(defender.x+(defender.x<action.hero.x?-1:1),-13,13),z:defender.z+2};defender.angle=Math.atan2(-(action.escapeTarget.x-defender.x),-(action.escapeTarget.z-defender.z));attachBall(defender);}
@@ -309,7 +320,7 @@ function updateActors(a,dt){if(a.phase==='press')return;
   const target=defensiveTarget(d,carrier,a.ball,i===a.pressIndex,a.flying,lead||carrier);if(i===a.pressIndex&&carrier===a.hero)target.x+=(match.sideBias||0)*.7;
   moveToward(d,target,(i===a.pressIndex?4.35:3.8)*st.speed*match.profile.press*(a.phase==='windup'?.55:1),dt,9);
  }
- for(const t of a.teammates||[]){if(a.ended){t.speed=0;continue;}if(t===carrier)continue;if(t.hold&&!a.released){t.speed=0;continue;}
+ for(const t of a.teammates||[]){if(a.ended){celebrate(a,t,dt);continue;}if(t===carrier)continue;if(t.hold&&!a.released){t.speed=0;continue;}
   if(a.throughRun?.mate===t&&(a.phase==='windup'||a.flying&&!a.loose)){moveToward(t,a.throughRun.point,5.1,dt,10);continue;}
   if(a.depthRun?.mate===t&&(a.phase==='windup'||a.flying||a.phase==='choice')){moveToward(t,a.depthRun.point,4.8,dt,10);continue;}
   if(a.phase==='shield'&&t===supporter){const dx=t.x-a.hero.x,dz=t.z-a.hero.z,l=Math.hypot(dx,dz)||1;moveToward(t,{x:a.hero.x+dx/l*4.5,z:a.hero.z+dz/l*4.5},4.6,dt,10);continue;}if(t===looseChase[1]&&a.ball.y<1.8&&Math.hypot(t.x-a.ball.x,t.z-a.ball.z)<14){moveToward(t,{x:a.ball.x+a.ball.vx*.18,z:a.ball.z+a.ball.vz*.18},4.5*fatigueFactor(100),dt,10);continue;}if(t===a.passRecipient&&(a.flying||a.phase==='windup')){const target=a.flying?a.flightTarget:a.windup.target;moveToward(t,target,3.6,dt,8);continue;}
@@ -327,7 +338,8 @@ function updateActors(a,dt){if(a.phase==='press')return;
   for(let i=0;i<a.defenders.length;i++)for(let j=i+1;j<a.defenders.length;j++)separateBodies(a.defenders[i],a.defenders[j],.82);
  }
 
- if(a.flying&&a.loose)moveToward(a.hero,{x:a.ball.x+a.ball.vx*.15,z:clamp(a.ball.z+a.ball.vz*.15,-19.3,31)},attributes(developmentXP()).speed*fatigueFactor(match.energy)*1.15,dt);
+ if(a.ended&&a.celebration)celebrate(a,a.hero,dt);
+ else if(a.flying&&a.loose)moveToward(a.hero,{x:a.ball.x+a.ball.vx*.15,z:clamp(a.ball.z+a.ball.vz*.15,-19.3,31)},attributes(developmentXP()).speed*fatigueFactor(match.energy)*1.15,dt);
  else if(a.runTarget&&(a.phase==='offball'||a.flying&&a.shotBy!=='return'))moveToward(a.hero,a.runTarget,4.5*fatigueFactor(match.energy),dt);
  else if(a.combination&&['windup','flight'].includes(a.phase)&&a.shotBy==='return')moveToward(a.hero,a.returnSpot,4.6*fatigueFactor(match.energy),dt);
  else if(a.flying&&a.shotBy==='hero'&&a.followTarget)moveToward(a.hero,a.followTarget,1.35,dt);
@@ -377,7 +389,7 @@ function tick(dt){if(!action||guideOpen)return;const a=action;if(a.phase==='inte
  resolveBodyContacts(a);
 }
 function loop(t){const dt=Math.min((t-lastTime)/1000,.04);lastTime=t;time+=dt;if(action&&!document.hidden){if(drag&&(drag.kind==='ball'||drag.kind==='target'&&Date.now()-drag.began>=LOB_HOLD_MS))updateAim(drag.current);let remaining=dt;while(remaining>0){const d=Math.min(remaining,1/120);tick(d);remaining-=d;}if(action){if(action.phase==='interval')drawTactical($('tacticalPitch'),match.tactical);else engine.render(action,dt,time);}updateOffscreen();updateCoach();updateCrowd();if(match?.commentAt!=null&&time-match.commentAt>3.4&&!$('commentary').hidden)$('commentary').hidden=true;engine.setRunCursor?.(action&&action.runTarget&&!action.ended&&action.phase!=='interval'?action.runTarget:null,!!action?.callPause);if(action?.ended&&!match?.training&&action.after>(action.outcomeKind==='goal'?3.8:2.6)&&!action.autoNext){action.autoNext=true;$('continue').onclick();}}frameHandle=requestAnimationFrame(loop);}
-async function init(){$('fullscreen').hidden=!$('match').requestFullscreen;refresh();setMode('normal');try{const {Pitch3D}=await import('./engine.js?v=18-28');engine=new Pitch3D(canvas,career);engine.setCrowdVisible($('crowdToggle').checked);$('engineStatus').textContent='Prêt à entrer sur le terrain · '+BUILD;$('play').disabled=false;$('practice').disabled=false;frameHandle=requestAnimationFrame(loop);}catch(e){console.error(e);$('engineStatus').textContent='La 3D est indisponible. Essaie Safari ou Chrome avec WebGL activé.';$('play').disabled=true;}}
+async function init(){$('fullscreen').hidden=!$('match').requestFullscreen;refresh();setMode('normal');try{const {Pitch3D}=await import('./engine.js?v=18-29');engine=new Pitch3D(canvas,career);engine.setCrowdVisible($('crowdToggle').checked);$('engineStatus').textContent='Prêt à entrer sur le terrain · '+BUILD;$('play').disabled=false;$('practice').disabled=false;frameHandle=requestAnimationFrame(loop);}catch(e){console.error(e);$('engineStatus').textContent='La 3D est indisponible. Essaie Safari ou Chrome avec WebGL activé.';$('play').disabled=true;}}
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();if(action){action=null;match=null;screen('home');}$('play').disabled=true;$('engineStatus').textContent='Affichage 3D interrompu. Recharge la page pour reprendre.';});init();
 
 $('exportSave').onclick=()=>{const blob=new Blob([JSON.stringify({format:'next-nine',version:1,career},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='next-nine-carriere.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};

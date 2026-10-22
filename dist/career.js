@@ -1,4 +1,4 @@
-import {clamp} from './physics.js?v=18-28';
+import {clamp} from './physics.js?v=18-29';
 export const LEVEL_XP=700;
 // 21 · Playing position: it decides where the player's chances come from.
 export const POSITIONS={BU:{label:'Avant-centre',short:'BU'},AIL:{label:'Ailier droit',short:'AIL'},MOC:{label:'Meneur de jeu',short:'MOC'}};
@@ -32,3 +32,15 @@ export function squadRole(career){const trust=Number.isFinite(career.trust)?care
 export const SCENARIOS={derby:{title:'DERBY',text:'Contre l’Étoile du Port, tout le stade pousse. XP ×1,2.'},remontada:{title:'REMONTADA',text:'Mené 0–1 à la 55e : renverse le match. +60 XP en cas de victoire.'},finale:{title:'DERNIÈRE JOURNÉE',text:'La victoire ou rien : +50 XP si Rivage gagne.'},pluie:{title:'SOUS LA PLUIE',text:'Terrain glissant : contrôles et passes plus difficiles.'}};
 export function matchScenario(games=0){const d=games%6;if(games>0&&d===2)return 'remontada';if(d===4)return 'derby';if(d===5)return 'finale';if(games>0&&(d===1||d===3)&&(games*7)%5<2)return 'pluie';return null;}
 export function scenarioBonus(id,m,earned){if(id==='derby')return {xp:Math.round(earned*.2),text:'Derby : +'+Math.round(earned*.2)+' XP'};if(id==='remontada')return m.us>m.them?{xp:60,text:'Remontada réussie : +60 XP'}:{xp:0,text:'Remontada manquée'};if(id==='finale')return m.us>m.them?{xp:50,text:'Dernière journée gagnée : +50 XP'}:{xp:0,text:'Dernière journée sans victoire'};return {xp:0,text:''};}
+
+// 29 · Goal celebrations depend on the moment: first goal, brace, hat-trick, late winner, equaliser, derby, team goal.
+export function celebrationFor(c={}){const diff=(c.us||0)-(c.them||0);
+ if(c.teammate)return {type:'hug',pose:true,label:'ENSEMBLE'};
+ if(diff<0)return {type:'ball',pose:false,label:'VITE, LE BALLON !'};
+ if(c.goals>=3)return {type:'hat',pose:'hat',label:'TRIPLÉ'};
+ if((c.minute||0)>=80&&diff===1)return {type:'slide',pose:'run',label:'GLISSADE À GENOUX'};
+ if(diff===0)return {type:'ball',pose:false,label:'VITE, LE BALLON !'};
+ if(c.goals===1&&c.careerGoals===0)return {type:'jump',pose:'fist',label:'PREMIER BUT'};
+ if(c.goals===2)return {type:'point',pose:'point',label:'DOUBLÉ'};
+ if(c.scenario==='derby')return {type:'crowd',pose:'ears',label:'DEVANT SES SUPPORTERS'};
+ return {type:'plane',pose:'plane',label:'L’AVION'};}
