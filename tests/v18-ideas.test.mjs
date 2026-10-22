@@ -55,3 +55,14 @@ test('24 · a substitute comes on during the match and his chances only start th
  const {run}=boot({name:'Remplaçant',games:3,goals:0,assists:0,xp:0,trust:20});assert.match(run("$('roleNote').textContent"),/Remplaçant/);
  run("$('play').onclick();beginInterval=originalInterval;beginInterval();");assert.equal(run('match.role.starter'),false);const energy=run('match.energy');
  for(let i=0;i<60000&&run("action.phase==='interval'&&!match.entered");i++)run('tick(1/60)');assert.ok(run('match.entered')>=58);assert.ok(energy-run('match.energy')<.01,'no energy spent on the bench');assert.equal(run("$('announceTitle').textContent"),'ENTRÉE EN JEU');assert.equal(run("$('announce').hidden"),false);});
+
+test('25 · both sides make three changes, and the coach can take the player off',async()=>{
+ const {heroOff}=await import('../dist/tactical.js');
+ for(let seed=1;seed<=12;seed++){const s=createTactical(seed*53+1,{levels:[60,60],energy:90,allowChances:false});const changes=[];for(let i=0;i<20000;i++){const e=stepTactical(s,1/60);if(e?.type==='change')changes.push(e);if(e?.type==='finish')break;}
+  for(const team of [0,1])assert.equal(changes.filter(c=>c.team===team).length,3,'three changes for each side');assert.ok(changes.every(c=>c.minute>=58&&c.minute<=85));
+  assert.equal(s.players[9].since,undefined,'the career player is never changed by the simulation');assert.equal(s.players[0].since,undefined);assert.ok(s.players.filter(p=>p.since!=null).every(p=>['Caron','Mercier','Perrin','Fontaine','Girard','Bonnet'].includes(p.name)));}
+ const s=createTactical(9,{levels:[60,60],energy:90});for(let i=0;i<4000;i++){const e=stepTactical(s,1/60);if(e?.type==='chance')resumeTactical(s,[],'miss',s.ball,11);}heroOff(s);assert.equal(s.players[9].name,'Lambert');for(let i=0;i<20000;i++){const e=stepTactical(s,1/60);assert.notEqual(e?.type,'chance','no chance once taken off');if(e?.type==='finish')break;}
+ const {run}=boot();run("$('play').onclick();beginInterval=originalInterval;beginInterval();match.tactical.allowChances=false;match.tactical.wantChances=false;");
+ for(let i=0;i<60000&&run('match&&match.tactical.minute<61');i++)run('tick(1/60)');run('match.energy=25;');for(let i=0;i<600&&run('!match.left');i++)run('tick(1/60)');
+ assert.ok(run('match.left')>=60);assert.equal(run("$('announceTitle').textContent"),'SORTIE');assert.match(run("$('announceText').textContent"),/À bout de forces/);const energy=run('match.energy');
+ for(let i=0;i<80000&&run('!!match');i++)run('tick(1/60)');assert.equal(run('!!match'),false);assert.match(run("$('resultDetail').textContent"),/Sorti à la \d+′/);assert.ok(Math.abs(run('career.energy')-energy)<.01,'no energy spent after going off');});
