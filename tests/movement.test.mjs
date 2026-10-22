@@ -1,0 +1,14 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {moveToward,dribbleTarget,createKeeper,updateKeeper,slingPoint,keeperTouches,sweptKeeperTouch,separateBodies,beginChallenge,updateChallenge,challengeHits} from '../dist/movement.js';
+test('pull down sends target up, pull left sends right',()=>{const p=slingPoint({x:100,y:100},{x:70,y:160},{x:100,y:100});assert.ok(p.x>100);assert.ok(p.y<100);});
+test('dribble advances at most 3.2 metres and stays on pitch',()=>{const target=dribbleTarget({x:0,z:-9},{x:5,z:-30});assert.ok(Math.hypot(target.x,target.z+9)<=3.20001);assert.ok(target.z>=-16.3);});
+test('movement is continuous and cannot overshoot',()=>{const a={x:0,z:0};moveToward(a,{x:3,z:0},2,.1);assert.ok(a.x>0&&a.x<.2);moveToward(a,{x:3,z:0},2,2);assert.equal(a.x,3);});
+test('keeper stays set before shot and dives only after reaction delay',()=>{const k=createKeeper(),b={x:2,y:.4,z:-17,vx:0,vz:-15,vy:1};for(let i=0;i<120;i++)updateKeeper(k,b,1/120,false);assert.equal(k.state,'set');assert.equal(k.tilt,0);for(let i=0;i<20;i++)updateKeeper(k,b,1/120,true);assert.equal(k.state,'set');for(let i=0;i<15;i++)updateKeeper(k,b,1/120,true);assert.equal(k.state,'dive');const start=k.x;for(let i=0;i<75;i++)updateKeeper(k,b,1/120,true);assert.ok(Math.abs(k.x-start)<=1.51);assert.equal(k.state,'ground');});
+test('keeper hitbox respects actual position',()=>{const k=createKeeper();assert.equal(keeperTouches({x:3,y:.6,z:k.z},k),false);assert.equal(keeperTouches({x:0,y:.6,z:k.z},k),true);});
+
+test('a fast shot cannot tunnel through the keeper between physics steps',()=>{const k=createKeeper(),hit=sweptKeeperTouch({x:0,y:.6,z:-18},{x:0,y:.6,z:-21},k);assert.ok(hit);assert.ok(hit.z>k.z);assert.equal(sweptKeeperTouch({x:4,y:.6,z:-18},{x:4,y:.6,z:-21},k),null);});
+
+test('body separation resolves both exact and partial overlap',()=>{for(const x of [0,.4]){const a={x,z:0},b={x:0,z:0};separateBodies(a,b,.82,true);assert.ok(Math.hypot(a.x-b.x,a.z-b.z)>=.81999);assert.equal(b.x,0);}});
+
+test('standing challenge has windup, committed reach, miss and recovery',()=>{const d={x:0,z:0},ball={x:0,y:.22,z:-1.2};assert.ok(beginChallenge(d,ball,'poke'));assert.equal(challengeHits(d,ball),false);updateChallenge(d,.22);assert.ok(challengeHits(d,{x:0,y:.22,z:-.65}));assert.equal(challengeHits(d,{x:1.6,y:.22,z:-.65}),false);assert.equal(beginChallenge(d,{x:2,z:0},'poke'),false);assert.equal(d.challenge.dx,0);updateChallenge(d,.7);assert.equal(d.challenge,null);assert.ok(d.challengeCooldown>0);assert.equal(beginChallenge(d,ball),false);updateChallenge(d,.8);assert.ok(beginChallenge(d,ball,'block'));});
+
+test('running gains speed gradually and direction changes have inertia',()=>{const a={x:0,z:0,vx:0,vz:0};moveToward(a,{x:10,z:0},4,.05);const first=a.speed;moveToward(a,{x:10,z:0},4,.05);assert.ok(a.speed>first);const vx=a.vx;moveToward(a,{x:-10,z:0},4,.01);assert.ok(a.vx>0);assert.ok(a.vx<vx);});
