@@ -1,14 +1,14 @@
-import {laneClearance,refreshDefence,assignMarkers,defensiveTarget,teamDecision,sweptPlayerContact} from './football-ai.js?v=18-30';
-import {createTactical,stepTactical,drawTactical,tacticalGoal,tacticalToWorld,worldToTactical,resumeTactical,TACTICS,setTactic,heroOff} from './tactical.js?v=18-30';
-import {attributes,performance,progressionLevel,LEVEL_XP,parseCareer,makeTimeline,advanceMatch,profiles,matchScenarios,fatigueFactor,spendEnergy,matchStartEnergy,teamLevels,POSITIONS,INSTRUCTIONS,coachInstruction,instructionProgress,coachVerdict,squadRole,SCENARIOS,matchScenario,scenarioBonus,celebrationFor} from './career.js?v=18-30';
-import {launch,stepBall,goalCrossing,hitPlayer,R,clamp,containGoalBall,stepNetBall,frameContact} from './physics.js?v=18-30';
-import {moveToward,dribbleTarget,createKeeper,updateKeeper,keeperTouches,slingPoint,pressDefender,keeperGrip,sweptKeeperTouch,separateBodies,beginChallenge,updateChallenge,challengeHits} from './movement.js?v=18-30';
-import {commentLine} from './commentary.js?v=18-30';
-import {Ambience,crowdLevel} from './audio.js?v=18-30';
-import {gestureSpin,targetGesture,LOB_HOLD_MS,hookedShot,lateralSkill,assistedShot,heldShot} from './gestures.js?v=18-30';
+import {laneClearance,refreshDefence,assignMarkers,defensiveTarget,teamDecision,sweptPlayerContact} from './football-ai.js?v=18-0';
+import {createTactical,stepTactical,drawTactical,tacticalGoal,tacticalToWorld,worldToTactical,resumeTactical,TACTICS,setTactic,heroOff} from './tactical.js?v=18-0';
+import {attributes,performance,progressionLevel,LEVEL_XP,parseCareer,makeTimeline,advanceMatch,profiles,matchScenarios,fatigueFactor,spendEnergy,matchStartEnergy,teamLevels,POSITIONS,INSTRUCTIONS,coachInstruction,instructionProgress,coachVerdict,squadRole,SCENARIOS,matchScenario,scenarioBonus,celebrationFor} from './career.js?v=18-0';
+import {launch,stepBall,goalCrossing,hitPlayer,R,clamp,containGoalBall,stepNetBall,frameContact} from './physics.js?v=18-0';
+import {moveToward,dribbleTarget,createKeeper,updateKeeper,keeperTouches,slingPoint,pressDefender,keeperGrip,sweptKeeperTouch,separateBodies,beginChallenge,updateChallenge,challengeHits} from './movement.js?v=18-0';
+import {commentLine} from './commentary.js?v=18-0';
+import {Ambience,crowdLevel} from './audio.js?v=18-0';
+import {gestureSpin,targetGesture,LOB_HOLD_MS,hookedShot,lateralSkill,assistedShot,heldShot} from './gestures.js?v=18-0';
 'use strict';
 // Shown on the home screen: tells which build the phone is running.
-const BUILD='V18 · idée 30';
+const BUILD='V18';
 const $=id=>document.getElementById(id),KEY='nextnine-career-v1',clubs=['AS Montclair','FC des Dunes','Olympique Valmont','Union Bellevue','Étoile du Port','Sporting des Pins'];
 const fresh=()=>({name:'Jeune espoir',games:0,goals:0,assists:0,xp:0,last:'',skin:'#c98b62',hair:'#28231e',number:9,baseXP:0,baseLevel:0,energy:100,position:'BU',trust:50,tactic:'equilibre',sound:true});let career=fresh(),storageOK=true;
 try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&typeof saved.name==='string'&&['games','goals','assists','xp'].every(k=>Number.isFinite(saved[k])&&saved[k]>=0))career={...fresh(),...parseCareer(saved)};}catch(e){storageOK=false;}
@@ -398,7 +398,7 @@ function tick(dt){if(!action||guideOpen)return;const a=action;if(a.phase==='inte
  resolveBodyContacts(a);
 }
 function loop(t){const dt=Math.min((t-lastTime)/1000,.04);lastTime=t;time+=dt;if(action&&!document.hidden&&replay)playReplay(dt);else if(action&&!document.hidden){if(drag&&(drag.kind==='ball'||drag.kind==='target'&&Date.now()-drag.began>=LOB_HOLD_MS))updateAim(drag.current);let remaining=dt;while(remaining>0){const d=Math.min(remaining,1/120);tick(d);remaining-=d;}if(!guideOpen)recordFrame(action,dt);if(action){if(action.phase==='interval')drawTactical($('tacticalPitch'),match.tactical);else engine.render(action,dt,time);}updateOffscreen();updateCoach();updateCrowd();if(match?.commentAt!=null&&time-match.commentAt>3.4&&!$('commentary').hidden)$('commentary').hidden=true;engine.setRunCursor?.(action&&action.runTarget&&!action.ended&&action.phase!=='interval'?action.runTarget:null,!!action?.callPause);if(action?.ended&&!match?.training&&action.after>(action.outcomeKind==='goal'?3.8:2.6)&&!action.autoNext){action.autoNext=true;$('continue').onclick();}}frameHandle=requestAnimationFrame(loop);}
-async function init(){$('fullscreen').hidden=!$('match').requestFullscreen;refresh();setMode('normal');try{const {Pitch3D}=await import('./engine.js?v=18-30');engine=new Pitch3D(canvas,career);engine.setCrowdVisible($('crowdToggle').checked);$('engineStatus').textContent='Prêt à entrer sur le terrain · '+BUILD;$('play').disabled=false;$('practice').disabled=false;frameHandle=requestAnimationFrame(loop);}catch(e){console.error(e);$('engineStatus').textContent='La 3D est indisponible. Essaie Safari ou Chrome avec WebGL activé.';$('play').disabled=true;}}
+async function init(){$('fullscreen').hidden=!$('match').requestFullscreen;refresh();setMode('normal');try{const {Pitch3D}=await import('./engine.js?v=18-0');engine=new Pitch3D(canvas,career);engine.setCrowdVisible($('crowdToggle').checked);$('engineStatus').textContent='Prêt à entrer sur le terrain · '+BUILD;$('play').disabled=false;$('practice').disabled=false;frameHandle=requestAnimationFrame(loop);}catch(e){console.error(e);$('engineStatus').textContent='La 3D est indisponible. Essaie Safari ou Chrome avec WebGL activé.';$('play').disabled=true;}}
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();if(action){action=null;match=null;screen('home');}$('play').disabled=true;$('engineStatus').textContent='Affichage 3D interrompu. Recharge la page pour reprendre.';});init();
 
 $('exportSave').onclick=()=>{const blob=new Blob([JSON.stringify({format:'next-nine',version:1,career},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='next-nine-carriere.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};

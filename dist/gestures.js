@@ -1,4 +1,4 @@
-import {clamp} from './physics.js?v=18-30';
+import {clamp} from './physics.js?v=18-0';
 export const LOB_HOLD_MS=480;
 // Signed bend relative to the straight pull. A straight drag has no spin.
 export function gestureSpin(points){

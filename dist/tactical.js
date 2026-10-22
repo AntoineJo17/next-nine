@@ -1,4 +1,4 @@
-import {clamp} from './physics.js?v=18-30';
+import {clamp} from './physics.js?v=18-0';
 const formation=[[.5,.025],[.16,.25],[.39,.21],[.61,.21],[.84,.25],[.24,.44],[.5,.40],[.76,.44],[.17,.62],[.5,.66],[.83,.62]];
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 export const tacticalToWorld=p=>({x:(p.x-.5)*32,z:32-p.y*52});

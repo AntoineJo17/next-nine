@@ -1,4 +1,4 @@
-# Passation à Claude — NEXT NINE V13 (audit V13.1 appliqué)
+# Passation à Claude — NEXT NINE V18 (idées 21 à 30)
 
 Tu reprends un jeu existant avec son créateur et Codex. Lis README.md et PROJECT.md, puis le code avant toute modification. Préserve le fonctionnement existant et explique tes changements. Rends une archive complète modifiée ou un patch unifié, avec la liste des fichiers touchés, les tests exécutés et les limites constatées. Ne prétends pas avoir testé visuellement si tu ne l’as pas fait. Aucun canal automatique ne synchronise Claude et Codex : le créateur transfère les fichiers.
 
@@ -25,7 +25,7 @@ Terrain plein écran, geste de frappe tiré vers soi puis relâché, visée cour
 - career.js : énergie, sauvegarde et progression.
 
 ## Points sensibles et limites
-Les tests automatisés passent (113/113), mais cette livraison n’a pas fait l’objet d’une validation visuelle complète dans un navigateur ou sur téléphone. Priorité : tester réellement la caméra, les commandes tactiles, les décisions défensives et la fluidité des animations.
+Les tests automatisés passent (152/152 en V18), mais cette livraison n’a pas fait l’objet d’une validation visuelle complète dans un navigateur ou sur téléphone. Priorité : tester réellement la caméra, les commandes tactiles, les décisions défensives et la fluidité des animations.
 Les personnages sont des modèles procéduraux stylisés, pas des modèles réalistes animés par capture de mouvement. Leur naturel reste à améliorer avec le créateur.
 Le système d’effet actuel est un petit sélecteur gauche/droit/tout droit près du score. Plusieurs gestes d’effet précédents ont été rejetés par le créateur : faire valider toute nouvelle interaction avant de la généraliser.
 Les collisions doivent rester cohérentes pour tirs, passes et lobs : arrêt = ballon bloqué ou repoussé ; but = ballon dans les filets ; rebond = pas de maintien artificiel de l’effet initial.
@@ -37,3 +37,8 @@ Préserver les sauvegardes existantes, le passage exact simulation/occasion et l
 2. Modifier, lancer npm run check et tester les interactions dans un navigateur si possible.
 3. Ajouter des tests de régression utiles pour les bugs de logique.
 4. Fournir le code complet ou un patch et un bref compte rendu. Ne pas publier ni modifier l’hébergement sans demande du créateur.
+5. Avant toute livraison : `npm run stamp -- "<libellé>" <jeton>` pour que les téléphones ne gardent pas d’anciens fichiers en cache.
+
+## État V18
+Idées 21 à 30 livrées (détail dans PROJECT.md) : poste du joueur, consignes et confiance du coach, tactique d’équipe active dans la simulation, banc, entrées et sorties, changements, scénarios (derby, remontada, dernière journée, pluie, carton rouge), commentaires courts, son du stade synthétisé, célébrations selon le contexte, replay facultatif. Le créateur a demandé la mise en ligne : un workflow GitHub Pages est prêt, à activer depuis son compte GitHub. Nouvelles données de carrière (position, trust, tactic, sound) : les anciennes sauvegardes reçoivent des valeurs par défaut.
+À évaluer en jeu : équilibre des tactiques avec les occasions jouées, fréquence des sorties décidées par le coach, volume et timbre du son sur téléphone, lisibilité des poses de célébration, intérêt du point de vue du replay.
