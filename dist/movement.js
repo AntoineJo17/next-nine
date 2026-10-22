@@ -1,4 +1,4 @@
-import {clamp,GOAL_Z,G,R,PITCH} from './physics.js?v=19-4';
+import {clamp,GOAL_Z,G,R,PITCH} from './physics.js?v=19-5b';
 // V19 · On the real 105 m pitch everybody runs 35 % faster: real sprint speeds, the same balance between players.
 export const PACE=1.35;
 export function moveToward(actor,target,speed,dt,acceleration=12){speed*=PACE;acceleration*=PACE;const dx=target.x-actor.x,dz=target.z-actor.z,d=Math.hypot(dx,dz);if(d<.035){actor.speed=0;actor.vx=0;actor.vz=0;return true;}const desired=Math.min(speed,Math.sqrt(16*d)),tx=dx/d*desired,tz=dz/d*desired,cx=tx-(actor.vx||0),cz=tz-(actor.vz||0),change=Math.hypot(cx,cz)||1,gain=Math.min(1,acceleration*dt/change);actor.vx=(actor.vx||0)+cx*gain;actor.vz=(actor.vz||0)+cz*gain;const step=Math.hypot(actor.vx,actor.vz)*dt;if(step>=d&&actor.vx*dx+actor.vz*dz>0){actor.x=target.x;actor.z=target.z;actor.vx=actor.vz=actor.speed=0;return true;}actor.x+=actor.vx*dt;actor.z+=actor.vz*dt;actor.speed=Math.hypot(actor.vx,actor.vz);if(actor.speed>.03)actor.angle=Math.atan2(-actor.vx,-actor.vz);return false;}
@@ -46,14 +46,18 @@ export function beginChallenge(d,ball,kind='poke'){
  const dx=ball.x-d.x,dz=ball.z-d.z,len=Math.hypot(dx,dz)||1;
  d.challenge={kind,time:0,x:d.x,z:d.z,dx:dx/len,dz:dz/len};d.angle=Math.atan2(-dx,-dz);d.vx=0;d.vz=0;d.speed=0;return true;
 }
+// V19 · Slide tackle: 2.6 m along the ground (decelerating), on the ground until 1.35 s, back up at 1.6 s.
+export const SLIDE={length:2.6,slide:.55,down:1.35,up:1.6};
 export function updateChallenge(d,dt){
  if(!d.challenge){d.challengeCooldown=Math.max(0,(d.challengeCooldown||0)-dt);return false;}
- const c=d.challenge;c.time+=dt;const extend=c.time<.12?0:c.time<.32?(c.time-.12)/.2:c.time<.55?1-(c.time-.32)/.23:0;
+ const c=d.challenge;c.time+=dt;
+ if(c.kind==='slide'){const u=Math.min(1,c.time/SLIDE.slide),e=1-(1-u)*(1-u);d.x=c.x+c.dx*SLIDE.length*e;d.z=c.z+c.dz*SLIDE.length*e;d.speed=0;if(c.time>=SLIDE.up){d.challenge=null;d.challengeCooldown=1.2;}return true;}const extend=c.time<.12?0:c.time<.32?(c.time-.12)/.2:c.time<.55?1-(c.time-.32)/.23:0;
  d.x=c.x+c.dx*.38*extend;d.z=c.z+c.dz*.38*extend;d.speed=0;
  if(c.time>=.72){d.challenge=null;d.challengeCooldown=.45;}return true;
 }
 export function challengeHits(d,ball){
- const c=d.challenge;if(!c||c.time<.14||c.time>.47)return false;
+ const c=d.challenge;if(c?.kind==='slide'){if(c.time<.06||c.time>.5)return false;const fx=d.x+c.dx*.9,fz=d.z+c.dz*.9;return Math.hypot(ball.x-fx,ball.z-fz)<.45+R&&ball.y<.6;}
+ if(!c||c.time<.14||c.time>.47)return false;
  const e=c.time<.32?(c.time-.12)/.2:Math.max(0,1-(c.time-.32)/.23);
  const foot={x:d.x+c.dx*.75*e,z:d.z+c.dz*.75*e,y:c.kind==='block'?.75:.28};
  return Math.hypot(ball.x-foot.x,ball.z-foot.z)<.3+R&&Math.abs(ball.y-foot.y)<.3+R;

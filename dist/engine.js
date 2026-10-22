@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=19-4';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=19-5b';
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
 export const BALL_VISUAL=.15;
@@ -195,7 +195,11 @@ posePlayer(p,a,dt,now,frozen=false){
 
  if(a.kickTimer>=0&&a.kickTimer<.65&&!a.heading&&!a.bicycle){const t=a.kickTimer;const swing=t<.16?-.65*(t/.16):t<.32?-.65+(t-.16)/.16*1.9:1.25*(1-(t-.32)/.33);p.legs[1].rotation.x=swing;p.knees[1].rotation.x=t<.16?-.55:-.12;p.pose.rotation.y=-swing*.14;p.arms[0].rotation.z=-.7;}
  if(a.skillTimer>=0&&a.skillTimer<.65){const t=Math.min(a.skillTimer/.62,1),wave=Math.sin(t*Math.PI),side=a.skillSide||1,leg=side<0?0:1;p.legs[leg].rotation.x=.75*wave;p.legs[leg].rotation.z=-side*.55*wave;p.knees[leg].rotation.x=-.3*wave;p.pose.rotation.y=side*.4*wave;p.pose.rotation.z=-side*.16*wave;p.arms[1-leg].rotation.z=-side*.6;}
- if(a.challenge){const c=a.challenge,t=c.time,extend=t<.12?0:t<.32?(t-.12)/.2:t<.55?1-(t-.32)/.23:0;p.pose.rotation.x=-.35*extend;p.pose.position.y-=.12*extend;p.legs[1].rotation.x=(c.kind==='block'?1.4:.95)*extend;p.knees[1].rotation.x=-.08;p.legs[0].rotation.x=-.18*extend;p.knees[0].rotation.x=-.35*extend;p.arms[0].rotation.z=-.7*extend;p.arms[1].rotation.z=.7*extend;}
+ // V19 · Slide tackle: low on one hip, leading leg straight along the ground; then lying, then back on his feet.
+ if(a.challenge?.kind==='slide'){const t=a.challenge.time,up=t>1.35?Math.min(1,(t-1.35)/.25):0,k=1-up;p.pose.position.y=1-(.62*k);p.pose.rotation.x=(t<.55?.95:1.25)*k;p.pose.rotation.z=.25*k;p.legs[1].rotation.x=(t<.55?.62:.3)*k;p.knees[1].rotation.x=-.05;p.legs[0].rotation.x=.05*k;p.knees[0].rotation.x=-1.5*k;p.arms[0].rotation.set(-.6*k,0,-.9*k);p.arms[1].rotation.set(.4*k,0,.5*k);}
+ // Shoulder duel: both bodies lean into each other.
+ if(a.lean)p.pose.rotation.z+=a.lean;
+ if(a.challenge&&a.challenge.kind!=='slide'){const c=a.challenge,t=c.time,extend=t<.12?0:t<.32?(t-.12)/.2:t<.55?1-(t-.32)/.23:0;p.pose.rotation.x=-.35*extend;p.pose.position.y-=.12*extend;p.legs[1].rotation.x=(c.kind==='block'?1.4:.95)*extend;p.knees[1].rotation.x=-.08;p.legs[0].rotation.x=-.18*extend;p.knees[0].rotation.x=-.35*extend;p.arms[0].rotation.z=-.7*extend;p.arms[1].rotation.z=.7*extend;}
  // 29 · Celebration poses: arms up (default), aeroplane, knee slide, fist, pointing to the sky, three fingers, hands to the ears.
  // V19 · Header: arched back with the arms out for balance, then a sharp nod through the ball.
  if(a.heading&&(a.kickTimer<0||a.kickTimer<.45)){const t=a.kickTimer<0?0:Math.min(1,a.kickTimer/.12);p.pose.rotation.x=.3-.75*t;p.arms[0].rotation.set(-.4,0,-1.25);p.arms[1].rotation.set(-.4,0,1.25);p.elbows.forEach(e=>e.rotation.x=.6);p.legs[0].rotation.x=.35;p.knees[0].rotation.x=-1;p.legs[1].rotation.x=-.15;p.knees[1].rotation.x=-.5;}
