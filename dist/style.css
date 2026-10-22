@@ -79,3 +79,6 @@ body.playing{overflow:hidden;overscroll-behavior:none}body.playing header,body.p
 .coach-line.done{border-color:#d3f96a;color:var(--lime)}
 .match-playback .coach-line{font-size:10px;letter-spacing:.6px;color:#c8d9bd;margin:6px 0 0}
 #match.simulating .arena-context .coach-line{display:none}
+/* V18 · 23 team tactic: home select and a live switch in the simulation panel */
+.tactic-option{display:grid;gap:6px;margin:4px 0 14px;font-size:9px;letter-spacing:1.5px;color:var(--muted)}.tactic-option select{width:100%;background:#26372c;color:var(--text);border:1px solid #4b5b4d;border-radius:6px;padding:10px 8px;font:inherit;font-size:13px;letter-spacing:0}
+.match-playback .tactic-btn{float:left;margin:4px 0 10px;min-height:40px;padding:8px 12px;border:1px solid #63b9f477;border-radius:20px;background:#173a2c;color:#bfe3fb;font-size:10px;font-weight:700;letter-spacing:.8px}

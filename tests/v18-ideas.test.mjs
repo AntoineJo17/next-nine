@@ -37,3 +37,12 @@ test('22 · the coach gives a position-based instruction, counts it live and rew
   assert.equal(run('career.xp')-xp,earned+(done?35:0));assert.equal(run('career.trust'),50+change);assert.ok(done?change>0:change<0);assert.match(run("$('resultCoach').textContent"),done?/Respectée/:/Pas respectée/);}
  const {run}=boot();run("$('play').onclick();windUp(action.hero,{x:4.4,z:-11.5},'low','hero');tick(1/2);beginRun({x:-2,z:-12});beginRun({x:-1,z:-13});");assert.equal(run('match.runs'),1,'adjusting the same run counts once');
  run("$('practice').onclick();");assert.equal(run('match.instruction'),null,'no instruction in training');});
+
+test('23 · team tactics change the simulated match, not just a label',async()=>{
+ const stats=tactic=>{let own=0,all=0,high=0,passes=0,h=0,n=0,against=0;for(let seed=1;seed<=40;seed++){const s=createTactical(seed*389+3,{levels:[60,60],energy:90,allowChances:false,tactic});for(let i=0;i<20000;i++){const e=stepTactical(s,1/60);if(s.owner.team===1&&i%10===0)for(const p of s.players)if(p.team===0&&p.i>0){h+=p.y;n++;}if(e?.type==='finish')break;}own+=s.possession[0];all+=s.possession[0]+s.possession[1];high+=s.wonHigh[0];passes+=s.passes[0];against+=s.score[1];}return {share:own/all,high,passes,height:h/n,against};};
+ const eq=stats('equilibre'),press=stats('pressing'),counter=stats('contre'),keep=stats('possession');
+ assert.ok(press.high>eq.high*1.5,`pressing wins the ball high: ${press.high} vs ${eq.high}`);assert.ok(press.height>eq.height+.05&&counter.height<eq.height-.03,'block height follows the tactic');
+ assert.ok(keep.share>eq.share+.08&&keep.passes>eq.passes*1.2,'possession keeps the ball');assert.ok(keep.against<eq.against,'and concedes less');
+ assert.ok(counter.against<eq.against,'a deep block concedes less than the balanced side');
+ const {TACTICS,setTactic}=await import('../dist/tactical.js');const s=createTactical(5,{tactic:'pressing'});assert.equal(s.tactics[0],'pressing');setTactic(s,'nope');assert.equal(s.tactics[0],'equilibre');assert.equal(Object.keys(TACTICS).length,4);
+ const {run}=boot();run("career.tactic='contre';$('play').onclick();");assert.equal(run('match.tactical.tactics[0]'),'contre');run("$('tacticBtn').onclick()");assert.equal(run('match.tactical.tactics[0]'),'possession','changed live during the match');assert.equal(run('career.tactic'),'possession');assert.match(run("$('tacticBtn').textContent"),/Possession/);});
