@@ -70,3 +70,6 @@ body.playing{overflow:hidden;overscroll-behavior:none}body.playing header,body.p
 
 .curve-slider{position:absolute;right:12px;top:calc(env(safe-area-inset-top,0px) + 150px);z-index:9;width:min(200px,46vw);padding:9px 12px 6px;border-radius:14px;background:#0b1f19d9;color:#e8f6ff;font-size:11px;letter-spacing:1px}.curve-slider label{display:flex;justify-content:space-between}.curve-slider b{color:#8cdbff;letter-spacing:0}
 .curve-slider input{width:100%;margin:6px 0 2px;accent-color:#8cdbff;height:28px}.simulating .curve-slider{display:none}
+
+/* V18 · profile grid holds the position select */
+.customgrid{grid-template-columns:1fr 1fr}

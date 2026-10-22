@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {"name": "next-nine", "url": "http://localhost:8765", "port": 8765}
+  ]
+}
