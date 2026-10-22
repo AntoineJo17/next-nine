@@ -81,3 +81,13 @@ test('26 · special scenarios: derby, comeback, last matchday, rain and red card
  assert.ok(reds>=2&&reds<=12,'red cards stay rare: '+reds+' in 60 matches');
  const rainy=boot({name:'Pluie',games:3,goals:0,assists:0,xp:0});rainy.run("$('play').onclick();");assert.equal(rainy.run('match.scenario'),'pluie');assert.equal(rainy.run('match.tactical.rain'),true);
  const derby=boot({name:'Derby',games:4,goals:0,assists:0,xp:0});derby.run("$('play').onclick();");assert.equal(derby.run('match.levels[1]'),derby.run('teamLevels(4)[1]')+3);});
+
+test('27 · commentary lines are short and follow the context',async()=>{
+ const {commentLine,commentKey,COMMENT_POOLS}=await import('../dist/commentary.js');
+ for(const [key,pool] of Object.entries(COMMENT_POOLS))for(const line of pool){const out=line.replace(/\{(\w+)\}/g,(_,k)=>k==='name'?'Antoine-Jo':k==='team'?'L’adversaire':k==='in'||k==='out'?'Chevalier':'2');assert.ok(out.length<=50,`${key}: "${out}" is ${out.length} characters`);}
+ assert.equal(commentKey('goal_us',{us:1,them:1}),'goal_us_equal');assert.equal(commentKey('goal_us',{us:2,them:1}),'goal_us_lead');assert.equal(commentKey('goal_them',{us:0,them:2}),'goal_them_more');
+ assert.match(commentLine('hero_goal',{name:'Antoine',goals:2,us:2,them:0}),/Doublé pour Antoine/);assert.match(commentLine('hero_goal',{name:'Antoine',goals:1,us:2,them:1,minute:88}),/au bout du temps/);
+ assert.match(commentLine('late',{us:0,them:1},()=>0),/égaliser/);assert.match(commentLine('kickoff',{scenario:'derby'},()=>0),/Derby/);assert.equal(commentLine('nothing'),'');
+ const {run}=boot({name:'Antoine',games:1,goals:0,assists:0,xp:0});run("$('play').onclick();");assert.equal(run("$('commentary').hidden"),false);
+ let g;for(let x=-3.2;x<=3.2&&!g;x+=.4){const b=boot({name:'Antoine',games:1,goals:0,assists:0,xp:0});b.run(`$('play').onclick();match.index=1;setup();windUp(action.hero,{x:${x},z:-21},'normal','hero');`);for(let i=0;i<650&&!b.run('action.ended');i++)b.run('tick(1/120)');if(b.run("action.outcomeKind==='goal'"))g=b;}
+ assert.ok(g);assert.match(g.run("$('commentary').textContent"),/Antoine/,'the goal is announced with the player name');});
