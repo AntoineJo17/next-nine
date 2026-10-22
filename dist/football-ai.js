@@ -1,4 +1,4 @@
-import {clamp,R,PITCH} from './physics.js?v=19-3';
+import {clamp,R,PITCH} from './physics.js?v=19-4';
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export function laneClearance(from,to,defenders){const dx=to.x-from.x,dz=to.z-from.z,ll=dx*dx+dz*dz;return defenders.reduce((best,d)=>{const u=((d.x-from.x)*dx+(d.z-from.z)*dz)/(ll||1);if(u<.08||u>.96)return best;return Math.min(best,Math.hypot(d.x-from.x-u*dx,d.z-from.z-u*dz));},20);}
 export function canShoot(p,defenders){return p.z< -9&&Math.abs(p.x)<8&&distance(p,{x:0,z:-20})<13&&[-2.7,0,2.7].some(x=>laneClearance(p,{x,z:-20},defenders)>.38);}
@@ -10,10 +10,12 @@ export function teamDecision(carrier,partners,defenders,keeper,preferred=null){
  if(Math.abs(carrier.x)>8&&carrier.z<-7&&central&&laneClearance(carrier,central,defenders)<1.4)return {kind:'cross',receiver:central,target:{x:central.x,z:central.z}};
  const forward={x:clamp(carrier.x*.92,-PITCH.W+1,PITCH.W-1),z:Math.max(-18,carrier.z-4)},pressure=Math.min(20,...defenders.map(d=>distance(d,carrier)));
  const candidates=partners.filter(p=>p!==carrier&&distance(p,carrier)>2&&distance(p,carrier)<30).map(p=>{const lane=laneClearance(carrier,p,defenders),space=Math.min(8,...defenders.map(d=>distance(d,p))),progress=carrier.z-p.z;return {p,lane,score:Math.min(lane,4)*.7+space*.35+progress*.45-distance(p,carrier)*.07+(canShoot(p,defenders)?4:0)+(p===preferred?2.2:0)-(p===carrier.lastPasser?3:0)-(progress< -3?3:0)};}).filter(c=>c.lane>.75);
+ // V19 · A partner 12–35 m away behind a blocked lane can still be found with a lofted pass.
+ if(!candidates.length||candidates[0].score<2){const lofted=partners.filter(p=>p!==carrier&&distance(p,carrier)>12&&distance(p,carrier)<35&&laneClearance(carrier,p,defenders)<=.75&&p.z<carrier.z+4).map(p=>({p,lane:1,lob:true,score:Math.min(8,...defenders.map(d=>distance(d,p)))*.5+(carrier.z-p.z)*.3-(p===carrier.lastPasser?3:0)})).filter(c=>c.score>1.2);candidates.push(...lofted);}
  candidates.sort((a,b)=>b.score-a.score);
  // Carry into free space before passing sideways; a forward run by the player is preferred.
  if(pressure>2.6&&laneClearance(carrier,forward,defenders)>1.1&&(!candidates.length||candidates[0].score<(style==='meneur'?4.5:6.5)))return {kind:'carry',target:forward};
- if(candidates.length)return {kind:'pass',receiver:candidates[0].p,target:{x:candidates[0].p.x,z:candidates[0].p.z}};
+ if(candidates.length)return {kind:'pass',receiver:candidates[0].p,target:{x:candidates[0].p.x,z:candidates[0].p.z},lob:!!candidates[0].lob};
  return {kind:'carry',target:{x:clamp(carrier.x+(carrier.x<0?-1:1)*1.2,-PITCH.W+1,PITCH.W-1),z:Math.max(-16,carrier.z-1.8)}};
 }
 // Stable one-to-one marking persists for the whole touch, avoiding target oscillation.

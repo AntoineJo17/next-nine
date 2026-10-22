@@ -1,4 +1,4 @@
-import {clamp,PITCH,GOAL_Z} from './physics.js?v=19-3';
+import {clamp,PITCH,GOAL_Z} from './physics.js?v=19-4';
 const formation=[[.5,.025],[.16,.25],[.39,.21],[.61,.21],[.84,.25],[.24,.44],[.5,.40],[.76,.44],[.17,.62],[.5,.66],[.83,.62]];
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 // V19 · The whole simulated pitch maps onto the real 105 × 68 m field.
@@ -73,9 +73,9 @@ export function stepTactical(s,dt){if(s.paused)return null;s.elapsed+=dt;
  // 12 · An opposing defender building from the back near the career striker: a pressing chance.
  if(team===1&&o.i>=1&&o.i<=7&&s.allowChances&&progress<.45&&s.minute-s.lastChance>5&&dist(o,s.players[s.hero])<.2&&s.random()<.2){const e=chanceEvent(s,'press',null);e.carrierId=o.id;return e;}
  // Wide Rivage players in the final third can cross for the career striker (a winger attacks the far post; a playmaker is not in the box).
- if(team===0&&o.i!==s.hero&&s.allowChances&&s.position!=='MOC'&&(s.position!=='AIL'||(o.x-.5)*(s.players[s.hero].x-.5)<0)&&progress>.6&&Math.abs(o.x-.5)>.22&&s.minute-s.lastChance>4&&s.random()<.6)return chanceEvent(s,'cross',o);
+ if(team===0&&o.i!==s.hero&&s.allowChances&&s.position!=='MOC'&&(s.position!=='AIL'||(o.x-.5)*(s.players[s.hero].x-.5)<0)&&progress>.62&&Math.abs(o.x-.5)>.24&&s.minute-s.lastChance>6&&s.random()<.22)return chanceEvent(s,'cross',o);
  // Behind schedule: a Rivage attack in the opposing half is turned into a ball for the player.
- if(team===0&&o.i!==s.hero&&o.i>=5&&behind&&progress>.52){const wide=Math.abs(o.x-.5)>.27&&progress>.6;return chanceEvent(s,s.position!=='BU'?chanceKindFor(s,s.players[s.hero]):wide&&s.random()<.65?'cross':'open',o);}
+ if(team===0&&o.i!==s.hero&&o.i>=5&&behind&&progress>.52){const wide=Math.abs(o.x-.5)>.27&&progress>.6;return chanceEvent(s,s.position!=='BU'?chanceKindFor(s,s.players[s.hero]):wide&&s.random()<.3?'cross':'open',o);}
  const heroDot=team===0&&o.i===s.hero&&s.allowChances;
  // Against a deep block, the attackers try their luck from further out (lower quality).
  if(!heroDot&&progress>.80+Math.min(0,theirs.line)*1.1&&Math.abs(o.x-.5)<.36){s.shots[team]++;s.shot={from:{...s.ball},target:{x:.5+(s.random()-.5)*.13,y:team===0?1:0},elapsed:0,duration:.65,probability:clamp(.15+quality*.17+(progress-.8)*.8+theirs.line*1.6+(s.elapsed-s.wonAt[team]<7?.06*(1+mine.length*4):0),.06,.55)};s.comment=team===0?'Rivage frappe !':'Attention, frappe adverse !';s.event='TIR';return {type:'shot',team,minute:s.minute};}

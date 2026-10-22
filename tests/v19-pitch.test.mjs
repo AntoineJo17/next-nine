@@ -18,7 +18,11 @@ test('V19 · full stadium: two goals, every line, and stands standing outside th
  e.action={hero:{x:0,z:-8},ball:{x:0,y:14,z:-40},teammates:[]};e.resize();const far=e.camera.position.distanceTo(new T.Vector3(0,0,-8));e.action.ball={x:0,y:.22,z:-8};e.resize();assert.ok(far<e.camera.position.distanceTo(new T.Vector3(0,0,-8))*2.2,'the camera stays close');});
 
 test('V19 · the keeper waits low with his arms spread, not with his hands on his belly',()=>{const e=rig(),k=e.makePlayer(0,-19.3,0xe5c45c,1,false,true,'Gardien');for(let i=0;i<20;i++)e.posePlayer(k,{x:0,z:-19.3,state:'set'},1/60,i/60);k.g.updateMatrixWorld(true);
- const l=k.hands[0].getWorldPosition(new T.Vector3()),r=k.hands[1].getWorldPosition(new T.Vector3());assert.ok(Math.abs(l.x-r.x)>.85,'hands at least 85 cm apart: '+Math.abs(l.x-r.x).toFixed(2));assert.ok(l.y<1.25&&r.y<1.25,'hands at hip height');});
+ const l=k.hands[0].getWorldPosition(new T.Vector3()),r=k.hands[1].getWorldPosition(new T.Vector3());assert.ok(Math.abs(l.x-r.x)>.85,'hands at least 85 cm apart: '+Math.abs(l.x-r.x).toFixed(2));assert.ok(l.y<1.25&&r.y<1.25,'hands at hip height');
+ // The keeper faces the pitch (rotated half a turn): his left foot is at +x. Feet must stay apart, never crossed, standing or shuffling.
+ const feet=()=>{k.g.updateMatrixWorld(true);return k.knees.map(n=>n.children.at(-1).getWorldPosition(new T.Vector3()).x);};
+ let [f0,f1]=feet();assert.ok(f0-f1>.2,'feet apart: '+(f0-f1).toFixed(2));
+ const hip=k.legs[0].rotation.z;for(let i=0;i<20;i++){e.posePlayer(k,{x:i*.04,z:-19.3,state:'set'},1/60,1+i/60);[f0,f1]=feet();assert.ok(f0-f1>.05,'shuffling feet never cross');}assert.notEqual(k.legs[0].rotation.z,hip,'he steps when he moves');});
 
 test('V19 · real running pace and freeze frame during decisions',async()=>{const {moveToward,PACE}=await import('../dist/movement.js');const a={x:0,z:0,vx:0,vz:0};for(let i=0;i<120;i++)moveToward(a,{x:100,z:0},4,1/60);assert.ok(Math.abs(a.speed-4*PACE)<.05,'top speed '+a.speed.toFixed(2));assert.ok(PACE>1.3);
  const e=rig(),p=e.makePlayer(0,-10,0x63b9f4,9,true);for(let i=0;i<30;i++)e.posePlayer(p,{x:0,z:-10,speed:5,angle:0,kickTimer:-1},1/60,i/60);const hip=p.legs[0].rotation.x;for(let i=0;i<30;i++)e.posePlayer(p,{x:0,z:-10,speed:0,angle:0,kickTimer:-1},1/60,1+i/60,true);assert.equal(p.legs[0].rotation.x,hip,'a frozen player keeps his stride');});
