@@ -36,6 +36,7 @@ const POOLS={
  late_level:['Les dernières minutes sont tendues.'],
  late_ahead:['Rivage gère son avance.','Plus que quelques minutes à tenir.'],
  red:['Carton rouge ! {team} à dix.'],
+ offside:['Hors-jeu de {who}.','Le drapeau se lève : hors-jeu.'],
  foul:['{name} est fauché !','Faute sur {name}.'],
  change:['{in} remplace {out}.'],
  sub_in:['{name} entre en jeu.','Place à {name} !'],
