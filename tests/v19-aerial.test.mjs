@@ -21,4 +21,4 @@ test('V19 · bicycle kick: an upward swipe on a ball in the air, back to goal, t
  for(let i=0;i<60&&run("action.phase==='windup'");i++)run('tick(1/120)');assert.equal(run('action.phase'),'flight');assert.equal(run('match.shots'),shots+1,'it counts as a shot');assert.ok(run('action.ball.vz')<-5,'struck towards goal');assert.ok(run('action.hero.grounded')>0,'he ends up on the ground');
  for(let i=0;i<150&&!run('action.ready');i++)run('tick(1/120)');assert.equal(run('action.hero.grounded')||0,0,'and gets up');});
 
-test('V19 · team-mates chip the ball over a blocked lane',()=>{const carrier={x:0,z:0},mate={x:-14,z:-12},defs=[{x:-7,z:-6},{x:1.5,z:-2.5}];const d=teamDecision(carrier,[carrier,mate],defs,{x:0,z:-19});assert.equal(d.kind,'pass');assert.equal(d.receiver,mate);assert.equal(d.lob,true);});
+test('V19 · team-mates chip the ball over a blocked lane',()=>{const carrier={x:0,z:0},mate={x:-14,z:-12},defs=[{x:-7,z:-6},{x:1.5,z:-2.5},{x:10,z:-15}];/* V20: a deep defender keeps the mate onside */const d=teamDecision(carrier,[carrier,mate],defs,{x:0,z:-19});assert.equal(d.kind,'pass');assert.equal(d.receiver,mate);assert.equal(d.lob,true);});

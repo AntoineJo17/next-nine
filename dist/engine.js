@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-1';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-2';
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
 export const BALL_VISUAL=.15;
@@ -122,40 +122,74 @@ animateCrowd(time,goal){const c=this.crowd;if(!c||!c.group.visible)return;const 
   for(let side=0;side<2;side++){const sign=side?1:-1;d.position.set(f.x+sign*.11,f.base+.3+bob,f.z);d.rotation.set(0,0,0);d.updateMatrix();c.legs.setMatrixAt(i*2+side,d.matrix);d.position.set(f.x+sign*.28,f.base+.96+bob,f.z);d.rotation.set(Math.sin(time*2+f.phase)*.18,0,sign*(i%4===0||goal?2.6+Math.sin(time*4+f.phase)*excitement:.2));d.updateMatrix();c.arms.setMatrixAt(i*2+side,d.matrix);}
  });c.heads.instanceMatrix.needsUpdate=true;c.bodies.instanceMatrix.needsUpdate=true;c.legs.instanceMatrix.needsUpdate=true;c.arms.instanceMatrix.needsUpdate=true;c.flags.forEach((f,i)=>f.rotation.y=Math.sin(time*2+i)*.25);
 }
+// Lot 2 · Painted face on the head (eyes with iris and highlight, brows, nose shading, lips, optional beard), cached per look.
+faceTexture(skin,hair,eye,beard){const key=[skin,hair,eye,beard].join('|');this.faces=this.faces||new Map();if(this.faces.has(key))return this.faces.get(key);
+ const cv=document.createElement('canvas');cv.width=512;cv.height=256;const c=cv.getContext('2d'),W=512,cx=384;if(typeof c?.fillRect!=='function'||typeof c.arc!=='function'){const t=new T.CanvasTexture(cv);this.faces.set(key,t);return t;}const tone=(hex,f)=>{const col=new T.Color(hex);if(f<0)col.lerp(new T.Color(0x000000),-f);else col.lerp(new T.Color(0xffffff),f);return '#'+col.getHexString();};
+ c.fillStyle=skin;c.fillRect(0,0,W,256);
+ const g=c.createRadialGradient?.(cx,140,20,cx,140,150);if(g?.addColorStop){g.addColorStop(0,tone(skin,.04));g.addColorStop(.7,skin);g.addColorStop(1,tone(skin,-.05));c.fillStyle=g;c.fillRect(0,0,W,256);}
+ // cheeks and nose shading
+ c.fillStyle=tone(skin,-.25);for(const s of [-1,1]){c.beginPath();c.ellipse?.(cx+s*5,149,2.6,1.6,0,0,Math.PI*2);c.fill();}
+ c.fillStyle=tone(skin,.1);c.beginPath();c.ellipse?.(cx,136,2.2,7,0,0,Math.PI*2);c.fill();
+ for(const s of [-1,1]){const ex=cx+s*24;
+  // brows
+  c.strokeStyle=tone(hair,-.15);c.lineWidth=4.2;c.lineCap='round';c.beginPath();c.moveTo(ex-10*s,104);c.quadraticCurveTo?.(ex,99,ex+11*s,104);c.stroke();
+  // eye socket shadow, white, iris, pupil, highlight, upper lid
+  c.fillStyle=tone(skin,-.14);c.beginPath();c.ellipse?.(ex,119,12,7.5,0,0,Math.PI*2);c.fill();
+  c.fillStyle='#f3eee6';c.beginPath();c.ellipse?.(ex,120,9,4.8,0,0,Math.PI*2);c.fill();
+  c.fillStyle=eye;c.beginPath();c.arc(ex,120.3,4.4,0,Math.PI*2);c.fill();c.fillStyle='#0c0b0a';c.beginPath();c.arc(ex,120.3,2,0,Math.PI*2);c.fill();
+  c.fillStyle='rgba(255,255,255,.9)';c.beginPath();c.arc(ex+1.4,119,1.1,0,Math.PI*2);c.fill();
+  c.strokeStyle=tone(skin,-.45);c.lineWidth=1.8;c.beginPath();c.ellipse?.(ex,120,9.3,5,0,Math.PI*1.08,Math.PI*1.92);c.stroke();}
+ // lips
+ const lip=new T.Color(skin).lerp(new T.Color(0x9a4a3e),.42);c.fillStyle='#'+lip.getHexString();c.beginPath();c.ellipse?.(cx,163,12,3.6,0,0,Math.PI*2);c.fill();c.strokeStyle=tone('#'+lip.getHexString(),-.35);c.lineWidth=1.4;c.beginPath();c.moveTo(cx-11,163);c.quadraticCurveTo?.(cx,165,cx+11,163);c.stroke();
+ if(beard){c.fillStyle=hair;c.globalAlpha=beard==='full'?.85:.38;c.beginPath();c.moveTo(cx-44,128);c.quadraticCurveTo?.(cx-40,196,cx,206);c.quadraticCurveTo?.(cx+40,196,cx+44,128);c.lineTo(cx+30,150);c.quadraticCurveTo?.(cx,154,cx-30,150);c.closePath();c.fill();c.globalAlpha=1;c.fillStyle='#'+lip.getHexString();c.beginPath();c.ellipse?.(cx,163,11,3.2,0,0,Math.PI*2);c.fill();}
+ const tex=new T.CanvasTexture(cv);tex.colorSpace=T.SRGBColorSpace;this.faces.set(key,tex);return tex;}
 makePlayer(x,z,color,num,own=false,keeper=false,displayName="Rivage"){
- // V14: more human proportions — tapered torso with shoulders, neck, ears and nose, varied hair and skin,
- // muscular thighs and calves, socks and shaped boots. The bone hierarchy is unchanged.
+ // Lot 2: painted faces, six haircuts and beards, collar and cuffs, sock bands, coloured boots, fuller chest and shoulders.
+ // The bone hierarchy is unchanged (knee children: shin, boot, kneecap, calf).
  const g=new T.Group(),pose=new T.Group();g.position.set(x,0,z);pose.position.y=1;g.add(pose);
- const seed=(num*37+displayName.length*11+(keeper?5:0))%97,skins=['#e8c19f','#c98b62','#a76d48','#7b4a32','#f1d0b4','#b8835c','#5c3a28'],hairs=['#28231e','#111111','#5a3a22','#a8763e','#d1b06a','#2f1d14'];
+ const seed=(num*37+displayName.length*11+(keeper?5:0))%97,skins=['#e8c19f','#c98b62','#a76d48','#7b4a32','#f1d0b4','#b8835c','#5c3a28'],hairs=['#28231e','#111111','#5a3a22','#a8763e','#d1b06a','#2f1d14'],eyes=['#4a2f1d','#2a1a10','#3d5a7a','#5b6b3a','#3a2a1c'];
  const skin=own?this.appearance.skin:skins[seed%skins.length],hair=own?this.appearance.hair:hairs[seed%hairs.length],sock=keeper?0x30383a:color===0x63b9f4?0xeef4f6:0x2b2f33,shorts=keeper?0x30383a:color===0x63b9f4?0x183e59:0x2a2d33;
+ const trim=color===0x63b9f4?0xffffff:color===0xd96955?0x2a2d33:0x15181b,boots=[0x111414,0xf2f2f2,0xff7a1a,0x1d6fe0,0xe9e23a,0xd8264b][seed%6],beard=seed%5===0?'full':seed%5===2?'stubble':'';
  const add=(parent,geo,c,px,py,pz)=>{const m=this.mesh(geo,c);m.position.set(px,py-1,pz);m.castShadow=true;parent.add(m);return m;};
- const torso=[[0,.01],[.175,0],[.188,.08],[.205,.28],[.232,.47],[.24,.53],[.2,.585],[.07,.6],[0,.6]].map(([r,y])=>new T.Vector2(r,y));
- const body=this.mesh(new T.LatheGeometry(torso,18),color);body.position.set(0,.955-1,0);body.scale.z=.66;body.castShadow=true;pose.add(body);
+ const torso=[[0,.01],[.175,0],[.19,.08],[.208,.28],[.24,.46],[.252,.52],[.212,.585],[.08,.605],[0,.605]].map(([r,y])=>new T.Vector2(r,y));
+ const body=this.mesh(new T.LatheGeometry(torso,20),color);body.position.set(0,.955-1,0);body.scale.z=.64;body.castShadow=true;pose.add(body);
+ const collar=add(pose,new T.TorusGeometry(.068,.016,8,18),trim,0,1.555,0);collar.rotation.x=Math.PI/2;collar.scale.y=.8;
  const waist=add(pose,new T.CylinderGeometry(.18,.19,.14,14),shorts,0,.975,0);waist.scale.z=.74;
- add(pose,new T.CylinderGeometry(.058,.068,.12,10),skin,0,1.6,0);
- const head=add(pose,new T.SphereGeometry(.118,18,14),skin,0,1.735,.004);head.scale.set(.92,1.12,1);
- add(pose,new T.SphereGeometry(.07,12,8),skin,0,1.672,-.032).scale.set(1.1,.7,1);
- add(pose,new T.SphereGeometry(.02,8,6),skin,0,1.722,-.118).scale.set(.9,1,1.3);
- for(const side of [-1,1]){add(pose,new T.SphereGeometry(.026,8,6),skin,side*.108,1.73,.004).scale.set(.5,1,.8);add(pose,new T.SphereGeometry(.013,6,6),0x22261f,side*.042,1.75,-.104);}
- const style=seed%4,cap=add(pose,new T.SphereGeometry(.128,16,10,0,Math.PI*2,0,Math.PI*(style===1?.38:.5)),hair,0,1.755+(style===1?.03:0),.012);cap.scale.set(.96,style===2?1.02:1.1,1.04);
- if(style===3)add(pose,new T.SphereGeometry(.07,10,8),hair,0,1.79,.07);
+ add(pose,new T.CylinderGeometry(.056,.066,.13,12),skin,0,1.6,0);
+ const faceMat=new T.MeshStandardMaterial({map:this.faceTexture(skin,hair,eyes[seed%eyes.length],beard),roughness:.8});
+ const head=new T.Mesh(new T.SphereGeometry(.118,28,20),faceMat);head.position.set(0,.735,.004);head.scale.set(.9,1.12,.98);head.castShadow=true;head.name='Visage';pose.add(head);
+ const jaw=add(pose,new T.SphereGeometry(.07,16,12),skin,0,1.676,-.022);jaw.scale.set(1.02,.7,.98);
+ const nose=add(pose,new T.SphereGeometry(.019,12,10),skin,0,1.718,-.112);nose.scale.set(.85,1.35,1);const bridge=add(pose,new T.CylinderGeometry(.009,.014,.04,8),skin,0,1.738,-.112);bridge.rotation.x=-.25;
+ for(const side of [-1,1])add(pose,new T.SphereGeometry(.026,8,6),skin,side*.106,1.73,.004).scale.set(.45,1,.8);
+ const style=seed%6,hairMat=hair;
+ // Hairline sits high at the front and low at the back so the face stays clear.
+ const capGroup=new T.Group();capGroup.position.set(0,.745,.012);capGroup.rotation.x=.42;pose.add(capGroup);
+ const cap=this.mesh(new T.SphereGeometry(.126,18,12,0,Math.PI*2,0,Math.PI*(style===1?.4:.47)),hairMat);cap.scale.set(.95,style===1?1:1.08,1.04);cap.castShadow=true;capGroup.add(cap);
+ if(style===2){const afro=this.mesh(new T.SphereGeometry(.15,14,10),hairMat);afro.position.set(0,.05,.02);afro.scale.set(1,.85,1);capGroup.add(afro);}
+ if(style===3){const top=this.mesh(new T.SphereGeometry(.085,12,8),hairMat);top.position.set(0,.085,-.03);top.scale.set(.75,.7,1.25);capGroup.add(top);}
+ if(style===4){const bun=this.mesh(new T.SphereGeometry(.045,10,8),hairMat);bun.position.set(0,.06,.11);capGroup.add(bun);}
+ if(style===5)for(let k=0;k<9;k++){const curl=this.mesh(new T.SphereGeometry(.04,8,6),hairMat);const a=k/9*Math.PI*2;curl.position.set(Math.cos(a)*.085,.075+Math.sin(k)*.01,Math.sin(a)*.085);capGroup.add(curl);}
+ if(beard==='full'){const b=add(pose,new T.SphereGeometry(.078,14,10,Math.PI*1.05,Math.PI*.9,Math.PI*.45,Math.PI*.55),hair,0,1.69,-.026);b.scale.set(1.12,1,1.02);}
  const legs=[],knees=[],arms=[],elbows=[],hands=[];
  for(const side of [-1,1]){
   const hip=new T.Group();hip.position.set(side*.1,-.04,0);pose.add(hip);legs.push(hip);
-  const thigh=this.mesh(new T.CylinderGeometry(.088,.064,.43,12),skin);thigh.position.y=-.215;thigh.scale.z=1.08;hip.add(thigh);thigh.castShadow=true;
+  const thigh=this.mesh(new T.CylinderGeometry(.09,.062,.43,14),skin);thigh.position.y=-.215;thigh.scale.z=1.1;hip.add(thigh);thigh.castShadow=true;
   const knee=new T.Group();knee.position.y=-.43;hip.add(knee);knees.push(knee);
-  const short=this.mesh(new T.CylinderGeometry(.108,.118,.24,12),shorts);short.name='Jambe du short';short.position.y=-.105;hip.add(short);
+  const short=this.mesh(new T.CylinderGeometry(.108,.12,.24,14),shorts);short.name='Jambe du short';short.position.y=-.105;hip.add(short);
   const shin=this.mesh(new T.CylinderGeometry(.064,.04,.4,12),sock);shin.position.y=-.2;knee.add(shin);shin.castShadow=true;
   const boot=new T.Group();boot.position.set(0,-.43,-.03);knee.add(boot);
-  const sole=this.mesh(new T.BoxGeometry(.1,.07,.24),0x111414);sole.castShadow=true;boot.add(sole);const toe=this.mesh(new T.SphereGeometry(.052,10,8),0x111414);toe.position.set(0,0,-.11);toe.scale.set(1,.7,1.2);boot.add(toe);
-  knee.add(this.mesh(new T.SphereGeometry(.066,10,8),skin));
-  const calf=this.mesh(new T.SphereGeometry(.062,10,8),sock);calf.position.set(0,-.13,.025);calf.scale.set(1,1.8,1);knee.add(calf);
-  const shoulder=new T.Group();shoulder.position.set(side*.215,.5,0);pose.add(shoulder);arms.push(shoulder);
-  const sleeve=this.mesh(new T.CylinderGeometry(.07,.062,.17,12),color);sleeve.position.y=-.065;shoulder.add(sleeve);shoulder.add(this.mesh(new T.SphereGeometry(.074,12,8),color));
-  const upper=this.mesh(new T.CylinderGeometry(.052,.046,.15,10),keeper?color:skin);upper.position.y=-.2;shoulder.add(upper);
+  const sole=this.mesh(new T.BoxGeometry(.1,.035,.25),0x1a1c1c);sole.position.y=-.02;sole.castShadow=true;boot.add(sole);const upperBoot=this.mesh(new T.BoxGeometry(.094,.05,.2),boots);upperBoot.position.set(0,.015,.01);boot.add(upperBoot);const toe=this.mesh(new T.SphereGeometry(.05,10,8),boots);toe.position.set(0,0,-.1);toe.scale.set(1,.68,1.25);boot.add(toe);
+  knee.add(this.mesh(new T.SphereGeometry(.064,10,8),skin));
+  const calf=this.mesh(new T.SphereGeometry(.063,10,8),sock);calf.position.set(0,-.13,.026);calf.scale.set(1,1.8,1);knee.add(calf);
+  const band=this.mesh(new T.CylinderGeometry(.066,.066,.035,12),trim);band.position.y=-.02;knee.add(band);
+  const shoulder=new T.Group();shoulder.position.set(side*.218,.5,0);pose.add(shoulder);arms.push(shoulder);
+  const sleeve=this.mesh(new T.CylinderGeometry(.068,.062,.17,12),color);sleeve.position.y=-.065;shoulder.add(sleeve);shoulder.add(this.mesh(new T.SphereGeometry(.07,12,8),color));
+  const cuff=this.mesh(new T.CylinderGeometry(.066,.066,.022,12),keeper?color:trim);cuff.position.y=-.148;shoulder.add(cuff);
+  const upper=this.mesh(new T.CylinderGeometry(.054,.046,.15,10),keeper?color:skin);upper.position.y=-.2;shoulder.add(upper);
   const elbow=new T.Group();elbow.position.y=-.27;shoulder.add(elbow);elbows.push(elbow);
-  const forearm=this.mesh(new T.CylinderGeometry(.046,.034,.25,10),keeper?color:skin);forearm.position.y=-.125;elbow.add(forearm);elbow.add(this.mesh(new T.SphereGeometry(.047,10,8),keeper?color:skin));
-  const hand=this.mesh(new T.SphereGeometry(keeper?.085:.048,8,6),keeper?0xe9eeee:skin);hand.position.y=-.28;hand.scale.set(.85,1.15,.7);elbow.add(hand);hands.push(hand);
+  const forearm=this.mesh(new T.CylinderGeometry(.047,.033,.25,10),keeper?color:skin);forearm.position.y=-.125;elbow.add(forearm);elbow.add(this.mesh(new T.SphereGeometry(.048,10,8),keeper?color:skin));
+  const hand=this.mesh(new T.SphereGeometry(keeper?.085:.046,10,8),keeper?0xe9eeee:skin);hand.position.y=-.28;hand.scale.set(.8,1.2,.62);elbow.add(hand);hands.push(hand);
+  if(!keeper){const thumb=this.mesh(new T.SphereGeometry(.017,6,5),skin);thumb.position.set(-side*.03,.01,-.015);thumb.scale.set(1,1.6,1);hand.add(thumb);}
  }
  const tex=document.createElement('canvas');tex.width=512;tex.height=512;const c=tex.getContext('2d'),ink=shirtInk(color);c.textAlign='center';c.fillStyle=ink;c.strokeStyle=ink==='#ffffff'?'#10232b':'#ffffff';c.lineWidth=8;c.lineJoin='round';c.textBaseline='middle';c.font='bold 44px sans-serif';c.strokeText?.(displayName.slice(0,14).toUpperCase(),256,77,450);c.fillText(displayName.slice(0,14).toUpperCase(),256,77,450);c.font='900 310px sans-serif';c.strokeText?.(String(num),256,303);c.fillText(String(num),256,303);
  const number=new T.Mesh(new T.PlaneGeometry(.32,.45),new T.MeshBasicMaterial({map:new T.CanvasTexture(tex),transparent:true,alphaTest:.25,depthWrite:false,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1}));number.name='Marquage maillot';number.userData={ink,number:num,displayName};number.position.set(0,.255,.162);pose.add(number);const front=number.clone();front.position.z=-.162;front.rotation.y=Math.PI;pose.add(front);
@@ -163,13 +197,25 @@ makePlayer(x,z,color,num,own=false,keeper=false,displayName="Rivage"){
  this.scene.add(g);const p={g,pose,body,arms,elbows,legs,knees,hands,keeper,lastAngle:keeper?Math.PI:0,stride:own?0:seed,idle:seed*.37};this.players.push(p);return p;
 }
 clearPlayers(){for(const p of this.players){this.scene.remove(p.g);p.g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(o.material.map)o.material.map.dispose();o.material.dispose();}});}this.players=[];}
-setup(a){this.action=a;this.camPos=null;this.cinePos=null;this.clearPlayers();this.hero=this.makePlayer(a.hero.x,a.hero.z,0x63b9f4,this.appearance.number,true,false,this.appearance.name||'Espoir');this.teammates=(a.teammates||[a.receiver]).filter(Boolean).map((t,i)=>this.makePlayer(t.x,t.z,0x63b9f4,t.number||11+i,false,false,t.name||['Martin','Lopez','Morel','Diallo','Petit','Garcia','Leroy','Roux','Faye','Blanc'][i%10]));this.receiver=this.teammates[0]||null;this.defenders=a.defenders.map((d,i)=>this.makePlayer(d.x,d.z,0xd96955,d.number||4+i,false,false,d.name||['Bernard','Thomas','Robert','Dubois','Laurent','Michel','Simon','Durand','Adam','Henry'][i%10]));this.keeper=this.makePlayer(a.keeper.x,a.keeper.z,0xe5c45c,1,false,true,'Gardien');
+setup(a){this.action=a;this.camPos=null;this.cinePos=null;this.clearPlayers();this.referee=null;this.hero=this.makePlayer(a.hero.x,a.hero.z,0x63b9f4,this.appearance.number,true,false,this.appearance.name||'Espoir');this.teammates=(a.teammates||[a.receiver]).filter(Boolean).map((t,i)=>this.makePlayer(t.x,t.z,0x63b9f4,t.number||11+i,false,false,t.name||['Martin','Lopez','Morel','Diallo','Petit','Garcia','Leroy','Roux','Faye','Blanc'][i%10]));this.receiver=this.teammates[0]||null;this.defenders=a.defenders.map((d,i)=>this.makePlayer(d.x,d.z,0xd96955,d.number||4+i,false,false,d.name||['Bernard','Thomas','Robert','Dubois','Laurent','Michel','Simon','Durand','Adam','Henry'][i%10]));this.keeper=this.makePlayer(a.keeper.x,a.keeper.z,0xe5c45c,1,false,true,'Gardien');
  // V19 · Assistant referee on the near touchline, level with the offside line, flag in hand.
  this.linesman=a.defenders.length?this.makePlayer(-PITCH.W-1.1,a.keeper.z,0x1c1f22,'',false,false,'Arbitre'):null;if(this.linesman){const flag=new T.Mesh(new T.PlaneGeometry(.34,.26),new T.MeshBasicMaterial({color:0xf2d23a,side:T.DoubleSide}));flag.position.set(.17,-.08,0);this.linesman.hands[1].add(flag);this.linesman.flag=flag;this.lineZ=null;}this.aim.visible=false;if(this.targetRing)this.targetRing.visible=false;this.ball.position.set(a.ball.x,R,a.ball.z);}
 resize(){const w=this.canvas.parentElement.clientWidth,h=this.canvas.parentElement.clientHeight;if(!w||!h)return;this.renderer.setSize(w,h,false);const a=w/h;this.camera.aspect=a;this.camera.position.set(0,a<.85?27:26,a<.85?25:22);this.camera.fov=a<.85?Math.min(92,2*Math.atan(Math.tan(47*Math.PI/360)*.85/a)*180/Math.PI):45;this.camera.lookAt(0,0,-6);this.camera.far=180;if(this.scene.fog){this.scene.fog.near=90;this.scene.fog.far=220;}this.camera.updateProjectionMatrix();this.camera.updateMatrixWorld();
  if(this.action){this.fitTeamCamera();}
 }
 fitTeamCamera(){this.followCamera(this.action,0,true);}
+// Lot 2 · Referee for bookings: runs to the culprit, then raises the card above his head.
+drawReferee(a,dt,now){const c=a.cardShow;if(!c){if(this.referee)this.referee.g.visible=false;return;}
+ if(!this.referee){this.referee=this.makePlayer(c.rx,c.rz,0x15181b,'',false,false,'Arbitre');const card=new T.Mesh(new T.BoxGeometry(.12,.17,.01),new T.MeshBasicMaterial({color:0xf2d23a}));card.position.set(0,-.1,-.03);card.name='Carton';this.referee.hands[1].add(card);this.referee.card=card;}
+ const r=this.referee;r.g.visible=true;r.card.material.color.set(c.card==='red'?0xe0272e:0xf2d23a);this.posePlayer(r,{x:c.rx,z:c.rz,angle:c.rangle,speed:c.rspeed},dt,now,false);r.card.visible=c.raised;
+ if(c.raised){const u=Math.min(1,(c.t-1.9)/.25);r.arms[1].rotation.set(-.2*u,0,2.95*u);r.elbows[1].rotation.x=0;r.arms[0].rotation.set(0,0,-.2);}}
+cardView(a,dt){const c=a.cardShow,cam=this.camera,mid={x:(c.rx+c.d.x)/2,z:(c.rz+c.d.z)/2},look=new T.Vector3(mid.x,1.55,mid.z),side=c.rx<c.d.x?1:-1,pos=new T.Vector3(mid.x+side*1.6,2.3,mid.z+4.2);
+ if(!this.cinePos){this.cinePos=pos;this.cineLook=look;}else{const k=1-Math.exp(-dt*2.6);this.cinePos.lerp(pos,k);this.cineLook.lerp(look,k);}cam.fov=cam.aspect>1.2?38:52;cam.position.copy(this.cinePos);cam.lookAt(this.cineLook);cam.updateProjectionMatrix();cam.updateMatrixWorld();}
+// Lot 2 · Off-ball runs: a flat arrow on the grass from each partner to where he is about to run.
+drawRuns(a){const runs=a.ready&&!a.ended&&a.runs||[];this.runArrows=this.runArrows||[];
+ while(this.runArrows.length<runs.length){const m=new T.MeshBasicMaterial({color:0xbff0ff,transparent:true,opacity:.7,depthWrite:false,side:T.DoubleSide}),g=new T.Group(),shaft=new T.Mesh(new T.PlaneGeometry(1,.34),m),head=new T.Mesh(new T.CircleGeometry(.62,3),m);shaft.rotation.x=-Math.PI/2;head.rotation.x=-Math.PI/2;g.add(shaft,head);g.userData={shaft,head};g.name='Appel de balle';this.scene.add(g);this.runArrows.push(g);}
+ this.runArrows.forEach((g,i)=>{const r=runs[i];g.visible=!!r;if(!r)return;const m=r.mate,dx=r.point.x-m.x,dz=r.point.z-m.z,len=Math.max(.5,Math.hypot(dx,dz)),pulse=.55+.25*Math.sin(performance.now?.()/180||0);
+  g.position.set(m.x,.05,m.z);g.rotation.y=Math.atan2(-dz,dx);const {shaft,head}=g.userData;shaft.scale.x=len-1;shaft.position.set((len-1)/2+.4,0,0);head.position.set(len,0,0);head.rotation.z=0;shaft.material.opacity=pulse;});}
 // V13.2: close camera behind the career player. It frames the player, the ball, the goal and
 // partners close by, then follows the action smoothly (passes, runs, rebounds).
 setWideView(on){this.wideView=!!on;}
@@ -259,29 +305,34 @@ posePlayer(p,a,dt,now,frozen=false){
   else if(c==='point'){p.arms[0].rotation.set(-.25,0,-2.85);p.arms[1].rotation.set(-.25,0,2.85);p.elbows.forEach(e=>e.rotation.x=0);p.pose.rotation.x=.12;}
   else if(c==='ears'){p.arms[0].rotation.set(0,0,-2.3);p.arms[1].rotation.set(0,0,2.3);p.elbows.forEach(e=>e.rotation.x=-2.1);}
   // V19 · dances and figures, timed by celebrateTime.
-  else if(['robot','floss','disco','salsa','salto','roue','vrille','chut','coeur','salut'].includes(c)){const t=a.celebrateTime||0,A=p.arms,E=p.elbows;
-   if(c==='robot'){const s=Math.floor(t*3.5)%2;A[0].rotation.set(0,0,s?-1.6:-.25);A[1].rotation.set(0,0,s?.25:1.6);E.forEach(e=>e.rotation.x=1.57);p.pose.rotation.y=(s?.25:-.25);p.pose.position.y-=.03*s;}
-   else if(c==='floss'){const w=Math.sin(t*9);A.forEach((arm,i)=>arm.rotation.set(w*.7,0,(i?1:-1)*.35));E.forEach(e=>e.rotation.x=.05);p.pose.rotation.y=-w*.45;p.pose.rotation.z=w*.08;}
-   else if(c==='disco'){const up=Math.sin(t*4.5)>0;A[1].rotation.set(0,0,up?2.8:-.6);E[1].rotation.x=0;A[0].rotation.set(0,0,-.5);E[0].rotation.x=1.3;p.pose.rotation.z=(up?.12:-.12);}
-   else if(c==='salsa'){const w=Math.sin(t*6);p.pose.rotation.z=w*.15;p.pose.rotation.y=w*.25;A.forEach((arm,i)=>arm.rotation.set(-.3,0,(i?1:-1)*(.7+.2*w)));E.forEach(e=>e.rotation.x=1.3);p.legs[0].rotation.x=.4*w;p.legs[1].rotation.x=-.4*w;}
-   else if(c==='salto'){const u=Math.min(1,t/1.1);p.pose.rotation.x=u<1?Math.PI*2*u:0;const tuck=Math.sin(Math.PI*u);p.legs.forEach(l=>l.rotation.x=1.9*tuck);p.knees.forEach(k=>k.rotation.x=-2*tuck);A.forEach((arm,i)=>arm.rotation.set(-1.2*tuck,0,(i?1:-1)*(u<1?.4:2.7)));}
-   else if(c==='roue'){const u=Math.min(1,t/1);p.pose.rotation.z=u<1?Math.PI*2*u:0;p.pose.position.y+=.25*Math.sin(Math.PI*u);A.forEach((arm,i)=>arm.rotation.set(0,0,(i?1:-1)*2.8));E.forEach(e=>e.rotation.x=0);p.legs.forEach((l,i)=>l.rotation.z=(i?1:-1)*.7*Math.sin(Math.PI*u));}
-   else if(c==='vrille'){const u=Math.min(1,t/.9);p.g.rotation.y+=u<1?Math.PI*2*u:0;A.forEach((arm,i)=>arm.rotation.set(-.9,0,(i?1:-1)*.3));E.forEach(e=>e.rotation.x=1.8);p.legs.forEach(l=>l.rotation.x=.3*Math.sin(Math.PI*u));}
-   else if(c==='chut'){A[1].rotation.set(-1.25,0,.35);E[1].rotation.x=2.3;A[0].rotation.set(0,0,-.25);}
-   else if(c==='coeur'){A.forEach((arm,i)=>arm.rotation.set(-1.05,0,(i?1:-1)*.3));E.forEach(e=>e.rotation.x=1.9);p.pose.rotation.x=-.08;}
-   else if(c==='salut'){A[1].rotation.set(-1.5,0,.95);E[1].rotation.x=2.25;A[0].rotation.set(0,0,-.15);if(t>1.3)p.pose.rotation.x=-.55*Math.min(1,(t-1.3)/.4);}}
+  // Lot 2 · Modern celebrations, timed by celebrateTime.
+  else if(['siu','salto','vrille','griddy','croises','meditation','ouverts','tempe','calma','pouce','nom','ecusson','chut','coeur'].includes(c)){const t=a.celebrateTime||0,A=p.arms,E=p.elbows,L=p.legs,K=p.knees;
+   if(c==='siu'){if(t<.62){const u=t/.62;p.g.rotation.y+=Math.PI*u;A.forEach((arm,i)=>arm.rotation.set(0,0,(i?1:-1)*2.6));E.forEach(e=>e.rotation.x=.1);L.forEach(l=>l.rotation.x=.35*Math.sin(Math.PI*u));}else{p.g.rotation.y+=Math.PI;const k=Math.min(1,(t-.62)/.15);L.forEach((l,i)=>l.rotation.set(0,0,(i?1:-1)*.32*k));K.forEach(q=>q.rotation.x=-.25*k);p.pose.position.y-=.08*k;A.forEach((arm,i)=>arm.rotation.set(-.35*k,0,(i?1:-1)*.95*k));E.forEach(e=>e.rotation.x=.05);p.pose.rotation.x=-.22*k;}}
+   else if(c==='salto'){const u=Math.min(1,t/1.1);p.pose.rotation.x=u<1?Math.PI*2*u:0;const tuck=Math.sin(Math.PI*u);L.forEach(l=>l.rotation.x=1.9*tuck);K.forEach(k=>k.rotation.x=-2*tuck);A.forEach((arm,i)=>arm.rotation.set(1.2*tuck,0,(i?1:-1)*(u<1?.4:2.7)));}
+   else if(c==='vrille'){const u=Math.min(1,t/.9);p.g.rotation.y+=u<1?Math.PI*2*u:0;A.forEach((arm,i)=>arm.rotation.set(.9,0,(i?1:-1)*.3));E.forEach(e=>e.rotation.x=1.8);L.forEach(l=>l.rotation.x=.3*Math.sin(Math.PI*u));}
+   else if(c==='griddy'){for(let i=0;i<2;i++){const w=Math.max(0,Math.sin(t*8+i*Math.PI));L[i].rotation.x=-.25*w;K[i].rotation.x=-1.4*w;A[i].rotation.set(Math.sin(t*8+i*Math.PI)*1.1,0,(i?1:-1)*.35);E[i].rotation.x=.4;}p.pose.rotation.x=.15;p.pose.rotation.y=Math.sin(t*4)*.2;}
+   else if(c==='croises'){A[0].rotation.set(.42,.5,.62);A[1].rotation.set(.42,-.5,-.62);E.forEach(e=>e.rotation.x=1.7);p.pose.rotation.x=-.1;}
+   else if(c==='meditation'){p.pose.position.y=.4;L.forEach((l,i)=>l.rotation.set(1.45,0,(i?1:-1)*.75));K.forEach(k=>{k.rotation.x=-2.35;k.children[1].rotation.x=.6;});A.forEach((arm,i)=>arm.rotation.set(.55,0,(i?1:-1)*.38));E.forEach(e=>e.rotation.x=.6);p.pose.rotation.x=-.05;}
+   else if(c==='ouverts'){A.forEach((arm,i)=>arm.rotation.set(-.25,0,(i?1:-1)*1.3));E.forEach(e=>e.rotation.x=.12);p.pose.rotation.x=-.2;}
+   else if(c==='tempe'){A[1].rotation.set(.35,0,1.15);E[1].rotation.x=2.5;A[0].rotation.set(0,0,-.15);E[0].rotation.x=.2;p.pose.rotation.x=-.06;}
+   else if(c==='calma'){const w=Math.sin(t*5)*.14;A.forEach((arm,i)=>arm.rotation.set(.75+w,0,(i?1:-1)*.42));E.forEach(e=>e.rotation.x=.35);}
+   else if(c==='pouce'){A[1].rotation.set(.75,0,.12);E[1].rotation.x=2.35;A[0].rotation.set(0,0,-.2);E[0].rotation.x=.3;}
+   else if(c==='nom'){p.g.rotation.y+=Math.PI;A.forEach((arm,i)=>arm.rotation.set(.45,0,(i?1:-1)*2.05));E.forEach(e=>e.rotation.x=-2.5);p.pose.rotation.x=-.08;}
+   else if(c==='ecusson'){if(t<1.1){A[1].rotation.set(.4,0,-.5);E[1].rotation.x=1.65;}else if(t<2){A[1].rotation.set(.75,0,.1);E[1].rotation.x=2.4;}else{A[1].rotation.set(-.2,0,2.85);E[1].rotation.x=0;}A[0].rotation.set(0,0,-.2);}
+   else if(c==='chut'){A[1].rotation.set(.75,0,.1);E[1].rotation.x=2.4;A[0].rotation.set(0,0,-.25);}
+   else if(c==='coeur'){A.forEach((arm,i)=>arm.rotation.set(.95,0,(i?1:-1)*-.25));E.forEach(e=>e.rotation.x=1.75);p.pose.rotation.x=-.08;}}
   else if(c!=='run'){p.arms[0].rotation.z=-2.15;p.arms[1].rotation.z=2.15;p.elbows[0].rotation.x=-.2;p.elbows[1].rotation.x=-.2;}}
  if(p.keeper){p.g.rotation.y=Math.PI;p.pose.rotation.set(0,0,a.tilt||0);const dive=a.state==='dive'||a.state==='ground'||a.state==='recover';if(dive){p.arms.forEach((arm,i)=>{arm.rotation.z=(i?1:-1)*2.75;arm.rotation.x=-.25;});p.legs[0].rotation.x=.15;p.legs[1].rotation.x=-.25;}else if(a.holding){p.pose.position.y-=.12;p.legs.forEach(l=>l.rotation.x=.22);p.knees.forEach(k=>k.rotation.x=-.45);p.arms.forEach((arm,i)=>{arm.rotation.x=.85;arm.rotation.z=(i?-1:1)*.5;p.elbows[i].rotation.x=.18;});}
   // V19 · Ready stance: low, feet apart, arms spread at hip height to cover the goal.
-  else{const v=Math.hypot(a.x-(p.kx??a.x),a.z-(p.kz??a.z))/Math.max(dt,1e-3);p.kx=a.x;p.kz=a.z;p.shuffle=(p.shuffle||0)+dt*Math.min(v,6)*5;const step=v>.25?Math.sin(p.shuffle):0;
+  else if(!a.rush){const v=Math.hypot(a.x-(p.kx??a.x),a.z-(p.kz??a.z))/Math.max(dt,1e-3);p.kx=a.x;p.kz=a.z;p.shuffle=(p.shuffle||0)+dt*Math.min(v,6)*5;const step=v>.25?Math.sin(p.shuffle):0;
    // Feet apart (never crossed); when he moves he shuffles sideways, one foot after the other, with a small bounce.
    p.pose.position.y-=.17-Math.abs(step)*.04;p.pose.rotation.x=.14;p.legs.forEach((l,i)=>{l.rotation.x=.38;l.rotation.z=(i?1:-1)*(.16+.14*step*(i?1:-1));});p.knees.forEach(k=>k.rotation.x=-.7);p.arms.forEach((arm,i)=>{arm.rotation.x=.3;arm.rotation.z=(i?1:-1)*.85;p.elbows[i].rotation.x=.45;});}}
 
  const joints=[p.pose,...p.legs,...p.knees,...p.arms,...p.elbows];if(p.previousPose){const blend=1-Math.exp(-dt*22);joints.forEach((j,i)=>{for(const axis of ['x','y','z'])j.rotation[axis]=p.previousPose[i][axis]+(j.rotation[axis]-p.previousPose[i][axis])*blend;});}if(!(a.kickTimer>=0&&a.kickTimer<.65)&&!a.challenge&&!(a.skillTimer>=0&&a.skillTimer<.65))p.knees.forEach((k,i)=>k.children[1].rotation.x=-p.legs[i].rotation.x-k.rotation.x);p.previousPose=joints.map(j=>({x:j.rotation.x,y:j.rotation.y,z:j.rotation.z}));
 }
 heldBallPosition(){this.keeper.g.updateMatrixWorld(true);const left=this.keeper.hands[0].getWorldPosition(new T.Vector3()),right=this.keeper.hands[1].getWorldPosition(new T.Vector3());return left.add(right).multiplyScalar(.5).add(new T.Vector3(0,0,.12));}
-render(a,dt,now){this.stepCity(now,dt);if(a===this.action){if(a.cinematic&&a.celebration?.scorer)this.cineView(a,dt);else this.followCamera(a,dt);}this.stepRain(dt);this.animateCrowd(now,a.outcomeKind==='goal');const ball=a.ball;const turnover=a.ballControl==='defender'&&a.after<1.1;const travelling=a.phase==='interval'||a.phase==='incoming'||a.flying||a.phase==='dribble'||a.phase==='skill'||turnover;this.ball.position.set(ball.x,ball.y-(R-BALL_VISUAL),ball.z);if(travelling){this.ball.rotation.x-=dt*(a.phase==='dribble'||a.phase==='skill'||turnover?10:Math.abs(ball.vz)*1.8);this.ball.rotation.z+=dt*(ball.vx||0);}
+render(a,dt,now){this.stepCity(now,dt);if(a===this.action){if(a.cardShow)this.cardView(a,dt);else if(a.cinematic&&a.celebration?.scorer)this.cineView(a,dt);else this.followCamera(a,dt);}this.stepRain(dt);this.animateCrowd(now,a.outcomeKind==='goal');const ball=a.ball;const turnover=a.ballControl==='defender'&&a.after<1.1;const travelling=a.phase==='interval'||a.phase==='incoming'||a.flying||a.phase==='dribble'||a.phase==='skill'||turnover;this.ball.position.set(ball.x,ball.y-(R-BALL_VISUAL),ball.z);if(travelling){this.ball.rotation.x-=dt*(a.phase==='dribble'||a.phase==='skill'||turnover?10:Math.abs(ball.vz)*1.8);this.ball.rotation.z+=dt*(ball.vx||0);}
  this.shadow.position.set(ball.x,.04,ball.z);this.shadow.scale.setScalar((1+ball.y*.12)*.72);this.shadow.material.opacity=Math.max(.06,.4-ball.y*.04);
- const fz=!!a.frozen;this.posePlayer(this.hero,a.hero,dt,now,fz);(this.teammates||[]).forEach((p,i)=>this.posePlayer(p,(a.teammates||[a.receiver])[i],dt,now,fz));this.defenders.forEach((p,i)=>this.posePlayer(p,a.defenders[i],dt,now,fz));this.posePlayer(this.keeper,a.keeper,dt,now,fz);if(this.linesman&&a.offsideLine!=null){const target=clamp(a.offsideLine,GOAL_Z,(GOAL_Z+PITCH.far)/2),prev=this.lineZ??target;this.lineZ=prev+(target-prev)*Math.min(1,dt*4);const sp=Math.abs(this.lineZ-prev)/Math.max(dt,1e-3);this.posePlayer(this.linesman,{x:-PITCH.W-1.1,z:this.lineZ,angle:-Math.PI/2,speed:fz?0:sp},dt,now,fz);if(a.flag){this.linesman.arms[1].rotation.set(0,0,2.9);this.linesman.elbows[1].rotation.x=0;}}if(a.ballControl==='held'){this.ball.position.copy(this.heldBallPosition());this.shadow.position.set(this.ball.position.x,.04,this.ball.position.z);}this.renderer.render(this.scene,this.camera);
+ const fz=!!a.frozen;this.posePlayer(this.hero,a.hero,dt,now,fz);(this.teammates||[]).forEach((p,i)=>this.posePlayer(p,(a.teammates||[a.receiver])[i],dt,now,fz));this.defenders.forEach((p,i)=>this.posePlayer(p,a.defenders[i],dt,now,fz));this.posePlayer(this.keeper,a.keeper,dt,now,fz);if(this.linesman&&a.offsideLine!=null){const target=clamp(a.offsideLine,GOAL_Z,(GOAL_Z+PITCH.far)/2),prev=this.lineZ??target;this.lineZ=prev+(target-prev)*Math.min(1,dt*4);const sp=Math.abs(this.lineZ-prev)/Math.max(dt,1e-3);this.posePlayer(this.linesman,{x:-PITCH.W-1.1,z:this.lineZ,angle:-Math.PI/2,speed:fz?0:sp},dt,now,fz);if(a.flag){this.linesman.arms[1].rotation.set(0,0,2.9);this.linesman.elbows[1].rotation.x=0;}}this.drawRuns(a);this.drawReferee(a,dt,now);if(a.ballControl==='held'){this.ball.position.copy(this.heldBallPosition());this.shadow.position.set(this.ball.position.x,.04,this.ball.position.z);}this.renderer.render(this.scene,this.camera);
 }
 }

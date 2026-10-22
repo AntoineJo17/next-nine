@@ -1,12 +1,16 @@
-import {clamp,R,PITCH} from './physics.js?v=20-1';
+import {clamp,R,PITCH} from './physics.js?v=20-2';
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export function laneClearance(from,to,defenders){const dx=to.x-from.x,dz=to.z-from.z,ll=dx*dx+dz*dz;return defenders.reduce((best,d)=>{const u=((d.x-from.x)*dx+(d.z-from.z)*dz)/(ll||1);if(u<.08||u>.96)return best;return Math.min(best,Math.hypot(d.x-from.x-u*dx,d.z-from.z-u*dz));},20);}
 // Lot 1 · How good a shot is from here (0 = none): the angle between the posts, the distance and the open lanes.
 export function goalView(p){const a=Math.atan2(-3.66-p.x,-20-p.z),b=Math.atan2(3.66-p.x,-20-p.z);return Math.abs(Math.atan2(Math.sin(b-a),Math.cos(b-a)));}
 export function shotQuality(p,defenders){const d=distance(p,{x:0,z:-20});if(p.z>-4||d>17)return 0;const view=goalView(p);if(view<.36)return 0;const open=[-2.7,0,2.7].filter(x=>laneClearance(p,{x,z:-20},defenders)>.38).length;if(!open)return 0;const pressure=Math.min(4,...defenders.map(q=>distance(q,p)));return view*1.6+open*.18-d*.035+Math.min(pressure,2)*.08;}
 export function canShoot(p,defenders){return shotQuality(p,defenders)>.55;}
-export function shotPower(p){const d=distance(p,{x:0,z:-20});return clamp(.6+d*.02,.65,.95);}
+// Lot 2 · Above about 72 % the strike rises sharply (see launch), so partners keep their shots between 62 and 75 %: on target from 6 to 17 m.
+export function shotPower(p){const d=distance(p,{x:0,z:-20});return clamp(.62+d*.008,.62,.75);}
+// Lot 2 · A partner never passes to a player standing offside (judged now, at the pass). A run that starts onside is fine.
+export function offsidePosition(p,carrier,defenders,keeper){const zs=[keeper?.z??-19.25,...defenders.map(d=>d.z)].sort((a,b)=>a-b),line=zs.length>1?zs[1]:zs[0];return p.z<line-.05&&p.z<carrier.z&&p.z<(PITCH.far-20)/2;}
 export function teamDecision(carrier,partners,defenders,keeper,preferred=null){
+ partners=partners.filter(p=>p===carrier||!offsidePosition(p,carrier,defenders,keeper));if(preferred&&!partners.includes(preferred))preferred=null;
  // 13 · personalities: a winger takes players on, a playmaker looks for the pass, a forward attacks the box.
  const style=carrier.style||'',mine=shotQuality(carrier,defenders);
  // A call (preferred) counts in the comparison; another partner must be clearly better placed to be found instead of shooting.
@@ -28,7 +32,7 @@ export function teamDecision(carrier,partners,defenders,keeper,preferred=null){
  return {kind:'carry',target:{x:clamp(carrier.x+(carrier.x<0?-1:1)*1.2,-PITCH.W+1,PITCH.W-1),z:Math.max(-16,carrier.z-1.8)}};
 }
 // Stable one-to-one marking persists for the whole touch, avoiding target oscillation.
-export function assignMarkers(defenders,carrier,partners){const available=new Set(partners.filter(p=>p!==carrier));let primary=-1,best=Infinity;defenders.forEach((d,i)=>{const v=distance(d,carrier);if(v<best){best=v;primary=i;}});defenders.forEach((d,i)=>{d.mark=null;if(i===primary)return;let choice=null,score=Infinity;for(const p of available){const v=distance(d,p)+Math.max(0,p.z-d.z)*.15;if(v<score){score=v;choice=p;}}if(choice){d.mark=choice;available.delete(choice);}});return primary;}
+export function assignMarkers(defenders,carrier,partners){const available=new Set(partners.filter(p=>p!==carrier));let primary=-1,best=Infinity;defenders.forEach((d,i)=>{const v=distance(d,carrier);if(v<best){best=v;primary=i;}});/* Lot 2 · a marker keeps his man through a dribble, a pass or a reception unless he is out of reach. */const free=[];defenders.forEach((d,i)=>{if(i===primary){d.mark=null;return;}if(d.mark&&available.has(d.mark)&&distance(d,d.mark)<9){available.delete(d.mark);return;}d.mark=null;free.push(d);});free.forEach(d=>{let choice=null,score=Infinity;for(const p of available){const v=distance(d,p)+Math.max(0,p.z-d.z)*.15;if(v<score){score=v;choice=p;}}if(choice){d.mark=choice;available.delete(choice);}});return primary;}
 export function defensiveTarget(d,carrier,ball,primary,flying,intent){if(primary){if(flying){const t=clamp(distance(d,ball)/20,.04,.3);return {x:clamp(ball.x+(ball.vx||0)*t,-PITCH.W+.5,PITCH.W-.5),z:clamp(ball.z+(ball.vz||0)*t,-19,PITCH.far-2)};}const dx=intent.x-carrier.x,dz=intent.z-carrier.z,len=Math.hypot(dx,dz);if(len<.05)return {x:carrier.x+(carrier.vx||0)*.15,z:carrier.z-1.4};const ahead=Math.min(len,2.4);/* meet the carrier where the touch is going, from the goal side */return {x:carrier.x+dx/len*ahead+(carrier.vx||0)*.15,z:carrier.z+dz/len*ahead+(carrier.vz||0)*.15-.45};}if(d.cover){return {x:clamp(carrier.x*.75,-PITCH.W+3,PITCH.W-3),z:Math.max(-19,carrier.z-2.5)};}if(d.mark){const p=d.mark,dx=ball.x-p.x,dz=ball.z-p.z,len=Math.hypot(dx,dz)||1;return {x:p.x+dx/len*1.15,z:Math.min(p.z+dz/len*1.15,carrier.z-.8)};}return {x:clamp(carrier.x*.4+d.home.x*.6,-PITCH.W+1,PITCH.W-1),z:Math.max(-18,carrier.z-3)};}
 // Relative swept collision: a fast ball cannot jump through a moving receiver.
 export function sweptPlayerContact(before,after,p,radius=.65,height=1.55){const old=p.previous||p;const sx=before.x-old.x,sz=before.z-old.z,dx=(after.x-p.x)-sx,dz=(after.z-p.z)-sz,rr=radius+R;const aa=dx*dx+dz*dz,bb=2*(sx*dx+sz*dz),cc=sx*sx+sz*sz-rr*rr;let t=0;if(cc>0){const disc=bb*bb-4*aa*cc;if(aa<1e-12||disc<0)return null;t=(-bb-Math.sqrt(disc))/(2*aa);if(t<0||t>1)return null;}const y=before.y+(after.y-before.y)*t;if(y>height+R)return null;return {t,x:before.x+(after.x-before.x)*t,z:before.z+(after.z-before.z)*t,y};}

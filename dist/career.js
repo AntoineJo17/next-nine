@@ -1,4 +1,4 @@
-import {clamp} from './physics.js?v=20-1';
+import {clamp} from './physics.js?v=20-2';
 export const LEVEL_XP=700;
 // 21 · Playing position: it decides where the player's chances come from.
 export const POSITIONS={BU:{label:'Avant-centre',short:'BU'},AIL:{label:'Ailier droit',short:'AIL'},MOC:{label:'Meneur de jeu',short:'MOC'}};
@@ -34,8 +34,9 @@ export function matchScenario(games=0){const d=games%6;if(games>0&&d===2)return 
 export function scenarioBonus(id,m,earned){if(id==='derby')return {xp:Math.round(earned*.2),text:'Derby : +'+Math.round(earned*.2)+' XP'};if(id==='remontada')return m.us>m.them?{xp:60,text:'Remontada réussie : +60 XP'}:{xp:0,text:'Remontada manquée'};if(id==='finale')return m.us>m.them?{xp:50,text:'Dernière journée gagnée : +50 XP'}:{xp:0,text:'Dernière journée sans victoire'};return {xp:0,text:''};}
 
 // 29 · V19: 15 goal celebrations drawn at random: dances, acrobatic figures (the team comes after) and classics.
-export const CELEBRATIONS=[{id:'robot',label:'LE ROBOT',kind:'danse'},{id:'floss',label:'LE FLOSS',kind:'danse'},{id:'disco',label:'DISCO',kind:'danse'},{id:'salsa',label:'SALSA',kind:'danse'},
- {id:'salto',label:'SALTO ARRIÈRE',kind:'figure'},{id:'roue',label:'LA ROUE',kind:'figure'},{id:'vrille',label:'LA VRILLE',kind:'figure'},
- {id:'glissade',label:'GLISSADE À GENOUX',kind:'classique'},{id:'avion',label:'L’AVION',kind:'classique'},{id:'poing',label:'POING RAGEUR',kind:'classique'},{id:'ciel',label:'VERS LE CIEL',kind:'classique'},
- {id:'oreilles',label:'J’ENTENDS RIEN',kind:'classique'},{id:'chut',label:'CHUT !',kind:'classique'},{id:'coeur',label:'LE CŒUR',kind:'classique'},{id:'salut',label:'LE SALUT',kind:'classique'}];
+// Lot 2 · Modern celebrations (the labels stay internal: the game no longer names them on screen).
+export const CELEBRATIONS=[{id:'siu',label:'SAUT PIVOTÉ',kind:'figure'},{id:'salto',label:'SALTO ARRIÈRE',kind:'figure'},{id:'vrille',label:'LA VRILLE',kind:'figure'},
+ {id:'griddy',label:'DANSE',kind:'danse'},{id:'croises',label:'BRAS CROISÉS',kind:'classique'},{id:'meditation',label:'MÉDITATION',kind:'classique'},{id:'ouverts',label:'BRAS OUVERTS',kind:'classique'},
+ {id:'tempe',label:'DOIGT SUR LA TEMPE',kind:'classique'},{id:'calma',label:'CALME',kind:'classique'},{id:'pouce',label:'POUCE',kind:'classique'},{id:'nom',label:'LE NOM DANS LE DOS',kind:'classique'},
+ {id:'ecusson',label:'BAISER SUR L’ÉCUSSON',kind:'classique'},{id:'glissade',label:'GLISSADE À GENOUX',kind:'classique'},{id:'chut',label:'CHUT !',kind:'classique'},{id:'coeur',label:'LE CŒUR',kind:'classique'}];
 export function pickCelebration(random=Math.random){return CELEBRATIONS[Math.floor(random()*CELEBRATIONS.length)%CELEBRATIONS.length];}

@@ -1,4 +1,4 @@
-import {clamp,GOAL_Z,G,R,PITCH} from './physics.js?v=20-1';
+import {clamp,GOAL_Z,G,R,PITCH} from './physics.js?v=20-2';
 // V19 · On the real 105 m pitch everybody runs 35 % faster: real sprint speeds, the same balance between players.
 export const PACE=1.35;
 export function moveToward(actor,target,speed,dt,acceleration=12){speed*=PACE;acceleration*=PACE;const dx=target.x-actor.x,dz=target.z-actor.z,d=Math.hypot(dx,dz);if(d<.035){actor.speed=0;actor.vx=0;actor.vz=0;return true;}const desired=Math.min(speed,Math.sqrt(16*d)),tx=dx/d*desired,tz=dz/d*desired,cx=tx-(actor.vx||0),cz=tz-(actor.vz||0),change=Math.hypot(cx,cz)||1,gain=Math.min(1,acceleration*dt/change);actor.vx=(actor.vx||0)+cx*gain;actor.vz=(actor.vz||0)+cz*gain;const step=Math.hypot(actor.vx,actor.vz)*dt;if(step>=d&&actor.vx*dx+actor.vz*dz>0){actor.x=target.x;actor.z=target.z;actor.vx=actor.vz=actor.speed=0;return true;}actor.x+=actor.vx*dt;actor.z+=actor.vz*dt;actor.speed=Math.hypot(actor.vx,actor.vz);if(actor.speed>.03)actor.angle=Math.atan2(-actor.vx,-actor.vz);return false;}
@@ -6,14 +6,14 @@ export function moveToward(actor,target,speed,dt,acceleration=12){speed*=PACE;ac
 export function dribbleTarget(start,target){const dx=target.x-start.x,dz=target.z-start.z,len=Math.hypot(dx,dz)||1,d=clamp(len,.25,5);return {x:clamp(start.x+dx/len*d,-PITCH.W+1,PITCH.W-1),z:clamp(start.z+dz/len*d,-19.35,PITCH.far-1)};}
 export function createKeeper(){return {x:0,z:-19.25,y:0,vx:0,vz:0,speed:0,angle:Math.PI,state:'set',elapsed:0,shotTime:0,dir:0,tilt:0,reach:0,jump:0,diveStartX:0};}
 export function updateKeeper(k,ball,dt,flying){k.elapsed+=dt;if(k.holding&&k.state==='set'){k.speed=0;return;}if(k.state==='set'){
- const ideal=clamp(ball.x*.24,-1.2,1.2);const old=k.x;k.x+=clamp(ideal-k.x,-1.8*dt,1.8*dt);k.speed=Math.abs(k.x-old)/dt;
- if(flying&&ball.vz<-.2&&!k.noReact){k.shotTime+=dt;if(k.shotTime>.2){const t=(GOAL_Z-ball.z)/ball.vz;const impact=ball.x+ball.vx*t;const height=ball.y+ball.vy*t-G*t*t/2;if(t>0&&t<.52&&Math.abs(impact)<4.8&&height<3.5){k.state='dive';k.elapsed=0;k.dir=Math.sign(impact-k.x)||1;k.diveStartX=k.x;k.jump=clamp(height*.5,.2,1.2);}}}
+ if(!k.rush){const ideal=clamp(ball.x*.24,-1.2,1.2);const old=k.x;k.x+=clamp(ideal-k.x,-1.8*dt,1.8*dt);k.speed=Math.abs(k.x-old)/dt;}
+ if(flying&&ball.vz<-.2&&!k.noReact){if(!k.shotTime)k.react=.17+Math.random()*.16;k.shotTime+=dt;if(k.shotTime>(k.react||.2)){const t=(GOAL_Z-ball.z)/ball.vz;const impact=ball.x+ball.vx*t;const height=ball.y+ball.vy*t-G*t*t/2;if(t>0&&t<.52&&Math.abs(impact)<4.8&&height<3.5){k.state='dive';k.elapsed=0;k.dir=Math.sign(impact-k.x)||1;k.diveStartX=k.x;k.diveDX=clamp(impact-k.x,-1.4,1.4);k.diveT=t;k.jump=Math.abs(k.diveDX)<.6?clamp(height-1.45,0,.85):clamp(height*.5,.2,1.2);}}}
  }else if(k.state==='dive'){
- const p=clamp(k.elapsed/.55,0,1);k.x=k.diveStartX+k.dir*1.5*Math.sin(p*Math.PI/2);k.tilt=k.dir*Math.min(p*2,1)*1.32;k.y=Math.sin(p*Math.PI)*k.jump-p*.5;k.reach=Math.sin(p*Math.PI/2)*.72;k.speed=0;if(p>=1){k.state='ground';k.elapsed=0;}
+ const p=clamp(k.elapsed/.55,0,1);/* Lot 2 · the dive covers the distance to the ball: a shot at him is blocked standing, not dived away from */const dx=k.diveDX??k.dir*1.5,lat=Math.min(1,Math.abs(dx)/1.2);k.x=k.diveStartX+dx*Math.sin(p*Math.PI/2);k.tilt=k.dir*Math.min(p*2,1)*1.32*lat;const jp=clamp(k.elapsed/(2*(k.diveT||.28)),0,1);/* the jump peaks when the ball arrives */k.y=Math.sin(jp*Math.PI)*k.jump-p*.5*lat;k.reach=Math.sin(p*Math.PI/2)*.72*lat;k.speed=0;if(p>=1){k.state='ground';k.elapsed=0;}
  }else if(k.state==='ground'){k.speed=0;if(k.elapsed>.7){k.state='recover';k.elapsed=0;}}
  else if(k.state==='recover'){const p=clamp(k.elapsed/.8,0,1);k.tilt=k.dir*1.32*(1-p);k.y=-.5*(1-p);k.reach=.72*(1-p);if(p>=1){k.state='set';k.elapsed=0;k.shotTime=0;k.dir=0;}}
 }
-export function keeperTouches(ball,k){if(k.state==='ground')return Math.abs(ball.z-k.z)<.6&&Math.abs(ball.x-(k.x+k.dir*.45))<1&&ball.y<.65;if(k.state==='dive'){const handX=k.x+k.dir*k.reach;const handY=clamp(1.65+k.y-Math.abs(k.tilt)*.5,.5,2.6);return Math.abs(ball.z-k.z)<.65&&Math.hypot(ball.x-handX,ball.y-handY)<.6+R;}
+export function keeperTouches(ball,k){if(k.state==='ground')return Math.abs(ball.z-k.z)<.6&&Math.abs(ball.x-(k.x+k.dir*.45))<1&&ball.y<.65;if(k.state==='dive'){const handX=k.x+k.dir*k.reach;const handY=clamp(1.65+k.y-Math.abs(k.tilt)*.5,.5,2.6);if(Math.abs(k.diveDX??1)<.6&&Math.abs(ball.z-k.z)<.55&&Math.abs(ball.x-k.x)<.5+R&&ball.y<2.25+Math.max(0,k.y))return true;return Math.abs(ball.z-k.z)<.65&&Math.hypot(ball.x-handX,ball.y-handY)<.5+R;}
 return Math.abs(ball.z-k.z)<.55&&Math.abs(ball.x-k.x)<.48+R&&ball.y<2.1;}
 // Touchscreen slingshot: pulling down sends the aim upwards on screen.
 export function slingPoint(start,current,anchor,gain=2.2){return {x:anchor.x+(start.x-current.x)*gain,y:anchor.y+(start.y-current.y)*gain};}

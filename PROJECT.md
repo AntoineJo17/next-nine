@@ -234,3 +234,27 @@ La configuration Capacitor est préparatoire. Aucun projet iOS/Android ni binair
 7. Correction d'un plantage possible après un hors-jeu (le défenseur qui récupère n'avait pas de direction).
 - Tests adaptés : le scénario 2 « frappe possible » essaie trois chemins de dribble, car les défenseurs serrent désormais pendant la passe d'introduction. La reprise du partenaire peut finir sur un arrêt repoussé. Le défenseur « mal placé » du duel aérien est à 6 m côté but, plus sous la trajectoire. Tests des anciennes fonctions d'effet retirés.
 - 177 tests passent (9 nouveaux dans tests/lot1-feel.test.mjs). Pas de remplacement des joueurs au moment des actions d'ailier ou de meneur (point 5 de l'audit) : prévu plus tard.
+
+## V20 — lot 2 : retours du créateur après le lot 1 et audit
+1. Passes en profondeur : toucher une zone libre à plus de 8 m sert le partenaire qui y arrive avant les défenseurs ; le ballon part 2,5 m au-delà du point pour garder de la vitesse, et le receveur attaque le ballon une fois sur place. Le geste « doigt sur un partenaire puis glisse » reste possible.
+2. Appels des coéquipiers : à chaque pause, jusqu'à deux partenaires (ailiers qui rentrent dans l'axe, milieux qui partent dans la profondeur) affichent leur course par une flèche sur la pelouse. Ils partent toujours en position régulière. Toucher le bout de la flèche les sert dans la course ; ils font leur course pendant que tu dribbles ou passes.
+3. Gardien : il sort sur un un-contre-un (jusqu'à 10 m de son but) et plonge dans les pieds quand le ballon est à portée (72 %) ; s'il est éliminé, il ne recommence pas avant 1,2 s. Sur une frappe à sa portée il saute et capte au lieu de plonger à côté ; son saut culmine à l'arrivée du ballon ; son temps de réaction varie (0,17 à 0,33 s) ; le plongeon couvre la distance réelle (1,4 m maximum). Une frappe dans le coin rentre environ une fois sur deux.
+4. Défense : le tacle vise l'endroit où le ballon va (0,3 s d'avance) et un défenseur éliminé sprinte 20 % plus vite pour revenir.
+5. Hors-jeu : un partenaire ne passe jamais à un joueur hors-jeu au moment de la passe. Une course partie en position régulière reste valable.
+6. Début d'action sûr : ton joueur est replacé en jeu s'il était hors-jeu, aucun défenseur à moins de 2,6 m, et la passe qui te sert ne passe que par une ligne dégagée (sinon un autre partenaire, ou le ballon directement).
+7. Coups francs : le ballon est arrêté jusqu'à la frappe (pas de dribble, râteau, poussée, protection ni feinte) ; tous les joueurs sont placés (quatre attaquants dans la surface, deux à l'entrée, une solution courte, une couverture, chaque défenseur côté but de son joueur) et tout le monde bouge dès la frappe.
+8. Cartons : l'arbitre court vers le fautif et brandit le carton jaune ou rouge, filmé de près pendant environ 3,6 s, avant le coup franc ou le penalty.
+9. Corps et visages : visage dessiné (yeux avec iris et reflet, sourcils, nez, lèvres), barbe ou barbe de trois jours pour certains, six coiffures, col et bords de manches, bandes de chaussettes, crampons de couleurs, torse et épaules redessinés.
+10. Célébrations modernes, sans nom à l'écran : saut pivoté, salto, vrille, danse, bras croisés, méditation, bras ouverts, doigt sur la tempe, calme, pouce, nom dans le dos, baiser sur l'écusson, glissade, chut, cœur. Correction : les bras du « chut » et du cœur partaient vers l'arrière.
+11. Retours de ChatGPT : frappes des partenaires entre 62 et 75 % de puissance (cadrées de 6 à 17 m) ; un marqueur garde son joueur pendant un dribble, une passe ou une réception ; messages d'appel neutres (« Appel … demandé : ton partenaire choisit ») ; numéro de version identique partout sur l'accueil.
+- Tests adaptés : coup franc V16 visé dans le coin (le gardien couvre désormais 2,5 m), un défenseur en profondeur ajouté dans quatre tests de décision (sinon le partenaire était hors-jeu), le carton passe par l'arbitre avant le coup franc, nouvel ordre des célébrations.
+- 186 tests passent (9 nouveaux dans tests/lot2-feel.test.mjs). Contrôles visuels : visages, poses de célébration, flèches d'appel, arbitre et carton.
+- Audit, points relevés mais pas encore corrigés :
+  1. Les actions d'ailier et de meneur replacent encore quelques joueurs au début (continuité partielle avec la simulation).
+  2. Énergie : la récupération à l'accueil donne +20 sans contrepartie et chaque match démarre à 85 % minimum.
+  3. Progression : finition, passe et contrôle montent ensemble ; l'âge reste 17 ans ; le calendrier tourne sur six adversaires.
+  4. Le devant du maillot porte le nom et le grand numéro, comme le dos (un vrai maillot n'a qu'un petit numéro devant).
+  5. Pas d'arbitre central visible pendant le jeu (il n'apparaît que pour les cartons).
+  6. La passe en profondeur est dosée pour arriver avec le coureur : sur une longue distance elle reste lente et peut être coupée.
+  7. Le coût du cadrage de la caméra (plusieurs dizaines d'essais par image) n'a pas été mesuré sur téléphone.
+  8. Le replay n'enregistre pas la scène du carton.

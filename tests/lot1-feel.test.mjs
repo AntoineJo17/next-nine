@@ -33,9 +33,9 @@ test('Lot 1 · buttons, slider and label always show the effect really applied',
 test('Lot 1 · a call makes the run attractive but does not force the return',()=>{
  const carrier={x:-6,z:-8},hero={x:-9,z:-3},striker={x:1,z:-13};
  // The striker is unmarked in front of goal: the partner finds him even though the player called.
- assert.equal(teamDecision(carrier,[carrier,hero,striker],[{x:-3,z:-2},{x:8,z:-10}],{x:0},hero).receiver,striker);
+ assert.equal(teamDecision(carrier,[carrier,hero,striker],[{x:-3,z:-2},{x:8,z:-10},{x:12,z:-15}],{x:0},hero).receiver,striker);
  // Same partner, the player has called from a better spot: he gets it.
- const runner={x:-1,z:-12};assert.equal(teamDecision(carrier,[carrier,runner,{x:-12,z:2}],[{x:6,z:-10}],{x:0},runner).receiver,runner);});
+ const runner={x:-1,z:-12};assert.equal(teamDecision(carrier,[carrier,runner,{x:-12,z:2}],[{x:6,z:-10},{x:12,z:-15}],{x:0},runner).receiver,runner);});
 
 test('Lot 1 · the order of players in the list does not change the decision',()=>{const carrier={x:0,z:5},a={x:-14,z:-12},b={x:14,z:-14},wall=[{x:-7,z:-3},{x:7,z:-4},{x:-3,z:0},{x:3,z:0}];
  const one=teamDecision(carrier,[carrier,a,b],wall,{x:0}),two=teamDecision(carrier,[carrier,b,a],wall,{x:0});assert.equal(one.kind,two.kind);assert.equal(one.receiver,two.receiver);});
