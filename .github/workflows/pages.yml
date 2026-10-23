@@ -19,7 +19,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm run check
+      - name: Tests (les échecs sont affichés dans le résumé)
+        run: |
+          set +e
+          npm run check > check.log 2>&1
+          code=$?
+          grep -E '^not ok|^# (pass|fail)' check.log | sed 's/^/::error::/'
+          if [ $code -ne 0 ]; then grep -n -B2 -A12 '^not ok' check.log | head -80 | sed 's/^/::warning::/' ; fi
+          exit $code
   deploy:
     needs: tests
     runs-on: ubuntu-latest
