@@ -258,3 +258,10 @@ La configuration Capacitor est préparatoire. Aucun projet iOS/Android ni binair
   6. La passe en profondeur est dosée pour arriver avec le coureur : sur une longue distance elle reste lente et peut être coupée.
   7. Le coût du cadrage de la caméra (plusieurs dizaines d'essais par image) n'a pas été mesuré sur téléphone.
   8. Le replay n'enregistre pas la scène du carton.
+
+## V20 — lot 3 : retours du créateur après le lot 2
+1. La passe qui lance l'action arrive toujours à ton joueur : plus d'interception ni de tentative de contre pendant cette passe. Sur un centre, un défenseur placé sous la trajectoire ne le dégage plus que dans 35 % des cas (une seule tentative par défenseur).
+2. Passes en profondeur fiables : toucher n'importe où le long d'une flèche d'appel (à moins de 3,6 m) sert ce coureur au bout de sa course ; un geste commencé sur une flèche ne devient jamais une frappe. Toucher un espace libre à plus de 6,5 m sert le partenaire qui y arrive (moins de 2,8 s, jusqu'à 0,5 s après le défenseur le plus proche). Un glissement rapide de côté reste un râteau.
+3. Pluie : la zone de pluie s'agrandit avec la distance de la caméra (jusqu'à × 3,2) et compte 2 200 gouttes, pour couvrir aussi la vue large.
+4. Tacle glissé par derrière : s'il touche le joueur, c'est toujours une faute (jamais une récupération propre à travers lui). Les défenseurs tentent quatre fois moins souvent un tacle glissé par derrière.
+- 188 tests passent (2 nouveaux dans tests/lot3-feel.test.mjs ; le test « défenseur dans la ligne de passe » du lot 1 attend désormais la réception).

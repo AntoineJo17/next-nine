@@ -10,8 +10,8 @@ const runUntil=(run,stop,max=900)=>{for(let i=0;i<max&&!run(stop);i++){run('acti
 test('Lot 1 · a clean ground pass is really received by the player',()=>{const {run}=boot();serve(run);runUntil(run,'action.ready||action.ended');
  assert.equal(run('action.ready'),true);assert.equal(run('action.ended'),false);assert.match(run("$('feedback').textContent"),/Bien reçu/);assert.ok(run('Math.hypot(action.ball.x-action.hero.x,action.ball.z-action.hero.z)')<1.2);});
 
-test('Lot 1 · a defender standing in the lane cuts the introduction pass out',()=>{const {run}=boot();serve(run,'const d=action.defenders[0];d.x=0;d.z=6;');runUntil(run,'action.ready||action.ended');
- assert.equal(run('action.ended'),true);assert.equal(run('action.outcomeKind'),'tackle');});
+test('Lot 3 · the pass that opens the chance always reaches the player, even past a defender',()=>{const {run}=boot();serve(run,'const d=action.defenders[0];d.x=0;d.z=6;');runUntil(run,'action.ready||action.ended');
+ assert.equal(run('action.ended'),false);assert.equal(run('action.ready'),true);});
 
 test('Lot 1 · no more automatic "Bien reçu": a pass that misses the player is not handed back',()=>{const {run}=boot();serve(run);
  // Take the hero out of the ball's path right after the pass leaves.
@@ -24,7 +24,7 @@ test('Lot 1 · a gesture begun on a partner stays a pass: never a rake, never a 
  assert.equal(run(`drag={kind:'target',fromMate:M,start:{x:100,y:100},points:[]};rakeAllowed({x:200,y:100})`),false);
  assert.equal(run(`drag={kind:'target',fromMate:null,start:{x:100,y:100},points:[]};rakeAllowed({x:200,y:100})`),true);
  assert.equal(run(`drag={kind:'skill',fromMate:null,start:{x:100,y:100},points:[]};rakeAllowed({x:200,y:100})`),true);run('drag=null');
- const src=fs.readFileSync(new URL('../dist/game.js',import.meta.url),'utf8');assert.match(src,/drag\.kind==='target'&&!drag\.fromMate&&current\.y-drag\.start\.y>=18/,'pulling down from a partner does not turn into a shot');});
+ const src=fs.readFileSync(new URL('../dist/game.js',import.meta.url),'utf8');assert.match(src,/drag\.kind==='target'&&!drag\.fromMate&&!drag\.startRun&&current\.y-drag\.start\.y>=18/,'pulling down from a partner does not turn into a shot');});
 
 test('Lot 1 · buttons, slider and label always show the effect really applied',()=>{const {run}=boot();run(`$('play').onclick();`);
  run('setShotCurve(.35)');assert.equal(run("$('curveSlider').value"),'87');assert.match(run("$('curveValue').textContent"),/87 %/);

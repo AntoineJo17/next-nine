@@ -1,4 +1,4 @@
-import {clamp,PITCH,GOAL_Z} from './physics.js?v=20-2';
+import {clamp,PITCH,GOAL_Z} from './physics.js?v=20-3';
 const formation=[[.5,.025],[.16,.25],[.39,.21],[.61,.21],[.84,.25],[.24,.44],[.5,.40],[.76,.44],[.17,.62],[.5,.66],[.83,.62]];
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 // V19 · The whole simulated pitch maps onto the real 105 × 68 m field.
