@@ -1,5 +1,8 @@
-import {test} from 'node:test';import assert from 'node:assert/strict';
-const {boot}=await import('./_boot.mjs');
+import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
+// Each test file writes its own boot module (two files sharing one raced each other in CI).
+const src=fs.readFileSync(new URL('./career.test.mjs',import.meta.url),'utf8');
+fs.writeFileSync(new URL('./_boot-v15.mjs',import.meta.url),src.slice(0,src.indexOf('function boot'))+'export '+src.slice(src.indexOf('function boot'),src.indexOf('\ntest(')));
+const {boot}=await import('./_boot-v15.mjs');
 const start=run=>run("$('play').onclick();action.started=true;");
 test('1 · runs after a pass: tap your player to come short, tap ahead to be served in your stride',()=>{const {run}=boot();start(run);run("action.receiver=action.teammates?.[0]||action.receiver;beginRun({x:action.hero.x+.3,z:action.hero.z});");assert.equal(run('action.runKind'),'feet');
  run("beginRun({x:action.hero.x+2,z:action.hero.z-6});");assert.equal(run('action.runKind'),'depth');assert.ok(run('action.returnSpot.z<action.runTarget.z'),'the return pass leads the run');});

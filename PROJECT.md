@@ -308,3 +308,4 @@ La configuration Capacitor est préparatoire. Aucun projet iOS/Android ni binair
 7. Pelouse plus naturelle, filet dynamique, numéros imprimés sur le maillot : voir lot 5b.
 - Tests : les os remplacent les groupes (genou.children[1] devient p.boots[i]) ; nouveaux tests « une seule peau partagée, neuf os » et « plier un coude ne bouge que l'avant-bras ».
 - 195 tests passent.
+- Tests : cause du test instable sur GitHub (lot 6) : `stress.test.mjs` et `v15-actions.test.mjs` partageaient le fichier généré `_boot.mjs` et couraient l'un contre l'autre (« boot is not a function »). `v15-actions` génère maintenant son propre `_boot-v15.mjs`. Deux tests dépendant du hasard sont rendus déterministes (râteau latéral, arrêt du gardien).
