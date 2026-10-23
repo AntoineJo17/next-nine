@@ -289,3 +289,11 @@ La configuration Capacitor est préparatoire. Aucun projet iOS/Android ni binair
 5. Menu « Mon joueur » (bouton dans la carte « Ta carrière ») : ton joueur en 3D sur une plateforme éclairée, qu'on fait tourner au doigt ; onglets Coupe (8 coupes en portraits 3D), Cheveux (8 couleurs), Teint (8 teintes), Barbe (4 portraits), Maillot (numéro). Chaque choix s'applique tout de suite et est sauvegardé.
 - Test adapté : les filets sont des maillages nommés « Filet » (et non plus des lignes).
 - 194 tests passent (2 nouveaux dans tests/lot5-look.test.mjs).
+
+## V20 — lot 5b : retours du créateur après le lot 5
+1. Pelouse moins lumineuse : exposition 0,92, lumière du ciel et du soleil réduites, bandes de tonte plus sombres.
+2. Filet dynamique : grille de nœuds reliés par des ressorts (lignes blanches et voile translucide). Le ballon repousse les nœuds, l'impact se propage en vague, puis le filet revient en place. Le filet précédent (texture) disparaissait sur téléphone à cause du filtrage de la texture.
+3. Numéro, nom et écusson imprimés dans la texture du maillot (dos : nom et grand numéro ; devant : écusson à gauche de la poitrine et petit numéro), au lieu de plaques flottantes. Les manches ont une texture sans marquage.
+4. Silhouette plus fine et épaules carrées : ligne d'épaules quasi horizontale, taille plus étroite, cuisses, mollets et bras amincis, le maillot recouvre le haut du short.
+5. Tête plus ovale et plus petite : rayon réduit, hauteur × 1,22, mâchoire plus étroite, cou plus fin.
+- Tests adaptés : les marquages sont une donnée (userData.marking du torse) et non plus des plans.
