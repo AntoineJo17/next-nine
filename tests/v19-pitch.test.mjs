@@ -11,7 +11,7 @@ test('V19 · the ball rebounds on the boards and stops in the stands instead of 
  const wide={x:0,y:3,z:20,vx:40,vy:8,vz:0,bounces:0,age:0};for(let i=0;i<600;i++)stepBall(wide,1/60);assert.ok(Math.abs(wide.x)<=PITCH.board+2.41);});
 
 test('V19 · full stadium: two goals, every line, and stands standing outside the field',()=>{const e=rig();e.staticWorld();
- const goals=e.scene.children.filter(o=>o.type==='LineSegments');assert.equal(goals.length,2,'one net at each end');
+ const goals=e.scene.children.filter(o=>o.name==='Filet');assert.equal(goals.length,2,'one net at each end');/* Lot 5: nets are textured meshes */
  for(const o of e.stadium.children){if(o.name==='Tribune d’angle')continue;const b=new T.Box3().setFromObject(o);const inside=b.max.x>-PITCH.W&&b.min.x<PITCH.W&&b.max.z>GOAL_Z&&b.min.z<PITCH.far&&b.min.y<3;assert.ok(!inside,'nothing of the stadium stands on the pitch');}
  assert.ok(e.crowd.fans.every(f=>Math.abs(f.x)>PITCH.board||f.z<GOAL_Z-PITCH.boardEnd||f.z>PITCH.far+PITCH.boardEnd),'fans sit behind the boards');assert.ok(e.crowd.fans.some(f=>f.z>PITCH.far),'there is a crowd at the far end too');
  // The follow camera does not chase a ball that went into the stands.

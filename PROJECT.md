@@ -280,3 +280,12 @@ La configuration Capacitor est préparatoire. Aucun projet iOS/Android ni binair
 - Reporté à plus tard, à la demande du créateur : ne plus être enfermé dans un poste (actions d'aile, construction au milieu).
 - Tests adaptés : duel aérien (le défenseur nettement mieux placé gagne jusqu'à 93 %).
 - 192 tests passent (4 nouveaux dans tests/lot4-feel.test.mjs). Contrôle visuel des têtes, coiffures et barbes de près.
+
+## V20 — lot 5 : graphismes façon Dream League Soccer et menu « Mon joueur »
+1. Rendu : tone mapping filmique (ACES), soleil plus fort, ombres douces 2048, ciel en dégradé (dôme), pelouse vive aux bandes de tonte marquées, lignes peintes de 12 cm (rubans) au lieu de traits d'un pixel, poteaux ronds et vrais filets texturés, ballon à 12 pentagones et 20 hexagones avec coutures.
+2. Stade : sièges bleus du club, une tribune visiteurs rouge, public plus dense et plus coloré, toits sur les quatre tribunes avec poteaux, projecteurs lumineux, immeubles de la ville abaissés derrière les toits.
+3. Corps athlétiques : chaque membre est un tube sculpté (profil lissé, section presque carrée, muscles) — torse en V avec pectoraux et omoplates, short avec ceinture, cuisses, mollets, biceps, avant-bras, mains, crampons sculptés ; maillot texturé (panneaux latéraux, motif sublimé discret, grain du tissu, liserés). Géométries partagées entre joueurs.
+4. Tête : visage un peu plus fin, front moins haut, cou plus court, yeux plus grands.
+5. Menu « Mon joueur » (bouton dans la carte « Ta carrière ») : ton joueur en 3D sur une plateforme éclairée, qu'on fait tourner au doigt ; onglets Coupe (8 coupes en portraits 3D), Cheveux (8 couleurs), Teint (8 teintes), Barbe (4 portraits), Maillot (numéro). Chaque choix s'applique tout de suite et est sauvegardé.
+- Test adapté : les filets sont des maillages nommés « Filet » (et non plus des lignes).
+- 194 tests passent (2 nouveaux dans tests/lot5-look.test.mjs).

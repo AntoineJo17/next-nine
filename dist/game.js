@@ -1,14 +1,14 @@
-import {laneClearance,refreshDefence,assignMarkers,defensiveTarget,teamDecision,sweptPlayerContact,offsidePosition} from './football-ai.js?v=20-4';
-import {createTactical,stepTactical,drawTactical,tacticalGoal,tacticalToWorld,worldToTactical,resumeTactical,TACTICS,setTactic,heroOff} from './tactical.js?v=20-4';
-import {attributes,performance,progressionLevel,LEVEL_XP,parseCareer,makeTimeline,advanceMatch,profiles,matchScenarios,fatigueFactor,spendEnergy,matchStartEnergy,teamLevels,POSITIONS,INSTRUCTIONS,coachInstruction,instructionProgress,coachVerdict,squadRole,SCENARIOS,matchScenario,scenarioBonus,pickCelebration} from './career.js?v=20-4';
-import {launch,stepBall,goalCrossing,hitPlayer,R,clamp,PITCH,containGoalBall,stepNetBall,frameContact} from './physics.js?v=20-4';
-import {moveToward,PACE,dribbleTarget,createKeeper,updateKeeper,keeperTouches,slingPoint,pressDefender,keeperGrip,sweptKeeperTouch,separateBodies,beginChallenge,updateChallenge,challengeHits} from './movement.js?v=20-4';
-import {commentLine} from './commentary.js?v=20-4';
-import {Ambience,crowdLevel} from './audio.js?v=20-4';
-import {targetGesture,LOB_HOLD_MS,lateralSkill,assistedShot} from './gestures.js?v=20-4';
+import {laneClearance,refreshDefence,assignMarkers,defensiveTarget,teamDecision,sweptPlayerContact,offsidePosition} from './football-ai.js?v=20-5';
+import {createTactical,stepTactical,drawTactical,tacticalGoal,tacticalToWorld,worldToTactical,resumeTactical,TACTICS,setTactic,heroOff} from './tactical.js?v=20-5';
+import {attributes,performance,progressionLevel,LEVEL_XP,parseCareer,makeTimeline,advanceMatch,profiles,matchScenarios,fatigueFactor,spendEnergy,matchStartEnergy,teamLevels,POSITIONS,INSTRUCTIONS,coachInstruction,instructionProgress,coachVerdict,squadRole,SCENARIOS,matchScenario,scenarioBonus,pickCelebration} from './career.js?v=20-5';
+import {launch,stepBall,goalCrossing,hitPlayer,R,clamp,PITCH,containGoalBall,stepNetBall,frameContact} from './physics.js?v=20-5';
+import {moveToward,PACE,dribbleTarget,createKeeper,updateKeeper,keeperTouches,slingPoint,pressDefender,keeperGrip,sweptKeeperTouch,separateBodies,beginChallenge,updateChallenge,challengeHits} from './movement.js?v=20-5';
+import {commentLine} from './commentary.js?v=20-5';
+import {Ambience,crowdLevel} from './audio.js?v=20-5';
+import {targetGesture,LOB_HOLD_MS,lateralSkill,assistedShot} from './gestures.js?v=20-5';
 'use strict';
 // Shown on the home screen: tells which build the phone is running.
-const BUILD='V20 · lot 4';
+const BUILD='V20 · lot 5';
 const $=id=>document.getElementById(id),KEY='nextnine-career-v1',clubs=['AS Montclair','FC des Dunes','Olympique Valmont','Union Bellevue','Étoile du Port','Sporting des Pins'];
 const fresh=()=>({name:'Jeune espoir',games:0,goals:0,assists:0,xp:0,last:'',skin:'#c98b62',hair:'#28231e',hairStyle:'degrade',beard:'',number:9,baseXP:0,baseLevel:0,energy:100,position:'BU',trust:50,tactic:'equilibre',sound:true});let career=fresh(),storageOK=true;
 try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&typeof saved.name==='string'&&['games','goals','assists','xp'].every(k=>Number.isFinite(saved[k])&&saved[k]>=0))career={...fresh(),...parseCareer(saved)};}catch(e){storageOK=false;}
@@ -20,6 +20,26 @@ $('name').addEventListener('change',()=>{career.name=$('name').value.trim()||'Je
 $('tactic').addEventListener('change',()=>{chooseTactic($('tactic').value);});
 $('position').addEventListener('change',()=>{career.position=POSITIONS[$('position').value]?$('position').value:'BU';save();});
 for(const k of ['skin','hair','hairStyle','beard','number'])$(k).addEventListener('change',()=>{if(k==='number')career[k]=clamp(parseInt($(k).value)||9,1,99);else career[k]=$(k).value;save();});
+// Lot 5 · "Mon joueur": the player on a turntable, every haircut and beard as a portrait card, live preview.
+const LOOK={coupe:[['degrade','Dégradé'],['court','Court'],['boucles','Boucles'],['afro','Afro'],['plaque','Plaqué'],['chignon','Chignon'],['rase','Rasé'],['crane','Crâne lisse']],
+ cheveux:[['#111111','Noirs'],['#28231e','Bruns'],['#5a3a22','Châtains'],['#a84e2e','Roux'],['#c29b52','Blonds'],['#e2cf98','Platine'],['#8b8986','Gris'],['#ecebe6','Blancs']],
+ teint:[['#f0c8a5','Clair'],['#e8c19f','Rosé'],['#c98b62','Hâlé'],['#b8835c','Doré'],['#9d6243','Mat'],['#7b4a32','Brun'],['#593c2e','Foncé'],['#3f2a20','Ébène']],
+ barbe:[['','Aucune'],['barbe3j','Trois jours'],['bouc','Bouc'],['barbe','Barbe']]};
+let locker=null,lockerTab='coupe';const portraits={};
+function lockerLook(){return {skin:career.skin,hair:career.hair,hairStyle:career.hairStyle,beard:career.beard,number:career.number,name:career.name};}
+function lockerBadge(){const b=$('openLocker');if(!b?.style?.setProperty)return;b.style.setProperty('--skin',career.skin);b.style.setProperty('--hair',career.hairStyle==='crane'?career.skin:career.hair);}
+function setLook(k,v){career[k]=v;save();locker?.setAppearance(lockerLook());renderLockerPanel();lockerBadge();}
+async function openLocker(){$('locker').hidden=false;if(!locker){try{const {Locker}=await import('./engine.js?v=20-5');locker=new Locker($('lockerCanvas'));}catch(err){$('lockerPanel').textContent='Aperçu 3D indisponible sur cet appareil.';}}if(locker){locker.setAppearance(lockerLook());locker.start();}showLockerTab(lockerTab);}
+function closeLocker(){locker?.stop();$('locker').hidden=true;lockerBadge();refresh();}
+function showLockerTab(t){lockerTab=t;document.querySelectorAll('.locker-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));locker?.setView(t==='maillot'||t==='teint'?'body':'face');renderLockerPanel();}
+function renderLockerPanel(){const panel=$('lockerPanel'),t=lockerTab;$('lockerName').textContent=career.number;
+ if(t==='coupe'||t==='barbe'){const field=t==='coupe'?'hairStyle':'beard',opts=LOOK[t],key=[t,career.skin,career.hair,t==='coupe'?career.beard:career.hairStyle].join('|'),imgs=portraits[key]||[];
+  panel.innerHTML='<div class="locker-grid">'+opts.map(([v,l],i)=>`<button type="button" class="locker-card${(career[field]||'')===v?' active':''}" data-v="${v}">${imgs[i]?`<img alt="" src="${imgs[i]}">`:'<span class="ph"></span>'}${l}</button>`).join('')+'</div>';
+  panel.querySelectorAll('button').forEach(b=>b.onclick=()=>setLook(field,b.dataset.v));
+  if(locker&&!portraits[key])setTimeout(()=>{if(portraits[key])return;portraits[key]=locker.portraits(opts.map(([v])=>({...lockerLook(),[field]:v})));if(lockerTab===t)renderLockerPanel();},40);}
+ else if(t==='cheveux'||t==='teint'){const field=t==='cheveux'?'hair':'skin';panel.innerHTML='<div class="locker-swatches">'+LOOK[t].map(([v,l])=>`<button type="button" class="locker-swatch${career[field]===v?' active':''}" data-v="${v}"><i style="background:${v}"></i>${l}</button>`).join('')+'</div>';panel.querySelectorAll('button').forEach(b=>b.onclick=()=>setLook(field,b.dataset.v));}
+ else{panel.innerHTML=`<div class="locker-number"><button type="button" data-d="-1" aria-label="Numéro précédent">−</button><b>${career.number}</b><button type="button" data-d="1" aria-label="Numéro suivant">+</button></div><p class="locker-note">Ton nom et ton numéro sont floqués dans le dos ; devant, un petit numéro et l’écusson.</p>`;panel.querySelectorAll('button').forEach(b=>b.onclick=()=>setLook('number',(career.number+ +b.dataset.d+98)%99+1));}}
+$('openLocker').onclick=openLocker;$('lockerBack').onclick=closeLocker;$('lockerDone').onclick=closeLocker;document.querySelectorAll('.locker-tabs button').forEach(b=>b.onclick=()=>showLockerTab(b.dataset.tab));lockerBadge();
 const ambience=new Ambience();ambience.enabled=career.sound!==false;
 let engine=null,match=null,action=null,drag=null,mode='normal',guideOpen=false,shotCurve=0,time=0,lastTime=0,frameHandle=0;
 const canvas=$('pitch');
@@ -511,7 +531,7 @@ function tick(dt){if(!action||guideOpen)return;const a=action;if(a.phase==='inte
  resolveBodyContacts(a);
 }
 function loop(t){const dt=Math.min((t-lastTime)/1000,.04);lastTime=t;time+=dt;if(action&&!document.hidden&&replay)playReplay(dt);else if(action&&!document.hidden){if(drag&&(drag.kind==='ball'||drag.kind==='target'&&Date.now()-drag.began>=LOB_HOLD_MS))updateAim(drag.current);let remaining=dt;while(remaining>0){const d=Math.min(remaining,1/120);tick(d);remaining-=d;}if(!guideOpen)recordFrame(action,dt);if(action){if(action.phase==='interval')drawTactical($('tacticalPitch'),match.tactical);else engine.render(action,dt,time);}updateOffscreen();updateCoach();updateCrowd();updateReplayTimer();if(match?.commentAt!=null&&time-match.commentAt>3.4&&!$('commentary').hidden)$('commentary').hidden=true;engine.setRunCursor?.(action&&action.runTarget&&!action.ended&&action.phase!=='interval'?action.runTarget:null,!!action?.callPause);if(action?.ended&&!match?.training&&action.after>continueDelay(action)&&!action.autoNext){action.autoNext=true;$('continue').onclick();}}frameHandle=requestAnimationFrame(loop);}
-async function init(){$('fullscreen').hidden=!$('match').requestFullscreen;refresh();setMode('normal');try{const {Pitch3D}=await import('./engine.js?v=20-4');engine=new Pitch3D(canvas,career);engine.setCrowdVisible($('crowdToggle').checked);$('engineStatus').textContent='Prêt à entrer sur le terrain · '+BUILD;if($('footBuild'))$('footBuild').textContent=BUILD+' · Entre sur le terrain';$('play').disabled=false;$('practice').disabled=false;frameHandle=requestAnimationFrame(loop);}catch(e){console.error(e);$('engineStatus').textContent='La 3D est indisponible. Essaie Safari ou Chrome avec WebGL activé.';$('play').disabled=true;}}
+async function init(){$('fullscreen').hidden=!$('match').requestFullscreen;refresh();setMode('normal');try{const {Pitch3D}=await import('./engine.js?v=20-5');engine=new Pitch3D(canvas,career);engine.setCrowdVisible($('crowdToggle').checked);$('engineStatus').textContent='Prêt à entrer sur le terrain · '+BUILD;if($('footBuild'))$('footBuild').textContent=BUILD+' · Entre sur le terrain';$('play').disabled=false;$('practice').disabled=false;frameHandle=requestAnimationFrame(loop);}catch(e){console.error(e);$('engineStatus').textContent='La 3D est indisponible. Essaie Safari ou Chrome avec WebGL activé.';$('play').disabled=true;}}
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();if(action){action=null;match=null;screen('home');}$('play').disabled=true;$('engineStatus').textContent='Affichage 3D interrompu. Recharge la page pour reprendre.';});init();
 
 $('exportSave').onclick=()=>{const blob=new Blob([JSON.stringify({format:'next-nine',version:1,career},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='next-nine-carriere.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
