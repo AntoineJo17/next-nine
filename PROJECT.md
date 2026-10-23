@@ -265,3 +265,18 @@ La configuration Capacitor est préparatoire. Aucun projet iOS/Android ni binair
 3. Pluie : la zone de pluie s'agrandit avec la distance de la caméra (jusqu'à × 3,2) et compte 2 200 gouttes, pour couvrir aussi la vue large.
 4. Tacle glissé par derrière : s'il touche le joueur, c'est toujours une faute (jamais une récupération propre à travers lui). Les défenseurs tentent quatre fois moins souvent un tacle glissé par derrière.
 - 188 tests passent (2 nouveaux dans tests/lot3-feel.test.mjs ; le test « défenseur dans la ligne de passe » du lot 1 attend désormais la réception).
+
+## V20 — lot 4 : retours du créateur après le lot 3
+1. Dribble pris pour une passe en profondeur : un toucher dans l'espace reste un dribble. La passe en profondeur ne part que sur une flèche d'appel (à moins de 2,8 m, et à plus de 7 m du porteur) ou dans un espace à plus de 12 m du porteur, juste à côté d'un partenaire (moins de 1,4 s de course, au moins 4 m plus près que le porteur).
+2. Gardien moins fort : il lit la frappe avec une erreur (plus grande sur une frappe forte et loin de lui), réagit en 0,20 à 0,36 s, plonge un peu moins loin (1,3 m) avec des mains plus petites. Il bloque une frappe dans le corps, mais repousse une frappe à pleine extension dès 17 m/s. Il gagne un face-à-face dans 55 % des cas (au lieu de 72 %).
+3. Duels aériens : le marqueur se place à l'épaule, côté but, au lieu de courir sur le ballon à travers le joueur. À égalité le défenseur gagne 3 fois sur 10 (2 si tu as choisi ta place) ; il doit être nettement mieux placé pour être favori. Un défenseur ne dégage un centre que s'il est au moins 0,5 m plus près du ballon.
+4. Vitesse en dribble : vitesse de base 4,4 (comme un défenseur du même niveau) et plus de freinage avant la fin de chaque touche.
+5. Défenseurs qui s'arrêtaient en touchant le ballon : le pied tendu se fait dans la course (le défenseur garde 80 % de son élan, qui s'amortit) ; seuls le tacle glissé et le contre arrêtent le corps.
+6. Contrôles : un petit écart de position (contrôle, mise en place d'une tête) est montré comme un pas rapide (environ 0,15 s), plus comme une téléportation.
+7. Passes des partenaires : ton joueur n'est servi que si le ballon peut vraiment lui arriver (ligne dégagée de 1,5 m et personne à moins de 2,4 m ; 1,2 et 1,7 m après un appel). Libre dans l'intervalle, il est préféré, y compris juste après t'avoir rendu le ballon. Sinon l'équipe construit sans lui.
+8. Têtes sculptées : la tête est une sphère déformée (arcade, orbites, pommettes, nez, lèvres, menton, mâchoire plus étroite, nuque), avec un visage peint en haute définition aligné sur le relief (yeux en amande avec iris et paupières, sourcils poil par poil, narines, plis, lèvres dessinées, pores, barbe ou ombre de rasage), une carte de rugosité (yeux et lèvres brillants), un reflet de peau, de vraies oreilles et huit coupes sculptées (court, dégradé, boucles, afro, plaqué, chignon, rasé, crâne lisse). Six formes de visage. Cou plus épais, tête mieux posée.
+9. Ton joueur : choix de la coiffure et de la barbe dans « Ajuster l'apparence ».
+10. Maillot : devant, un petit numéro et un écusson ; le nom et le grand numéro restent dans le dos (point 4 de l'audit du lot 2).
+- Reporté à plus tard, à la demande du créateur : ne plus être enfermé dans un poste (actions d'aile, construction au milieu).
+- Tests adaptés : duel aérien (le défenseur nettement mieux placé gagne jusqu'à 93 %).
+- 192 tests passent (4 nouveaux dans tests/lot4-feel.test.mjs). Contrôle visuel des têtes, coiffures et barbes de près.

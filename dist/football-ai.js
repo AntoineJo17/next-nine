@@ -1,4 +1,4 @@
-import {clamp,R,PITCH} from './physics.js?v=20-3';
+import {clamp,R,PITCH} from './physics.js?v=20-4';
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export function laneClearance(from,to,defenders){const dx=to.x-from.x,dz=to.z-from.z,ll=dx*dx+dz*dz;return defenders.reduce((best,d)=>{const u=((d.x-from.x)*dx+(d.z-from.z)*dz)/(ll||1);if(u<.08||u>.96)return best;return Math.min(best,Math.hypot(d.x-from.x-u*dx,d.z-from.z-u*dz));},20);}
 // Lot 1 · How good a shot is from here (0 = none): the angle between the posts, the distance and the open lanes.
@@ -10,7 +10,9 @@ export function shotPower(p){const d=distance(p,{x:0,z:-20});return clamp(.62+d*
 // Lot 2 · A partner never passes to a player standing offside (judged now, at the pass). A run that starts onside is fine.
 export function offsidePosition(p,carrier,defenders,keeper){const zs=[keeper?.z??-19.25,...defenders.map(d=>d.z)].sort((a,b)=>a-b),line=zs.length>1?zs[1]:zs[0];return p.z<line-.05&&p.z<carrier.z&&p.z<(PITCH.far-20)/2;}
 export function teamDecision(carrier,partners,defenders,keeper,preferred=null){
- partners=partners.filter(p=>p===carrier||!offsidePosition(p,carrier,defenders,keeper));if(preferred&&!partners.includes(preferred))preferred=null;
+ // Lot 4 · The career player is only found when the ball will really reach him (open lane, nobody on him); otherwise the team builds without him.
+ const heroOpen=p=>laneClearance(carrier,p,defenders)>(p===preferred?1.2:1.5)&&Math.min(20,...defenders.map(d=>distance(d,p)))>(p===preferred?1.7:2.4);
+ partners=partners.filter(p=>p===carrier||!offsidePosition(p,carrier,defenders,keeper)&&(!p.isHero||heroOpen(p)));if(preferred&&!partners.includes(preferred))preferred=null;
  // 13 · personalities: a winger takes players on, a playmaker looks for the pass, a forward attacks the box.
  const style=carrier.style||'',mine=shotQuality(carrier,defenders);
  // A call (preferred) counts in the comparison; another partner must be clearly better placed to be found instead of shooting.
@@ -21,7 +23,7 @@ export function teamDecision(carrier,partners,defenders,keeper,preferred=null){
  const central=partners.filter(p=>p!==carrier&&p.z<-10&&Math.abs(p.x)<5).sort((a,b)=>a.z-b.z)[0];
  if(Math.abs(carrier.x)>8&&carrier.z<-7&&central&&laneClearance(carrier,central,defenders)<1.4)return {kind:'cross',receiver:central,target:{x:central.x,z:central.z}};
  const forward={x:clamp(carrier.x*.92,-PITCH.W+1,PITCH.W-1),z:Math.max(-18,carrier.z-4)},pressure=Math.min(20,...defenders.map(d=>distance(d,carrier)));
- const candidates=partners.filter(p=>p!==carrier&&distance(p,carrier)>2&&distance(p,carrier)<30).map(p=>{const lane=laneClearance(carrier,p,defenders),space=Math.min(8,...defenders.map(d=>distance(d,p))),progress=carrier.z-p.z;return {p,lane,score:Math.min(lane,4)*.7+space*.35+progress*.45-distance(p,carrier)*.07+shotQuality(p,defenders)*4+(p===preferred?2.2:0)-(p===carrier.lastPasser?3:0)-(progress< -3?3:0)};}).filter(c=>c.lane>.75);
+ const candidates=partners.filter(p=>p!==carrier&&distance(p,carrier)>2&&distance(p,carrier)<30).map(p=>{const lane=laneClearance(carrier,p,defenders),space=Math.min(8,...defenders.map(d=>distance(d,p))),progress=carrier.z-p.z;return {p,lane,score:Math.min(lane,4)*.7+space*.35+progress*.45-distance(p,carrier)*.07+shotQuality(p,defenders)*4+(p===preferred?2.2:p.isHero?1.6:0)-(p===carrier.lastPasser&&!p.isHero?3:0)-(progress< -3?3:0)};}).filter(c=>c.lane>.75);
  // V19 · A partner 12–35 m away behind a blocked lane can still be found with a lofted pass.
  candidates.sort((a,b)=>b.score-a.score);
  if(!candidates.length||candidates[0].score<2){const lofted=partners.filter(p=>p!==carrier&&distance(p,carrier)>12&&distance(p,carrier)<35&&laneClearance(carrier,p,defenders)<=.75&&p.z<carrier.z+4).map(p=>({p,lane:1,lob:true,score:Math.min(8,...defenders.map(d=>distance(d,p)))*.5+(carrier.z-p.z)*.3-(p===carrier.lastPasser?3:0)})).filter(c=>c.score>1.2);candidates.push(...lofted);}
