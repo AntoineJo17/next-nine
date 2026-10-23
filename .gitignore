@@ -2,3 +2,5 @@ node_modules/
 .DS_Store
 .artifact/
 tests/_boot*.mjs
+dist/_*.html
+tete-validation.jpg

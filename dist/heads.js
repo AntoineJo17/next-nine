@@ -20,13 +20,13 @@ export function weldNormals(geo){const pos=geo.attributes.position,nor=geo.attri
 // ---- The skull -------------------------------------------------------------------------------------------------
 export const HR=.104,HEAD_Y=.737;
 // latitude on the painted map → height above the eye line
-const YK=[[-1.5708,-.12],[-1.1,-.112],[-.7,-.1],[-.375,-.075],[-.2,-.045],[.095,0],[.26,.028],[.64,.07],[1,.1],[1.5708,.117]];
+const YK=[[-1.5708,-.12],[-1.1,-.112],[-.7,-.1],[-.375,-.075],[-.2,-.045],[.095,0],[.26,.028],[.64,.07],[1,.1],[1.5708,.114]];
 // half-width, front depth and back depth by height: round cranium (widest above the ears), cheekbones, a jaw that
 // narrows to the chin, and a full back of the head that tucks into the nape.
-const AK=[[-.12,.012],[-.112,.026],[-.1,.04],[-.088,.049],[-.075,.055],[-.05,.0605],[-.025,.067],[0,.0715],[.02,.0745],[.045,.0765]].map(([y,a])=>[y,a*(y<-.11?1:1.06)]),AMAX=AK[AK.length-1][1];
-const FK=[[-.12,.02],[-.112,.04],[-.1,.066],[-.08,.077],[-.05,.0835],[-.03,.0838],[0,.0845],[.03,.0895],[.045,.088]];
-const BK=[[-.12,.02],[-.106,.04],[-.09,.058],[-.07,.077],[-.04,.094],[-.01,.1],[.02,.1015],[.045,.1]];
-export function headDims(Y,v){const top=Y>=.045,t=top?(Y-.045)/.072:0,dome=top?Math.sqrt(Math.max(0,1-t*t)):1;let a=top?AMAX*dome:catmull(AK,Y);a*=1+(v.jaw-1)*.5*smooth(-.01,-.065,Y);a*=1+.04*v.wide;return {a,bf:top?.088*dome:catmull(FK,Y),bb:top?.1*dome:catmull(BK,Y),e:2/(2.1+.2*smooth(0,-.05,Y))};}
+const AK=[[-.12,.02],[-.112,.032],[-.1,.044],[-.088,.049],[-.075,.055],[-.05,.0605],[-.025,.067],[0,.0715],[.02,.0745],[.045,.0765]].map(([y,a])=>[y,a*(y<-.11?1:1.03)]),AMAX=AK[AK.length-1][1];
+const FK=[[-.12,.044],[-.114,.062],[-.106,.0715],[-.097,.0745],[-.088,.0755],[-.078,.0775],[-.065,.0795],[-.05,.0815],[-.03,.0825],[-.012,.084],[0,.0845],[.015,.0875],[.03,.0885],[.045,.0875],[.06,.0845],[.075,.0785],[.09,.067],[.1,.052],[.107,.034],[.112,.016],[.114,0]];
+const BK=[[-.12,.026],[-.106,.04],[-.09,.052],[-.07,.07],[-.045,.0875],[-.02,.0955],[.005,.099],[.03,.0995],[.05,.0965],[.07,.09],[.088,.077],[.1,.058],[.107,.036],[.112,.014],[.114,0]];
+export function headDims(Y,v){const top=Y>=.045,t=top?(Y-.045)/.072:0,dome=top?Math.sqrt(Math.max(0,1-t*t)):1;let a=top?AMAX*dome:catmull(AK,Y);a*=1+(v.jaw-1)*.5*smooth(-.01,-.065,Y);a*=1+.04*v.wide;return {a,bf:catmull(FK,Y),bb:catmull(BK,Y),e:2/(2.1+.55*smooth(-.01,-.07,Y))};}
 const PHI=l=>l+.55*Math.sin(l)*Math.cos(l);
 // Where a point of the face (x, Y in metres) sits on the painted map: (longitude, latitude). The features are drawn
 // in real dimensions through this mapping, so an eye is 26 mm wide whatever the stretch of the texture.
@@ -34,14 +34,14 @@ export function uvOf(x,Y,v=FACE_SHAPES[0]){let lo=-1.5708,hi=1.5708;for(let i=0;
 // Relief of the face in metres (outwards): shallow sockets, a soft brow, a rounded nose, lips blended into the face,
 // a gentle groove under the lower lip, cheekbones and chin. All the bumps are wide so the surface stays continuous.
 function reliefM(x,Y,z,v){const ax=Math.abs(x),fm=smooth(0,-.05,z),nb=Math.pow(smooth(.01,-.034,Y),1.25);let r=0;
- r+=-.0034*G2(ax-.031,.019,Y-.003,.013)+.003*G2(ax-.031,.013,Y,.008);                                        // shallow socket, eyeball under the lids
+ r+=-.0062*G2(ax-.031,.021,Y-.002,.0145)+.003*G2(ax-.031,.013,Y,.008);                                        // shallow socket, eyeball under the lids
  r+=.0055*v.brow*G2(ax-.03,.036,Y-.026,.009);                                                               // soft brow
  r+=(.0015+.0128*nb)*v.nose*Math.exp(-((x/(.0085+.0055*nb))**2))*smooth(-.048,-.036,Y)*smooth(.022,.006,Y);   // bridge widening to the tip
  r+=.0055*v.nose*G2(x,.0085,Y+.0325,.0068);                                                                  // rounded tip
  r+=.0042*v.nose*G2(ax-.0135,.0072,Y+.0335,.0065)-.0022*G2(ax-.0082,.0045,Y+.0405,.0035)-.0018*G2(x,.0045,Y+.055,.011);
  r+=.0058*G2(x,.025,Y+.0708,.0058)+.0072*G2(x,.022,Y+.0825,.0068)-.0024*G2(x,.026,Y+.0755,.0017);           // lips, mouth line
  r+=-.0042*G2(x,.02,Y+.0955,.0036)+.0072*v.jaw*G2(x,.019,Y+.108,.011);                                       // groove under the lip, chin
- r+=.0045*G2(ax-.055,.022,Y+.012,.017)-.003*G2(ax-.052,.021,Y+.05,.019)-.002*G2(ax-.062,.015,Y-.03,.021)+.002*G2(ax-.058,.016,Y+.065,.018); // cheekbone, hollow, temple, jaw muscle
+ r+=.0045*G2(ax-.055,.022,Y+.012,.017)-.0016*G2(ax-.052,.021,Y+.05,.019)-.002*G2(ax-.062,.015,Y-.03,.021)+.002*G2(ax-.058,.016,Y+.065,.018); // cheekbone, hollow, temple, jaw muscle
  return r*fm;}
 export function headPoint(l,f,v,lift=0){const Y=catmull(YK,f),{a,bf,bb,e}=headDims(Y,v),phi=PHI(l),s=Math.sin(phi),c=Math.cos(phi),x=-Math.sign(s)*Math.pow(Math.abs(s),e)*a,z=c>0?-Math.pow(c,e)*bf:Math.pow(-c,e)*bb;
  const d=new T.Vector3(x,Y*.35,z).normalize(),rel=reliefM(x,Y,z,v)+lift;return new T.Vector3(x+d.x*rel,Y+d.y*rel,z+d.z*rel);}
@@ -79,31 +79,43 @@ export function buildEar(side,detail='low'){const hi=detail==='high',nu=hi?18:8,
 export function earMount(side,v){const p=headPoint(-side*1.58,.0,v);return {x:p.x,y:p.y-.004,z:p.z+.004,ry:side*-.42,rz:side*-.12};}
 
 // ---- Hair: short hair as a thin shell + a painted fade, curls as clusters of soft volumes ------------------------
-const HAIRLINE=[[0,.74],[.32,.73],[.58,.65],[.9,.5],[1.12,.2],[1.26,-.08],[1.36,-.06],[1.45,.22],[1.6,.3],[1.8,.18],[2.1,-.24],[2.6,-.48],[3.2,-.58]];
+const HAIRLINE=[[0,.74],[.32,.73],[.58,.65],[.9,.5],[1.12,.2],[1.26,-.08],[1.36,-.06],[1.45,.22],[1.6,.3],[1.8,.2],[2.1,.04],[2.6,-.2],[3.2,-.3]];
 export function hairline(l){const a=Math.abs(l);let f=-.6;for(let i=1;i<HAIRLINE.length;i++){const [a1,f1]=HAIRLINE[i],[a0,f0]=HAIRLINE[i-1];if(a<=a1){f=f0+(f1-f0)*(a-a0)/(a1-a0);break;}}return f+.009*Math.sin(l*13+1.3)+.005*Math.sin(l*29+.4);}
 // 0 = bare skin … 1 = full hair. Short hair on the sides and nape fades out gradually (the "fade").
 export function fadeDensity(style,l,f){if(style==='crane')return 0;const a=Math.abs(l),hl=hairline(l),above=smooth(hl-.05,hl+.09,f);if(style==='rase')return above*.2;
- const ramp=style==='boucles'||style==='degrade'?.42:style==='court'?.14:.22,side=a>1.0?smooth(hl-.02,hl+ramp,f):1;return above*side;}
+ const ramp=style==='boucles'||style==='degrade'?.8:style==='court'?.14:.22,side=a>1.0?smooth(hl-.02,hl+ramp,f):1;return above*side;}
 export function hairShellThickness(style,l,f){const dd=fadeDensity(style,l,f),top=smooth(.3,1.1,f);
  switch(style){case 'court':return dd*(.006+.004*top);case 'degrade':return dd*(.003+.013*top);case 'boucles':return dd*(.004+.003*top);case 'afro':return dd*(.012+.006*top);case 'plaque':return dd*(.008+.008*gauss(l,0,.9)*top+.003*top);case 'chignon':return dd*(.007+.004*top);case 'rase':return dd*.002;default:return 0;}}
 export function buildHairShell(style,shape,seed,detail='low'){if(style==='crane')return null;const v=FACE_SHAPES[shape%FACE_SHAPES.length],hi=detail==='high';
  const drop=(pos,th,a,b,c)=>th[a]<-.0042&&th[b]<-.0042&&th[c]<-.0042;
- return gridGeometry(v,{nl:hi?130:60,nf:hi?100:40,dense:false,lift:(l,f)=>{const t=hairShellThickness(style,l,f);return t+.0006-.0052*(1-smooth(0,.003,t));},drop});}
-// Curl clusters: grouped small volumes, volume on top, irregular implantation line, shorter at the sides.
-export function buildCurls(style,shape,seed,detail,hairHex){if(style!=='boucles'&&style!=='afro')return null;const v=FACE_SHAPES[shape%FACE_SHAPES.length],hi=detail==='high',rng=rngOf(seed*7+11),afro=style==='afro',n=afro?(hi?230:80):(hi?190:60),per=hi?5:3,pts=[],base=new T.Color(hairHex);
- const ok=(l,f)=>{const a=Math.abs(l),hl=hairline(l);if(a<1.15&&f<hl+.06)return false;if(afro)return f>-.1+.25*smooth(2,3,a);return a<1.15?f>hl+.06:f>.5+.12*smooth(1.1,1.7,a);};
- let tries=0;while(pts.length<n&&tries<n*60){tries++;const l=(rng()*2-1)*Math.PI,f=Math.asin(rng()*.97);if(f<.05||!ok(l,f))continue;const p=headPoint(l,f,v,0);if(pts.some(q=>q.distanceTo(p)<(afro?.022:.0155)))continue;p.userData={l,f};pts.push(p);}
- const sph=new T.SphereGeometry(1,hi?8:6,hi?6:4),sp=sph.attributes.position,sn=sph.attributes.normal,si=sph.index.array,P=[],N=[],C=[],I=[];let vc=0;
- for(const p of pts){const nrm=new T.Vector3(p.x,p.y*.6,p.z).normalize(),t1=new T.Vector3().crossVectors(nrm,new T.Vector3(0,1,0)).normalize();if(t1.lengthSq()<.1)t1.set(1,0,0);const t2=new T.Vector3().crossVectors(nrm,t1).normalize(),k0=.82+.36*rng();
-  for(let k=0;k<per;k++){const ang=k*2.3+rng()*.8,rad=k?.0045+.0028*rng():0,rise=.0028*k+.004,off=new T.Vector3().copy(p).addScaledVector(t1,Math.cos(ang)*rad).addScaledVector(t2,Math.sin(ang)*rad).addScaledVector(nrm,rise),r=(afro?.0135:.0088)+.004*rng(),m=new T.Matrix4().makeBasis(t1,nrm,t2),q=new T.Quaternion().setFromRotationMatrix(m),sc=new T.Vector3(r*1.15,r*.85,r*1.1),mat=new T.Matrix4().compose(off,q,sc),col=base.clone().multiplyScalar(k0*(.9+.2*rng()));
-   const tmp=new T.Vector3(),sh=rng()*50;for(let i=0;i<sp.count;i++){tmp.fromBufferAttribute(sp,i);const bump=1+.16*Math.sin(tmp.x*5.1+sh)*Math.sin(tmp.y*4.3+sh*1.7)+.1*Math.sin(tmp.z*7+sh*.6);tmp.multiplyScalar(bump).applyMatrix4(mat);P.push(tmp.x,tmp.y,tmp.z);tmp.fromBufferAttribute(sn,i).applyQuaternion(q);N.push(tmp.x,tmp.y,tmp.z);C.push(col.r,col.g,col.b);}for(const i of si)I.push(i+vc);vc+=sp.count;}}
- sph.dispose();const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(P,3));g.setAttribute('normal',new T.Float32BufferAttribute(N,3));g.setAttribute('color',new T.Float32BufferAttribute(C,3));g.setIndex(I);g.computeBoundingSphere();return g;}
+ const g=gridGeometry(v,{nl:hi?130:60,nf:hi?100:40,dense:false,lift:(l,f)=>{const t=hairShellThickness(style,l,f);return t+.0006-.0052*(1-smooth(0,.003,t));},drop});
+ // the edge of the hair is dithered away (alphaHash in the detailed model) instead of ending on a hard line
+ const uv=g.attributes.uv,col=new Float32Array(uv.count*4);for(let i=0;i<uv.count;i++){const l=(uv.getX(i)-.5)*2*Math.PI,f=uv.getY(i)*Math.PI-Math.PI/2;col[i*4]=col[i*4+1]=col[i*4+2]=1;col[i*4+3]=smooth(.3,.9,fadeDensity(style,l,f));}
+ g.setAttribute('color',new T.BufferAttribute(col,4));return g;}
+// Curls: many fine coils (small spiral tubes, darker at the root), grouped in clusters; volume on top, nothing on the
+// short sides and nape, an irregular implantation line at the front.
+export function buildCurls(style,shape,seed,detail,hairHex){if(style!=='boucles'&&style!=='afro')return null;const v=FACE_SHAPES[shape%FACE_SHAPES.length],hi=detail==='high',rng=rngOf(seed*7+11),afro=style==='afro',n=afro?(hi?300:90):(hi?380:110),per=afro?(hi?4:2):(hi?3:2),gap=afro?.0125:.0098,SEG=hi?9:5,RAD=hi?5:4,pts=[],base=new T.Color(hairHex);
+ const ok=(l,f)=>{const a=Math.abs(l),hl=hairline(l);if(a<1.15&&f<hl+.07)return false;if(afro)return f>-.1+.25*smooth(2,3,a);return a<1.15?f>hl+.07:f>.46+.1*smooth(1.1,1.7,a);};
+ let tries=0;while(pts.length<n&&tries<n*80){tries++;const l=(rng()*2-1)*Math.PI,f=Math.asin(rng()*.97);if(f<.05||!ok(l,f))continue;const p=headPoint(l,f,v,0);if(pts.some(q=>q.distanceTo(p)<gap))continue;pts.push(p);}
+ const P=[],C=[],I=[];let vc=0;const T1=new T.Vector3(),T2=new T.Vector3(),tg=new T.Vector3(),n1=new T.Vector3(),n2=new T.Vector3(),c=new T.Vector3();
+ for(const p of pts){const nrm=new T.Vector3(p.x,p.y*.6,p.z).normalize(),t1=new T.Vector3().crossVectors(nrm,new T.Vector3(0,1,0)).normalize();if(t1.lengthSq()<.1)t1.set(1,0,0);const t2=new T.Vector3().crossVectors(nrm,t1).normalize(),k0=.8+.4*rng();
+  for(let k=0;k<per;k++){const phase=rng()*6.28,turns=1.15+.9*rng(),h=(afro?.017:.012)+.006*rng(),rho=(afro?.0068:.0044)*(.8+.4*rng()),r0=(afro?.0036:.0027)*(.9+.2*rng()),dr=k?.0042*rng()+.002:0,da=rng()*6.28,drift=rng()*6.28,dl=h*.3*rng();
+   const path=[];for(let i=0;i<=SEG;i++){const u=i/SEG,ang=phase+u*turns*6.2832,rr=rho*(.5+.5*Math.sin(Math.min(1,u*1.5)*1.5708));path.push(new T.Vector3().copy(p).addScaledVector(nrm,-.0012+h*u).addScaledVector(t1,Math.cos(ang)*rr+Math.cos(da)*dr+Math.cos(drift)*dl*u).addScaledVector(t2,Math.sin(ang)*rr+Math.sin(da)*dr+Math.sin(drift)*dl*u));}
+   for(let i=0;i<=SEG;i++){const u=i/SEG;tg.subVectors(path[Math.min(SEG,i+1)],path[Math.max(0,i-1)]).normalize();n1.crossVectors(tg,nrm);if(n1.lengthSq()<1e-6)n1.copy(t1);n1.normalize();n2.crossVectors(tg,n1).normalize();const r=r0*(1-.55*u*u);c.copy(base).multiplyScalar(k0*(.42+.58*Math.pow(u,.7)));
+    for(let j=0;j<RAD;j++){const th=j/RAD*6.2832,cs=Math.cos(th)*r,sn=Math.sin(th)*r;P.push(path[i].x+n1.x*cs+n2.x*sn,path[i].y+n1.y*cs+n2.y*sn,path[i].z+n1.z*cs+n2.z*sn);C.push(c.x,c.y,c.z);}}
+   for(let i=0;i<SEG;i++)for(let j=0;j<RAD;j++){const a=vc+i*RAD+j,b=vc+i*RAD+(j+1)%RAD,d=vc+(i+1)*RAD+j,e=vc+(i+1)*RAD+(j+1)%RAD;I.push(a,d,b,b,d,e);}vc+=(SEG+1)*RAD;}}
+ const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(P,3));g.setAttribute('color',new T.Float32BufferAttribute(C,3));g.setIndex(I);g.computeVertexNormals();g.computeBoundingSphere();return g;}
 export const buildBun=()=>new T.SphereGeometry(.042,16,10);
 
 // ---- Beard: a continuous density, never a hard mask --------------------------------------------------------------
+// Goatee in metres on the face: a moustache above the upper lip (with a small philtrum gap) and a separate chin patch under
+// the groove below the lower lip, both elliptical and fading. Nothing on the lips, cheeks or jaw.
+function goateeDensity(l,f){const Y=catmull(YK,f),d=headDims(Y,FACE_SHAPES[0]),ax=Math.pow(Math.abs(Math.sin(PHI(l))),d.e)*d.a;if(Math.cos(PHI(l))<.2)return 0;
+ const sMo=Math.hypot((ax-.0125)/.0185,(Y+.0585)/.0088),mo=smooth(1.35,.1,sMo)*(1-.55*Math.exp(-((ax/.0045)**2))),sCh=Math.hypot(ax/.0215,(Y+.1055)/.0165),ch=smooth(1.35,.15,sCh),sl=.5*smooth(1.1,.4,Math.hypot(ax/.011,(Y+.096)/.007))*ch;
+ return Math.max(.82*mo,.88*ch)-0*sl;}
 export function beardDensity(kind,l,f){if(!kind)return 0;const a=Math.abs(l),side=smooth(1.46,1.2,a),mouth=1-.95*Math.exp(-(((a/.2)**2)+(((f+.4)/.075)**2))),neck=smooth(-1.12,-.92,f);let d;
  const stacheB=.85*smooth(.36,.16,a)*smooth(-.1,-.24,f)*smooth(-.38,-.29,f);
- if(kind==='bouc')d=Math.max(smooth(.3,.15,a)*smooth(-.3,-.4,f)*smooth(-.95,-.75,f)*mouth,stacheB*.9);
+ if(kind==='bouc')d=goateeDensity(l,f);
  else{const cheek=-.07-(1.3-a)*.22,upper=smooth(cheek+.1,cheek-.12,f);d=Math.max(upper*side*neck*mouth,stacheB*(kind==='barbe'?1:.6));if(kind==='barbe3j')d*=.5;}
  const patch=.78+.22*Math.sin(l*9.5+f*7.3)*Math.sin(l*5.1-f*11.7);return clamp(d*patch,0,1);}
 
@@ -129,7 +141,7 @@ export function paintFace(skin,hair,eye,beard,style,shape=0,detail='low'){
  if(!beard)for(const [x,Y] of [[-.036,-.075],[.036,-.075],[0,-.1]])blob(x,Y,.03,.024,0x2a3540,dark?.03:.05);
  for(let i=0;i<(hi?5200:1800);i++){c.fillStyle=rnd()<.5?'rgba(40,20,12,.028)':'rgba(255,240,225,.03)';c.fillRect(rnd()*FW,rnd()*FH,1.3*K+.4,1.3*K+.4);}   // very fine grain, no obvious pores
  // nose: only a light shading, wing creases and small nostrils
- for(const s of [-1,1]){ribbon([[s*.011,.008],[s*.0125,-.02],[s*.015,-.033]],.0022,rgba(ink,.035));ribbon([[s*.0135,-.031],[s*.0185,-.0365],[s*.0148,-.0435]],.001,rgba(ink,.1));ell(s*.0082,-.0412,.0034,.0017,rgba(0x1a0805,.3));ribbon([[s*.019,-.036],[s*.026,-.056],[s*.0285,-.075]],.0014,rgba(ink,.05));}
+ for(const s of [-1,1]){ribbon([[s*.011,.008],[s*.0125,-.02],[s*.015,-.033]],.0022,rgba(ink,.035));ribbon([[s*.0135,-.031],[s*.0185,-.0365],[s*.0148,-.0435]],.001,rgba(ink,.1));ell(s*.0082,-.0412,.0034,.0017,rgba(0x1a0805,.3));}
  ribbon([[0,.012],[0,-.03]],.004,rgba(0xffffff,.07));
  // eyes
  const outlineOf=s=>eyeOutline(s,12);

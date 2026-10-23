@@ -325,3 +325,10 @@ Méthode demandée : une seule tête et une seule coupe validées en images (dé
 - Défauts trouvés et corrigés pendant la mise au point : un trait sombre autour de la tête (la largeur de mâchoire d'une forme de visage changeait brutalement à une hauteur donnée), des bandes (interpolation), un bord de cheveux en escalier, des cils flottants, une paupière qui recouvrait toute l'ouverture au repos.
 - Test instable de GitHub : `stress.test.mjs` et `v15-actions.test.mjs` partageaient `_boot.mjs` ; chacun génère maintenant son fichier. 
 - 203 tests passent (8 nouveaux dans tests/lot7-heads.test.mjs : surface lisse pour les six formes, proportions humaines, correspondance carte/visage, ouvertures, oreilles, barbes, cheveux, clignement).
+
+## V20 — lot 7b : tête de base reprise, bouc et boucles refaits (validé par le créateur sur captures)
+- Tête : menton plus marqué, mâchoire plus carrée (exposant de section 2,1 → 2,65 vers le bas), front incliné, arrière du crâne qui rentre vers la nuque, orbites plus creuses, pommettes plus nettes, trait peint nez-bouche supprimé.
+- Bouc (`goateeDensity`) : moustache et touffe de menton séparées, ellipses douces, lèvres dégagées.
+- Boucles (`buildCurls`) : petites spirales en tube (plus sombres à la racine), nombreuses et fines ; côtés et nuque courts en dégradé (`HAIRLINE` relevée, rampe 0,8).
+- Coque de cheveux : alpha par sommet (`alphaHash` dans le vestiaire) pour que le bord se fonde sans ligne dure.
+- Pages de contrôle locales `dist/_bare.html`, `_triptych.html`, `_gallery.html` (ignorées par git).

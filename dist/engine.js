@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
-import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-7';
-import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-7';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-7c';
+import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-7c';
 export {FACE_SHAPES,HAIR_STYLES,headPoint,uvOf};
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
@@ -295,7 +295,7 @@ makePlayer(x,z,color,num,own=false,keeper=false,displayName="Rivage"){
  const plainSkin=new T.MeshStandardMaterial({color:skin,roughness:.62,metalness:0});
  for(const side of [-1,1]){const m=earMount(side,hv),ear=new T.Mesh(this.earGeometry(side,detail),plainSkin);ear.position.set(m.x,m.y,m.z);ear.rotation.set(0,m.ry,m.rz);ear.castShadow=true;ear.name='Oreille';headG.add(ear);}
  let faceRig=null;if(hi){const pairs=[];for(const side of [-1,1]){const e=buildEye(side,hv,eyeHex,plainSkin);headG.add(e.pivot);headG.add(buildEyeRim(side,hv,skin));pairs.push(e);}faceRig={eyes:pairs};}
- if(style!=='crane'){const ht=this.hairTexture(hair,style),hm=new T.MeshStandardMaterial({map:ht.map,bumpMap:ht.bumpMap||null,bumpScale:.4,roughness:.9,metalness:0});
+ if(style!=='crane'){const ht=this.hairTexture(hair,style),hm=new T.MeshStandardMaterial({map:ht.map,bumpMap:ht.bumpMap||null,bumpScale:.4,roughness:.9,metalness:0,vertexColors:true,alphaHash:hi});
   const shell=new T.Mesh(this.hairShell(style,shape,seed,detail),hm);shell.castShadow=true;shell.name='Cheveux';headG.add(shell);
   if(style==='boucles'||style==='afro'){const cm=new T.Mesh(this.curls(style,shape,seed,detail,hair),new T.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0}));cm.castShadow=true;cm.name='Boucles';headG.add(cm);}
   if(style==='chignon'){const p=headPoint(Math.PI,.66,hv,.016),bun=new T.Mesh(buildBun(),hm);bun.position.set(p.x,p.y,p.z);bun.scale.set(1,.9,.9);headG.add(bun);}}
