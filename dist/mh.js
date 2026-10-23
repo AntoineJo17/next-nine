@@ -3,7 +3,7 @@
 // morph targets (sparse offsets). A face is the base mesh plus weighted targets: race blend and gender first, then the
 // fine adjustments (jaw, nose, lips, ears...). Units in the file are decimetres, front = +z; the game wants metres, front = -z.
 import * as T from './vendor/three.module.js';
-import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-9';
+import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-9b';
 export const MH_EYE_Y=7.28,MH_S=.1,MH_ZC=.65;
 let cache=null;
 export async function loadMH(url='./mh/head.json'){if(!cache)cache=fetch(url).then(r=>r.json());const D=await cache;if(typeof document!=='undefined'){if(!eyeTex)eyeTex=calmEyeTexture();await eyeTex.userData.ready;}return D;}   // the eye texture is ready before the first head (thumbnails included)
@@ -89,8 +89,9 @@ export function bakeSkin(geo,lip,{skin,hair,style,beard='',lm,W=1024,cav,eyeC}){
   col.lerp(warm,front*(dark?.05:.09)*Math.exp(-(((ax-.052)/.02)**2)-(((y+.02)/.022)**2)));           // cheeks
   col.lerp(warm,front*(dark?.06:.12)*Math.exp(-((ax/.012)**2)-(((y+.036)/.01)**2)));                  // nose tip
   col.multiplyScalar(1-.05*front*Math.exp(-(((ax-.031)/.02)**2)-(((y-.003)/.014)**2)));               // soft shadow around the eyes
-  if(L>0){col.lerp(globalThis.MH_DEBUG_LIP?new T.Color(0xff00aa):lipC,L);const ol=4*L*(1-L);if(ol>0)col.multiplyScalar(1-.22*ol);}   // the vermilion border is a little darker
+  if(L>0){col.lerp(globalThis.MH_DEBUG_LIP?new T.Color(0xff00aa):lipC,L);const ol=4*L*(1-L);if(ol>0)col.multiplyScalar(1-.06*ol);}   // a barely darker border   // the vermilion border is a little darker
   col.multiplyScalar(1-.26*Math.max(0,C)*(1-.5*L)+.03*Math.max(0,-C));
+  if(lm&&front>0&&ax<.019){const dl=y-lm.ym;col.lerp(lipC.clone().multiplyScalar(.55),.38*Math.exp(-((dl/.0009)**2))*smooth(.0185,.0105,ax));}   // the fine closing line between the lips
   // eyebrows: an arch above the eye, made of many strands
   if(front>0){const t=(ax-.010)/.050;if(t>-.02&&t<1.02){const sg=Math.sign(x)||1,yc=.0203+.0042*Math.sin(Math.PI*Math.min(1,Math.max(0,t)*1.05))-.0035*t*t+.002*t,
      th=.0049*(.4+.6*smooth(0,.22,t))*(1-.62*smooth(.45,1,t))+.0005,en=.16*(hash3(ax*380,y*380,sg)-.5),d=Math.abs(y-yc)/th+en;if(d<1.2){
@@ -132,7 +133,7 @@ function lipMask(head,D){const n=head.attributes.position.count,w=new Float32Arr
  // nothing below the real lower edge of the lower lip (two faint spikes used to show up there)
  {const pos=head.attributes.position;let up=1e9,lo=-1e9;for(const i of D.lipU)if(Math.abs(pos.getX(i))<.02)up=Math.min(up,pos.getY(i));for(const i of D.lipL)if(Math.abs(pos.getX(i))<.02)lo=Math.max(lo,pos.getY(i));const ym=(up+lo)/2;
   for(let i=0;i<n;i++){const y=pos.getY(i);if(y>=ym)continue;const x=Math.abs(pos.getX(i)),lim=.0085*Math.pow(Math.max(0,1-(x/.026)**2),.5)+.0012;f[i]*=smooth(lim+.0016,lim,ym-y);}}
- for(let i=0;i<n;i++)f[i]=smooth(.13,.5,f[i]);return f;}
+ for(let i=0;i<n;i++)f[i]=smooth(.05,.66,f[i]);return f;}
 // Curls and afro: many fine coils (small spiral tubes, darker at the root) planted on the scalp of this head.
 const rngOf=seed=>{let a=(seed*2654435761+1013904223)>>>0;return ()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};};
 export function mhCurls(head,style,hairHex,hi,seed=1){if(style!=='boucles'&&style!=='afro')return null;
@@ -161,10 +162,20 @@ function calmEyeTexture(){const cv=document.createElement('canvas');cv.width=cv.
    else if(lum>150){const f=.9;px[i]=Math.min(255,px[i]*f+8);px[i+1]=Math.min(255,px[i+1]*f+5);px[i+2]=Math.min(255,px[i+2]*f);}                // white: softer, slightly warm
   }c.putImageData(d,0,0);tex.needsUpdate=true;res();};im.src='./mh/eye.png';});return tex;}
 // Everything the locker needs for one head: skin, eyes, hair. `p` as in buildMHHead; `look` = {skin,hair,style}.
+// The lips meet the skin gradually: positions in a ring around the mouth (outside the lips themselves) are blended with their
+// neighbours, and the two lips are brought together along the mouth line so that only a fine closing line remains.
+function integrateMouth(head,D,lipW,lm){const pos=head.attributes.position,idx=head.index.array,n=pos.count,key=new Map(),canon=new Int32Array(n);
+ for(let i=0;i<n;i++){const k=Math.round(pos.getX(i)*2e4)+'|'+Math.round(pos.getY(i)*2e4)+'|'+Math.round(pos.getZ(i)*2e4);if(!key.has(k))key.set(k,i);canon[i]=key.get(k);}
+ const nb=Array.from({length:n},()=>new Set());for(let t=0;t<idx.length;t+=3)for(let k=0;k<3;k++){const a=canon[idx[t+k]],b=canon[idx[t+(k+1)%3]];nb[a].add(b);nb[b].add(a);}
+ const ring=new Float32Array(n);for(let i=0;i<n;i++){const x=Math.abs(pos.getX(i)),dy=pos.getY(i)-lm.ym;ring[i]=smooth(.3,.0,lipW[i])*smooth(.03,.016,Math.hypot(x*.8,dy*1.25))*smooth(.03,-.01,pos.getZ(i));}
+ for(let it=0;it<3;it++){const nx=new Float32Array(n*3);for(let i=0;i<n;i++){const c=canon[i];let ax=0,ay=0,az=0,m=0;for(const j of nb[c]){ax+=pos.getX(j);ay+=pos.getY(j);az+=pos.getZ(j);m++;}const w=ring[i]*.55;nx[i*3]=m&&w>0?pos.getX(i)+(ax/m-pos.getX(i))*w:pos.getX(i);nx[i*3+1]=m&&w>0?pos.getY(i)+(ay/m-pos.getY(i))*w:pos.getY(i);nx[i*3+2]=m&&w>0?pos.getZ(i)+(az/m-pos.getZ(i))*w:pos.getZ(i);}
+  for(let i=0;i<n;i++){const c=canon[i];pos.setXYZ(i,nx[c*3],nx[c*3+1],nx[c*3+2]);}}   // seam duplicates move together
+ for(const i of [...D.lipU,...D.lipL]){const x=Math.abs(pos.getX(i)),y=pos.getY(i);if(Math.abs(y-lm.ym)<.0024&&x<.025)pos.setY(i,lm.ym+(y-lm.ym)*.4);}
+ pos.needsUpdate=true;head.computeVertexNormals();weldNormals(head);}
 function landmarks(head,D){const pos=head.attributes.position;let up=1e9,lo=-1e9;for(const i of D.lipU)if(Math.abs(pos.getX(i))<.02)up=Math.min(up,pos.getY(i));for(const i of D.lipL)if(Math.abs(pos.getX(i))<.02)lo=Math.max(lo,pos.getY(i));const ym=(up+lo)/2;
  let tz=1e9,ty=0,yc=1e9;for(let i=0;i<pos.count;i++){const x=Math.abs(pos.getX(i)),y=pos.getY(i),z=pos.getZ(i);if(x<.015&&y>ym&&y<ym+.05&&z<tz){tz=z;ty=y;}if(x<.02&&z<-.03&&y>-.16&&y<yc)yc=y;}
  return {ym,yn:ty-.011,yc};}
-export function mhHeadGroup(D,p,look,W=1024){const {head,eyes}=buildMHHead(D,p);const lipW=lipMask(head,D),lm=landmarks(head,D);
+export function mhHeadGroup(D,p,look,W=1024){const {head,eyes}=buildMHHead(D,p);const lipW=lipMask(head,D),lm=landmarks(head,D);integrateMouth(head,D,lipW,lm);
  const eyeC=[-1,1].map(sd=>{const pe=eyes.attributes.position;let sx=0,sy=0,sz=0,n=0;for(let i=0;i<pe.count;i++)if(Math.sign(pe.getX(i))===sd){sx+=pe.getX(i);sy+=pe.getY(i);sz+=pe.getZ(i);n++;}return {x:sx/n,y:sy/n,z:sz/n};});
  const map=bakeSkin(head,lipW,{skin:look.skin,hair:look.hair,style:look.style,beard:look.beard||'',lm,cav:cavity(head),W,eyeC}),g=new T.Group();
  const skinMat=new T.MeshStandardMaterial({map,roughness:.62,metalness:0}),m=new T.Mesh(head,skinMat);m.name='Visage';m.castShadow=true;g.add(m);
@@ -187,7 +198,7 @@ export function mhHeadGroup(D,p,look,W=1024){const {head,eyes}=buildMHHead(D,p);
 const SYMN=(name,v)=>({['l-'+name+'!']:v,['r-'+name+'!']:v});
 // Young adult, athletic, neutral: lips drawn back and slimmer, closed at rest, a clear cupid's bow and corners; cheeks less round (also
 // beside the mouth), cheekbones a little forward; a more defined jaw and chin; adult proportions instead of a child's.
-export const MH_NEUTRAL_MODS={'mouth-upperlip-middle-down!':.65,'mouth-lowerlip-middle-up!':.38,'mouth-lowerlip-volume-decr!':.8,'mouth-upperlip-volume-decr!':.4,'mouth-lowerlip-height-decr!':.45,'mouth-upperlip-height-decr!':.15,'mouth-cupidsbow-incr!':1,'mouth-scale-horiz-incr!':.3,'mouth-angles-up!':.4,'mouth-scale-depth-decr!':.7,'mouth-trans-backward!':.25,
+export const MH_NEUTRAL_MODS={'mouth-upperlip-middle-down!':.75,'mouth-lowerlip-middle-up!':.45,'mouth-lowerlip-volume-decr!':.8,'mouth-upperlip-volume-decr!':.4,'mouth-lowerlip-height-decr!':.45,'mouth-upperlip-height-decr!':.15,'mouth-cupidsbow-incr!':1,'mouth-scale-horiz-incr!':.3,'mouth-angles-up!':.05,'mouth-scale-depth-decr!':.9,'mouth-trans-backward!':.5,'mouth-philtrum-volume-decr!':.35,
  'head-fat-decr!':.25,...SYMN('cheek-inner-decr',.4),...SYMN('cheek-bones-incr',.3),'chin-prominent-incr!':.22,'chin-bones-incr!':.3,'head-age-incr!':.15};
 
 // Six face shapes, independent of the skin colour: a mix of the three base types (race blend and gender of MakeHuman only change
