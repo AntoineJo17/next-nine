@@ -4,3 +4,5 @@ node_modules/
 tests/_boot*.mjs
 dist/_*.html
 tete-validation.jpg
+essai-tete-*.jpg
+declinaison-*.jpg

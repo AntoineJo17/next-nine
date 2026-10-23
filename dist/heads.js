@@ -27,6 +27,7 @@ const AK=[[-.12,.02],[-.112,.032],[-.1,.044],[-.088,.049],[-.075,.055],[-.05,.06
 const FK=[[-.12,.044],[-.114,.062],[-.106,.0715],[-.097,.0745],[-.088,.0755],[-.078,.0775],[-.065,.0795],[-.05,.0815],[-.03,.0825],[-.012,.084],[0,.0845],[.015,.0875],[.03,.0885],[.045,.0875],[.06,.0845],[.075,.0785],[.09,.067],[.1,.052],[.107,.034],[.112,.016],[.114,0]];
 const BK=[[-.12,.026],[-.106,.04],[-.09,.052],[-.07,.07],[-.045,.0875],[-.02,.0955],[.005,.099],[.03,.0995],[.05,.0965],[.07,.09],[.088,.077],[.1,.058],[.107,.036],[.112,.014],[.114,0]];
 export function headDims(Y,v){const top=Y>=.045,t=top?(Y-.045)/.072:0,dome=top?Math.sqrt(Math.max(0,1-t*t)):1;let a=top?AMAX*dome:catmull(AK,Y);a*=1+(v.jaw-1)*.5*smooth(-.01,-.065,Y);a*=1+.04*v.wide;return {a,bf:catmull(FK,Y),bb:catmull(BK,Y),e:2/(2.1+.55*smooth(-.01,-.07,Y))};}
+export function latOfY(Y){let lo=-1.5708,hi=1.5708;for(let i=0;i<28;i++){const m=(lo+hi)/2;if(catmull(YK,m)<Y)lo=m;else hi=m;}return (lo+hi)/2;}
 const PHI=l=>l+.55*Math.sin(l)*Math.cos(l);
 // Where a point of the face (x, Y in metres) sits on the painted map: (longitude, latitude). The features are drawn
 // in real dimensions through this mapping, so an eye is 26 mm wide whatever the stretch of the texture.

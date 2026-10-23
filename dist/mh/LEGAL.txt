@@ -1,0 +1,4 @@
+Head mesh, morph targets and eye texture come from MakeHuman (https://github.com/makehumancommunity/makehuman),
+assets released under CC0 1.0 (see LICENSE-MAKEHUMAN.md). Source files: makehuman/data/3dobjs/base.obj,
+data/targets/{macrodetails,head,chin,cheek,ears,eyes,eyebrows,forehead,mouth,neck,nose}, data/eyes/high-poly (+ brown_eye.png).
+Extracted with a script into head.json (head vertices only).
