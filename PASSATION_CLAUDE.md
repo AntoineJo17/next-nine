@@ -25,7 +25,7 @@ Terrain plein écran, geste de frappe tiré vers soi puis relâché, visée cour
 - career.js : énergie, sauvegarde et progression.
 
 ## Points sensibles et limites
-Les tests automatisés passent (210/210 en V20 · lot 8), mais cette livraison n’a pas fait l’objet d’une validation visuelle complète dans un navigateur ou sur téléphone. Priorité : tester réellement la caméra, les commandes tactiles, les décisions défensives et la fluidité des animations.
+Les tests automatisés passent (213/213 en V20 · lot 9), mais cette livraison n’a pas fait l’objet d’une validation visuelle complète dans un navigateur ou sur téléphone. Priorité : tester réellement la caméra, les commandes tactiles, les décisions défensives et la fluidité des animations.
 Les personnages sont des modèles procéduraux stylisés, pas des modèles réalistes animés par capture de mouvement. Leur naturel reste à améliorer avec le créateur.
 Le système d’effet actuel est un petit sélecteur gauche/droit/tout droit près du score. Plusieurs gestes d’effet précédents ont été rejetés par le créateur : faire valider toute nouvelle interaction avant de la généraliser.
 Les collisions doivent rester cohérentes pour tirs, passes et lobs : arrêt = ballon bloqué ou repoussé ; but = ballon dans les filets ; rebond = pas de maintien artificiel de l’effet initial.
@@ -53,7 +53,7 @@ Lot 1 « sensations de jeu » tiré de l'audit ChatGPT : passe d'introduction r�
 Terrain réel 105 × 68 m et stade complet ; interface du match épurée (menu ⋯) ; gardien en position, vraie course (rythme × 1,35, touches de 5 m), arrêt sur image pendant les décisions ; jeu aérien (têtes, retournée, lobs, moins de centres) ; duels d'épaule, tacles glissés, fautes et cartons ; hors-jeu avec juge de touche ; 15 célébrations aléatoires en cinématique ; compte à rebours et lecteur de replay à quatre caméras ; quartier vivant autour du stade. Détail et chiffres dans PROJECT.md, section V19.
 
 ## Publier une mise à jour
-1. `npm run check` (210 tests, 1 min 30 à 4 min selon la charge du Mac).
+1. `npm run check` (213 tests, 1 min 30 à 4 min selon la charge du Mac).
 2. `npm run stamp -- "<libellé>" <jeton>`.
 3. Commit, puis envoi via GitHub Desktop (« Push origin ») : le terminal n'a pas d'identifiants GitHub.
 4. GitHub Actions relance les tests et publie dist/ sur https://antoinejo17.github.io/next-nine/.

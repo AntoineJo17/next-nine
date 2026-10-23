@@ -342,3 +342,14 @@ Méthode demandée : une seule tête et une seule coupe validées en images (dé
 - **Restes** : têtes MakeHuman pour tous les joueurs de match (LOD), regard (micro-mouvements des yeux), allègement du fichier de données, couleur des yeux.
 
 - **8b** : retours du créateur sur les formes de visage : les formes 2 et 5 (colonne de droite de la galerie) retrouvent une mâchoire et un menton définis (`chin-prominent`, `chin-bones`, moins de `chin-width-decr`), les formes 1 et 4 (colonne du milieu) sont moins carrées (`head-square` 0,9→0,5, `head-rectangular` 0,8→0,45).
+
+## V20 — lot 9 : intégration du personnage, coupes, vignettes, cadrage, visage de jeune adulte
+- **Corps complet** : au lot 8 un plan de coupe en espace monde, posé pour masquer le cou du corps, faisait disparaître bras et cuisses. Remplacé par un test dans l'espace du corps (`onBeforeCompile` sur la matière de peau, `vBodyY>.585`), valable quelle que soit la pose.
+- **Couleur des cheveux** : les boucles restaient noires (copie d'une `Color` dans un `Vector3` : NaN). Corrigé ; blond, blanc et noir vérifiés sur toutes les coupes ; la couleur est enregistrée et revient après rechargement.
+- **Boucles** : plus denses (560 mèches), plus épaisses, sur une coque plus épaisse de la même couleur : plus de trous ni de fragments.
+- **Coupes** : `MH_HAIR` gagne `front`/`back` (volume selon l'endroit) ; dégradé = haut long et front relevé, court = brosse basse et courte, plaqué = volume ramené vers l'arrière et brillant, chignon = chignon plus gros ; les autres inchangées.
+- **Vignettes** : la texture d'œil est prête avant la première tête (préchargement dans `loadMH`) : les yeux s'affichent dans les vignettes.
+- **Cadrage** : onglets coupe/cheveux/teint/barbe en visage de trois quarts (lacet 0,6), maillot en corps ; le plateau tournant s'arrête 8 s puis reprend ; on peut toujours tourner à la main.
+- **Visage de jeune adulte** (`MH_NEUTRAL_MODS`) : lèvres reculées et plus fines avec un arc de Cupidon net, bouche plus large (`mouth-scale-horiz-incr`), joues moins rondes surtout près de la bouche (`cheek-inner-decr`, `head-fat-decr`), pommettes (`cheek-bones-incr`), mâchoire et menton plus définis (`chin-bones`, `chin-prominent`), proportions adultes (`head-age-incr`). Vérifié sur argile, sans texture.
+- **Couture de la nuque** : les couleurs peintes débordent de quelques texels hors des îlots UV (une ligne de peau claire se voyait au milieu de l'arrière du crâne).
+- **Tests** : 3 nouveaux (couleur des boucles, silhouettes des coupes, réglages du visage) ; 213 au total. Un test du gardien échouait par intermittence : le hasard est fixé avant le lancement du match.

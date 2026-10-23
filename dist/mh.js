@@ -3,10 +3,10 @@
 // morph targets (sparse offsets). A face is the base mesh plus weighted targets: race blend and gender first, then the
 // fine adjustments (jaw, nose, lips, ears...). Units in the file are decimetres, front = +z; the game wants metres, front = -z.
 import * as T from './vendor/three.module.js';
-import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-8b';
+import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-9';
 export const MH_EYE_Y=7.28,MH_S=.1,MH_ZC=.65;
 let cache=null;
-export async function loadMH(url='./mh/head.json'){if(!cache)cache=fetch(url).then(r=>r.json());return cache;}
+export async function loadMH(url='./mh/head.json'){if(!cache)cache=fetch(url).then(r=>r.json());const D=await cache;if(typeof document!=='undefined'){if(!eyeTex)eyeTex=calmEyeTexture();await eyeTex.userData.ready;}return D;}   // the eye texture is ready before the first head (thumbnails included)
 const RACES=['african','asian','caucasian'];
 // params: {race:[african,asian,caucasian] (sum 1), gender:0..1 (1 = male), mods:{target-name: weight}}
 // A name ending in ! is an exact target ("mouth-lowerlip-middle-up!"). A modifier "nose-width" with weight +w uses "nose-width-incr", with −w uses "nose-width-decr".
@@ -47,10 +47,10 @@ const hash3=(x,y,z)=>{let h=Math.imul(Math.round(x*1e4)^0x9e3779b9,0x85ebca6b)^M
 // Each style only changes a few numbers: s = shift of the hairline, w = width of the fade, t/tt = thickness at the sides / on top,
 // dm = maximum density (a shaved head only shows a shadow).
 const HS=[[0,.064],[.45,.062],[.9,.052],[1.3,.040],[1.7,.034],[2.2,.005],[2.7,-.03],[3.2,-.045]];
-export const MH_HAIR={degrade:{s:0,w:1,t:.0022,tt:.004,dm:1},court:{s:.002,w:.45,t:.0034,tt:.0016,dm:1},plaque:{s:.002,w:.55,t:.0035,tt:.0045,dm:1},rase:{s:-.004,w:.3,t:.0007,tt:.0004,dm:.5},boucles:{s:0,w:1,t:.0022,tt:.0014,dm:1},afro:{s:-.012,w:.6,t:.004,tt:.004,dm:1},chignon:{s:.004,w:.5,t:.0035,tt:.0025,dm:1}};
+export const MH_HAIR={degrade:{s:.006,w:1.5,t:.0014,tt:.0135,dm:1,front:.55,rough:.62},court:{s:-.004,w:.35,t:.0052,tt:.0012,dm:1,rough:.7},plaque:{s:-.002,w:.5,t:.0042,tt:.0155,dm:1,back:.9,front:-.45,rough:.34},rase:{s:-.004,w:.3,t:.0007,tt:.0004,dm:.5,rough:.9},boucles:{s:0,w:1,t:.0032,tt:.0065,dm:1,rough:.8},afro:{s:-.012,w:.6,t:.006,tt:.01,dm:1,rough:.85},chignon:{s:.004,w:.4,t:.0045,tt:.0035,dm:1,back:.5,rough:.5}};
 export function mhHair(style,x,y,z){const P=MH_HAIR[style]||MH_HAIR.degrade,phi=Math.atan2(Math.abs(x),-(z-.008));let hs=HS[HS.length-1][1];for(let i=1;i<HS.length;i++)if(phi<=HS[i][0]){const [a0,b0]=HS[i-1],[a1,b1]=HS[i];hs=b0+(b1-b0)*(phi-a0)/(a1-a0);break;}
  hs+=.0012*Math.sin(phi*21)+P.s;const w=(.010+.026*smooth(.5,1.3,phi)+.012*smooth(1.9,2.6,phi))*P.w,d=smooth(hs,hs+w,y)*P.dm;
- return {d,dm:P.dm,t:d*(P.t+P.tt*smooth(.04,.1,y))};}
+ return {d,dm:P.dm,t:d*(P.t+P.tt*smooth(.04,.1,y))*(1+(P.back||0)*smooth(.4,2.2,phi)*smooth(.05,.1,y)+(P.front||0)*smooth(.8,.1,phi)*smooth(.05,.095,y))};}
 // Beards in metres on the face. lm = landmarks of this face: ym mouth line, yn base of the nose, yc bottom of the chin.
 // moustache + chin patch for the goatee, plus a stubble body along the cheeks, the jaw and under the chin for the other two.
 export function mhBeard(kind,x,y,z,lm){const ax=Math.abs(x);if(z>.03)return 0;
@@ -109,6 +109,9 @@ export function bakeSkin(geo,lip,{skin,hair,style,beard='',lm,W=1024,cav,eyeC}){
    x0=Math.floor(Math.min(...U))-1,x1=Math.ceil(Math.max(...U))+1,y0=Math.floor(Math.min(...Vv))-1,y1=Math.ceil(Math.max(...Vv))+1,den=(Vv[1]-Vv[2])*(U[0]-U[2])+(U[2]-U[1])*(Vv[0]-Vv[2]);if(Math.abs(den)<1e-9)continue;
   for(let py=y0;py<=y1;py++)for(let px=x0;px<=x1;px++){const X=px+.5,Y=py+.5,w0=((Vv[1]-Vv[2])*(X-U[2])+(U[2]-U[1])*(Y-Vv[2]))/den,w1=((Vv[2]-Vv[0])*(X-U[2])+(U[0]-U[2])*(Y-Vv[2]))/den,w2=1-w0-w1,e=-.06;if(w0<e||w1<e||w2<e)continue;
    const ids=[a,b,d],ws=[w0,w1,w2];let x=0,y=0,z=0,L=0,C=0;for(let k=0;k<3;k++){x+=ws[k]*pos.getX(ids[k]);y+=ws[k]*pos.getY(ids[k]);z+=ws[k]*pos.getZ(ids[k]);L+=ws[k]*lip[ids[k]];C+=ws[k]*cav[ids[k]];}put(px,py,x,y,z,clamp(L,0,1),C);}}
+ // bleed the painted colours a few texels beyond each UV island, so no seam of bare skin shows through the hair along the island edges
+ for(let it=0;it<4;it++){const add=[];for(let y=1;y<W-1;y++)for(let x=1;x<W-1;x++){const p=y*W+x;if(cov[p])continue;let r=0,g=0,b=0,n=0;for(const q of [p-1,p+1,p-W,p+W,p-W-1,p-W+1,p+W-1,p+W+1])if(cov[q]){r+=D[q*4];g+=D[q*4+1];b+=D[q*4+2];n++;}if(n)add.push(p,r/n,g/n,b/n);}
+  for(let i=0;i<add.length;i+=4){const p=add[i];D[p*4]=add[i+1];D[p*4+1]=add[i+2];D[p*4+2]=add[i+3];D[p*4+3]=255;cov[p]=1;}}
  c.putImageData(img,0,0);const map=new T.CanvasTexture(cv);map.colorSpace=T.SRGBColorSpace;map.anisotropy=4;return map;}
 // A short-hair shell hugging the scalp: thickness and opacity follow the same fade function as the painted scalp.
 export function hairShell(geo,style,hairHex='#28231e'){if(style==='crane')return null;const pos=geo.attributes.position,nor=geo.attributes.normal,n=pos.count,P=new Float32Array(n*3),A=new Float32Array(n*4),keepV=new Uint8Array(n),base=new T.Color(hairHex);
@@ -134,7 +137,7 @@ function lipMask(head,D){const n=head.attributes.position.count,w=new Float32Arr
 const rngOf=seed=>{let a=(seed*2654435761+1013904223)>>>0;return ()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};};
 export function mhCurls(head,style,hairHex,hi,seed=1){if(style!=='boucles'&&style!=='afro')return null;
  const pos=head.attributes.position,nor=head.attributes.normal,idx=head.index.array,afro=style==='afro',rng=rngOf(seed*7+11),base=new T.Color(hairHex),
-  n=afro?(hi?340:100):(hi?380:110),per=afro?(hi?4:2):(hi?3:2),gap=afro?.0135:.0098,SEG=hi?9:5,RAD=hi?5:4,pts=[];
+  n=afro?(hi?420:130):(hi?560:170),per=afro?(hi?4:2):(hi?3:2),gap=afro?.0125:.0083,SEG=hi?9:5,RAD=hi?5:4,pts=[];
  const okAt=(x,y,z)=>{const d=mhHair(style,x,y,z).d;return afro?d>.55&&y>-.01:d>.92&&y>.052;};
  const tris=[];for(let t=0;t<idx.length;t+=3){const a=idx[t],b=idx[t+1],c=idx[t+2],cx=(pos.getX(a)+pos.getX(b)+pos.getX(c))/3,cy=(pos.getY(a)+pos.getY(b)+pos.getY(c))/3,cz=(pos.getZ(a)+pos.getZ(b)+pos.getZ(c))/3;if(okAt(cx,cy,cz))tris.push(t);}
  if(!tris.length)return null;const grid=new Map(),cell=gap,key=(x,y,z)=>Math.floor(x/cell)+'|'+Math.floor(y/cell)+'|'+Math.floor(z/cell);
@@ -142,21 +145,21 @@ export function mhCurls(head,style,hairHex,hi,seed=1){if(style!=='boucles'&&styl
    P=new T.Vector3(w*pos.getX(a)+u*pos.getX(b)+v*pos.getX(c),w*pos.getY(a)+u*pos.getY(b)+v*pos.getY(c),w*pos.getZ(a)+u*pos.getZ(b)+v*pos.getZ(c)),N=new T.Vector3(w*nor.getX(a)+u*nor.getX(b)+v*nor.getX(c),w*nor.getY(a)+u*nor.getY(b)+v*nor.getY(c),w*nor.getZ(a)+u*nor.getZ(b)+v*nor.getZ(c)).normalize();
   const kx=Math.floor(P.x/cell),ky=Math.floor(P.y/cell),kz=Math.floor(P.z/cell);let bad=false;for(let i=-1;i<=1&&!bad;i++)for(let j=-1;j<=1&&!bad;j++)for(let k=-1;k<=1&&!bad;k++){const q=grid.get((kx+i)+'|'+(ky+j)+'|'+(kz+k));if(q&&q.some(o=>o.p.distanceTo(P)<gap)){bad=true;}}
   if(bad)continue;const e={p:P,n:N};pts.push(e);const kk=key(P.x,P.y,P.z);if(!grid.has(kk))grid.set(kk,[]);grid.get(kk).push(e);}
- const Pp=[],C=[],I=[];let vc=0;const tg=new T.Vector3(),n1=new T.Vector3(),n2=new T.Vector3(),c=new T.Vector3();
+ const Pp=[],C=[],I=[];let vc=0;const tg=new T.Vector3(),n1=new T.Vector3(),n2=new T.Vector3(),cc=new T.Color();
  for(const {p,n:nrm} of pts){const t1=new T.Vector3().crossVectors(nrm,new T.Vector3(0,1,0)).normalize();if(t1.lengthSq()<.1)t1.set(1,0,0);const t2=new T.Vector3().crossVectors(nrm,t1).normalize(),k0=.8+.4*rng();
-  for(let k=0;k<per;k++){const phase=rng()*6.28,turns=1.15+.9*rng(),h=(afro?.027:.012)+(afro?.009:.006)*rng(),rho=(afro?.0092:.0044)*(.8+.4*rng()),r0=(afro?.0043:.0027)*(.9+.2*rng()),dr=k?.0042*rng()+.002:0,da=rng()*6.28,drift=rng()*6.28,dl=h*.3*rng();
+  for(let k=0;k<per;k++){const phase=rng()*6.28,turns=1.15+.9*rng(),h=(afro?.027:.015)+(afro?.009:.007)*rng(),rho=(afro?.0092:.0052)*(.8+.4*rng()),r0=(afro?.0043:.0032)*(.9+.2*rng()),dr=k?.0042*rng()+.002:0,da=rng()*6.28,drift=rng()*6.28,dl=h*.3*rng();
    const path=[];for(let i=0;i<=SEG;i++){const u=i/SEG,ang=phase+u*turns*6.2832,rr=rho*(.5+.5*Math.sin(Math.min(1,u*1.5)*1.5708));path.push(new T.Vector3().copy(p).addScaledVector(nrm,-.0012+h*u).addScaledVector(t1,Math.cos(ang)*rr+Math.cos(da)*dr+Math.cos(drift)*dl*u).addScaledVector(t2,Math.sin(ang)*rr+Math.sin(da)*dr+Math.sin(drift)*dl*u));}
-   for(let i=0;i<=SEG;i++){const u=i/SEG;tg.subVectors(path[Math.min(SEG,i+1)],path[Math.max(0,i-1)]).normalize();n1.crossVectors(tg,nrm);if(n1.lengthSq()<1e-6)n1.copy(t1);n1.normalize();n2.crossVectors(tg,n1).normalize();const r=r0*(1-.55*u*u);c.copy(base).multiplyScalar(k0*(.42+.58*Math.pow(u,.7)));
-    for(let j=0;j<RAD;j++){const th=j/RAD*6.2832,cs=Math.cos(th)*r,sn=Math.sin(th)*r;Pp.push(path[i].x+n1.x*cs+n2.x*sn,path[i].y+n1.y*cs+n2.y*sn,path[i].z+n1.z*cs+n2.z*sn);C.push(c.x,c.y,c.z);}}
+   for(let i=0;i<=SEG;i++){const u=i/SEG;tg.subVectors(path[Math.min(SEG,i+1)],path[Math.max(0,i-1)]).normalize();n1.crossVectors(tg,nrm);if(n1.lengthSq()<1e-6)n1.copy(t1);n1.normalize();n2.crossVectors(tg,n1).normalize();const r=r0*(1-.55*u*u);cc.copy(base).multiplyScalar(k0*(.42+.58*Math.pow(u,.7)));
+    for(let j=0;j<RAD;j++){const th=j/RAD*6.2832,cs=Math.cos(th)*r,sn=Math.sin(th)*r;Pp.push(path[i].x+n1.x*cs+n2.x*sn,path[i].y+n1.y*cs+n2.y*sn,path[i].z+n1.z*cs+n2.z*sn);C.push(cc.r,cc.g,cc.b);}}
    for(let i=0;i<SEG;i++)for(let j=0;j<RAD;j++){const a=vc+i*RAD+j,b=vc+i*RAD+(j+1)%RAD,d=vc+(i+1)*RAD+j,e=vc+(i+1)*RAD+(j+1)%RAD;I.push(a,d,b,b,d,e);}vc+=(SEG+1)*RAD;}}
  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(Pp,3));g.setAttribute('color',new T.Float32BufferAttribute(C,3));g.setIndex(I);g.computeVertexNormals();return g;}
 let eyeTex=null;
 // The eye texture of MakeHuman has a very red iris and a stark white: desaturate the iris towards brown, warm and soften the white.
 function calmEyeTexture(){const cv=document.createElement('canvas');cv.width=cv.height=1024;const c=cv.getContext('2d');c.fillStyle='#bdb7ab';c.fillRect(0,0,1024,1024);const tex=new T.CanvasTexture(cv);tex.colorSpace=T.SRGBColorSpace;
- const im=new Image();im.onload=()=>{c.drawImage(im,0,0,1024,1024);const d=c.getImageData(0,0,1024,1024),px=d.data;for(let i=0;i<px.length;i+=4){const r=px[i],g=px[i+1],b=px[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b),sat=mx?(mx-mn)/mx:0,lum=.3*r+.59*g+.11*b;
+ tex.userData.ready=new Promise(res=>{const im=new Image();im.onerror=()=>res();im.onload=()=>{c.drawImage(im,0,0,1024,1024);const d=c.getImageData(0,0,1024,1024),px=d.data;for(let i=0;i<px.length;i+=4){const r=px[i],g=px[i+1],b=px[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b),sat=mx?(mx-mn)/mx:0,lum=.3*r+.59*g+.11*b;
    if(sat>.35){const k=.52;px[i]=lum+(r-lum)*k;px[i+1]=lum+(g-lum)*k*1.05;px[i+2]=lum+(b-lum)*k;px[i]*=.92;px[i+1]*=.9;px[i+2]*=.88;}      // iris: less red, a little darker
    else if(lum>150){const f=.9;px[i]=Math.min(255,px[i]*f+8);px[i+1]=Math.min(255,px[i+1]*f+5);px[i+2]=Math.min(255,px[i+2]*f);}                // white: softer, slightly warm
-  }c.putImageData(d,0,0);tex.needsUpdate=true;};im.src='./mh/eye.png';return tex;}
+  }c.putImageData(d,0,0);tex.needsUpdate=true;res();};im.src='./mh/eye.png';});return tex;}
 // Everything the locker needs for one head: skin, eyes, hair. `p` as in buildMHHead; `look` = {skin,hair,style}.
 function landmarks(head,D){const pos=head.attributes.position;let up=1e9,lo=-1e9;for(const i of D.lipU)if(Math.abs(pos.getX(i))<.02)up=Math.min(up,pos.getY(i));for(const i of D.lipL)if(Math.abs(pos.getX(i))<.02)lo=Math.max(lo,pos.getY(i));const ym=(up+lo)/2;
  let tz=1e9,ty=0,yc=1e9;for(let i=0;i<pos.count;i++){const x=Math.abs(pos.getX(i)),y=pos.getY(i),z=pos.getZ(i);if(x<.015&&y>ym&&y<ym+.05&&z<tz){tz=z;ty=y;}if(x<.02&&z<-.03&&y>-.16&&y<yc)yc=y;}
@@ -167,9 +170,9 @@ export function mhHeadGroup(D,p,look,W=1024){const {head,eyes}=buildMHHead(D,p);
  const skinMat=new T.MeshStandardMaterial({map,roughness:.62,metalness:0}),m=new T.Mesh(head,skinMat);m.name='Visage';m.castShadow=true;g.add(m);
  if(!eyeTex)eyeTex=calmEyeTexture();
  const em=new T.Mesh(eyes,new T.MeshStandardMaterial({map:eyeTex,color:0xfff4ea,emissive:0xffffff,emissiveMap:eyeTex,emissiveIntensity:.16,roughness:.2,metalness:0,transparent:true,alphaTest:.2}));em.name='Yeux';g.add(em);
- const hs=hairShell(head,look.style,look.hair);if(hs){const hm=new T.Mesh(hs,new T.MeshStandardMaterial({map,roughness:.62,metalness:0}));hm.name='Cheveux';g.add(hm);}
+ const hs=hairShell(head,look.style,look.hair);if(hs){const hm=new T.Mesh(hs,new T.MeshStandardMaterial({map,roughness:(MH_HAIR[look.style]||MH_HAIR.degrade).rough,metalness:0}));hm.name='Cheveux';g.add(hm);}
  {const cg=mhCurls(head,look.style,look.hair,W>=1024,look.seed||1);if(cg){const cm=new T.Mesh(cg,new T.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0}));cm.name='Boucles';cm.castShadow=true;g.add(cm);}
-  if(look.style==='chignon'){const bun=new T.Mesh(new T.SphereGeometry(.042,16,10),new T.MeshStandardMaterial({color:look.hair,roughness:.8}));bun.position.set(0,.078,.108);bun.scale.set(1,.9,.9);bun.name='Chignon';g.add(bun);}}
+  if(look.style==='chignon'){const bun=new T.Mesh(new T.SphereGeometry(.05,18,12),new T.MeshStandardMaterial({color:look.hair,roughness:.55}));bun.position.set(0,.082,.112);bun.scale.set(1,.9,.9);bun.name='Chignon';g.add(bun);}}
  // Blink: the skin of the eyelids slides over the eyeball (the lash line painted in the texture travels with it).
  {const hp=head.attributes.position,P0=Float32Array.from(hp.array),lid=[];
   for(const e of eyeC)for(let i=0;i<hp.count;i++){const dx=hp.getX(i)-e.x,dy=hp.getY(i)-e.y;if(Math.abs(dx)>.0175||hp.getZ(i)>e.z+.002||dy>.016||dy<-.011)continue;const k=Math.sqrt(Math.max(0,1-(Math.abs(dx)/.0165)**2)),wu=dy>-.002?smooth(.016,.0045,dy)*k:0,wl=dy<.001?smooth(-.011,-.0035,dy)*k:0;if(wu>.001||wl>.001)lid.push([i,wu,wl]);}
@@ -181,7 +184,11 @@ export function mhHeadGroup(D,p,look,W=1024){const {head,eyes}=buildMHHead(D,p);
  return g;}
 
 // The faces share these closed-mouth settings (the base mesh rests with the lips slightly parted).
-export const MH_NEUTRAL_MODS={'mouth-upperlip-middle-down!':.55,'mouth-lowerlip-middle-up!':.28,'mouth-lowerlip-volume-decr!':.85,'mouth-upperlip-volume-decr!':.52,'mouth-lowerlip-height-decr!':.56,'mouth-upperlip-height-decr!':.25,'mouth-cupidsbow-incr!':.8,'mouth-lowerlip-width-decr!':.5,'mouth-upperlip-width-decr!':.4,'mouth-angles-up!':.35};
+const SYMN=(name,v)=>({['l-'+name+'!']:v,['r-'+name+'!']:v});
+// Young adult, athletic, neutral: lips drawn back and slimmer, closed at rest, a clear cupid's bow and corners; cheeks less round (also
+// beside the mouth), cheekbones a little forward; a more defined jaw and chin; adult proportions instead of a child's.
+export const MH_NEUTRAL_MODS={'mouth-upperlip-middle-down!':.65,'mouth-lowerlip-middle-up!':.38,'mouth-lowerlip-volume-decr!':.8,'mouth-upperlip-volume-decr!':.4,'mouth-lowerlip-height-decr!':.45,'mouth-upperlip-height-decr!':.15,'mouth-cupidsbow-incr!':1,'mouth-scale-horiz-incr!':.3,'mouth-angles-up!':.4,'mouth-scale-depth-decr!':.7,'mouth-trans-backward!':.25,
+ 'head-fat-decr!':.25,...SYMN('cheek-inner-decr',.4),...SYMN('cheek-bones-incr',.3),'chin-prominent-incr!':.22,'chin-bones-incr!':.3,'head-age-incr!':.15};
 
 // Six face shapes, independent of the skin colour: a mix of the three base types (race blend and gender of MakeHuman only change
 // the shape of the bones) plus a few fine adjustments. Names ending in * are applied to both sides (l-/r- targets).

@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.js';
-import {mhHeadGroup,mhShapeParams} from './mh.js?v=20-8b';
-import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-8b';
-import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-8b';
+import {mhHeadGroup,mhShapeParams} from './mh.js?v=20-9';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-9';
+import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-9';
 export {FACE_SHAPES,HAIR_STYLES,headPoint,uvOf};
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
@@ -290,7 +290,8 @@ makePlayer(x,z,color,num,own=false,keeper=false,displayName="Rivage"){
  const detail=this.detail==='high'?'high':'low',hi=detail==='high',eyeHex=eyes[seed%eyes.length];
  const shape=seed%FACE_SHAPES.length,style=own?(HAIR_STYLES.includes(this.appearance.hairStyle)?this.appearance.hairStyle:'degrade'):HAIR_STYLES[(seed*7+3)%HAIR_STYLES.length],hv=FACE_SHAPES[shape];
  const headG=new T.Group();headG.position.set(0,HEAD_Y,.006);headG.name='Tête';pose.add(headG);
- let faceRig=null;if(this.mh&&(hi||own)){mats[0].clippingPlanes=[new T.Plane(new T.Vector3(0,-1,0),.585)];   // the head brings its own neck: hide the body's above the collar
+ let faceRig=null;if(this.mh&&(hi||own)){// the head brings its own neck: the body's skin is not drawn above the collar (tested in the body's own space, whatever the pose)
+  mats[0].onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying float vBodyY;').replace('#include <begin_vertex>','#include <begin_vertex>\nvBodyY=position.y;');sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vBodyY;').replace('void main() {','void main() {\nif(vBodyY>.585)discard;');};mats[0].customProgramCacheKey=()=>'neckHidden';
   const mhG=mhHeadGroup(this.mh,mhShapeParams(shape),{skin,hair,style,beard,seed},hi?1024:512);headG.add(mhG);faceRig={mh:mhG};}else{
  const face=this.faceTexture(skin,hair,eyeHex,beard,style,shape,detail),skinProps={map:face.map,roughnessMap:face.roughnessMap||null,bumpMap:face.bumpMap||null,bumpScale:.14,roughness:face.roughnessMap?1:.66,metalness:0};
  const faceMat=hi?new T.MeshPhysicalMaterial({...skinProps,sheen:.22,sheenRoughness:.7,sheenColor:new T.Color(0xff9a80)}):new T.MeshStandardMaterial(skinProps);
@@ -470,7 +471,8 @@ constructor(canvas){this.canvas=canvas;const r=this.r=new T.WebGLRenderer({canva
  this.cam=new T.PerspectiveCamera(30,1,.05,40);this.yaw=.35;this.view='body';this.camT={y:1,d:4.4,look:1,fov:30};this.camNow={...this.camT};
  const at=e=>e.touches?e.touches[0]:e;canvas.addEventListener('pointerdown',ev=>{this.dragX=ev.clientX;this.touched=performance.now();canvas.setPointerCapture?.(ev.pointerId);});canvas.addEventListener('pointermove',ev=>{if(this.dragX==null)return;this.yaw-=(ev.clientX-this.dragX)*.012;this.dragX=ev.clientX;this.touched=performance.now();});const up=()=>{this.dragX=null;};canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.style.touchAction='none';}
 setAppearance(app){const e=this.e;if(this.p){e.scene.remove(this.p.g);this.p.g.traverse(o=>{if(o.geometry&&!o.geometry.userData?.shared)o.geometry.dispose();});e.players=[];}e.appearance=app;const p=this.p=e.makePlayer(0,0,0x63b9f4,app.number||9,true,false,(app.name||'Joueur').slice(0,14));p.g.children.filter(o=>o.geometry?.type==='RingGeometry').forEach(o=>o.visible=false);p.g.traverse(o=>{if(o.isMesh)o.castShadow=true;});}
-setView(v){this.view=v;this.camT=v==='face'?{y:1.735,d:2.4,look:1.712,fov:14}:{y:1.05,d:4.5,look:.96,fov:30};}   // the face is seen through a longer lens: no distortion of the nose and chin
+setView(v,yaw){this.view=v;if(yaw!=null){this.yaw=yaw;this.touched=performance.now()+8000;}   // the turntable pauses a few seconds on the chosen angle; dragging still turns the player freely
+ this.camT=v==='face'?{y:1.735,d:2.4,look:1.712,fov:14}:{y:1.05,d:4.5,look:.96,fov:30};}   // the face is seen through a longer lens: no distortion of the nose and chin
 resize(){const w=this.canvas.clientWidth,h=this.canvas.clientHeight;if(!w||!h)return;if(this.w!==w||this.h!==h){this.w=w;this.h=h;this.r.setSize(w,h,false);this.cam.aspect=w/h;this.cam.updateProjectionMatrix();}}
 frame(now){if(!this.running)return;const dt=Math.min(.05,(now-(this.last||now))/1000);this.last=now;this.resize();if(performance.now()-(this.touched||0)>2500)this.yaw+=dt*.35;
  for(const k of ['y','d','look','fov'])this.camNow[k]+=(this.camT[k]-this.camNow[k])*Math.min(1,dt*5);const c=this.camNow;if(Math.abs(this.cam.fov-c.fov)>.01){this.cam.fov=c.fov;this.cam.updateProjectionMatrix();}this.cam.position.set(0,c.y,-c.d);this.cam.lookAt(0,c.look,0);

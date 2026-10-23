@@ -26,7 +26,7 @@ test('Lot 8 · mouth presets close the lips and keep every target name valid',()
 test('Lot 8 · one cut for all styles: bare lower down, full on top, a graded fade, a shaved head is only a shadow',()=>{
  for(const st of Object.keys(MH_HAIR)){const top=mhHair(st,0,.1,0),low=mhHair(st,.07,-.02,.0),front=mhHair(st,0,.02,-.07);assert.ok(top.d>.45,st+' covers the crown');assert.ok(low.d<.2,st+' sides are bare under the ears');assert.ok(front.d<.05,st+' no hair on the forehead');}
  assert.ok(mhHair('rase',0,.1,0).d<=.5&&mhHair('rase',0,.1,0).t<.001,'a shaved head');
- const a=mhHair('degrade',.068,.02,0).d,b=mhHair('degrade',.068,.04,0).d,c=mhHair('degrade',.068,.065,0).d;assert.ok(a<b&&b<c,'the fade is graded');});
+ const a=mhHair('degrade',.068,.05,0).d,b=mhHair('degrade',.068,.065,0).d,c=mhHair('degrade',.068,.08,0).d;assert.ok(a<b&&b<c,'the fade is graded');assert.ok(mhHair('court',.068,.04,0).d>mhHair('degrade',.068,.04,0).d+.4,'the crop starts lower than the fade');assert.ok(mhHair('degrade',0,.1,0).t>.01&&mhHair('court',0,.1,0).t<.008,'fade keeps length on top, crop is short everywhere');});
 
 test('Lot 8 · beards fade out, leave the lips and stay below the nose',()=>{const lm={ym:-.068,yn:-.047,yc:-.108};
  for(const kind of ['bouc','barbe3j','barbe']){let worst=0;for(let y=-.13;y<-.01;y+=.0015)for(let x=0;x<.07;x+=.0015){const d=mhBeard(kind,x,y,-.07,lm);worst=Math.max(worst,Math.abs(d-mhBeard(kind,x+.0015,y,-.07,lm)),Math.abs(d-mhBeard(kind,x,y+.0015,-.07,lm)));}assert.ok(worst<.5,kind+' edge step '+worst.toFixed(2));
@@ -41,3 +41,17 @@ test('Lot 8 · curls and afro are fine coils planted on the scalp, hair shell an
  assert.equal(sh.attributes.normal.count,head.attributes.normal.count,'same normals as the skin');
  const cav=cavity(head);assert.equal(cav.length,head.attributes.position.count);assert.ok(Math.max(...cav)>.3&&Math.min(...cav)<-.1);
  const f=smoothField(head,new Float32Array(head.attributes.position.count).fill(1),2);assert.ok(Math.abs(f[10]-1)<1e-4);});
+
+test('Lot 9 · curls take the chosen hair colour (no NaN, no black coils on a blond head) and cover the scalp densely',()=>{const {head}=buildMHHead(D,mhShapeParams(0));
+ const mean=g=>{const c=g.attributes.color;let r=0,gg=0,b=0,n=c.count;for(let i=0;i<n;i++){assert.ok(Number.isFinite(c.getX(i))&&Number.isFinite(c.getY(i))&&Number.isFinite(c.getZ(i)));r+=c.getX(i);gg+=c.getY(i);b+=c.getZ(i);}return [r/n,gg/n,b/n];};
+ const blond=mean(mhCurls(head,'boucles','#d6b560',true,5)),black=mean(mhCurls(head,'boucles','#111111',true,5)),white=mean(mhCurls(head,'afro','#ececec',true,5));
+ assert.ok(blond[0]>.2&&blond[0]>blond[2]*1.5,'blond coils are blond '+blond.join());assert.ok(black[0]<.05,'black coils stay black');assert.ok(white[0]>.3&&Math.abs(white[0]-white[2])<.08,'white coils are neutral '+white.join());
+ const g=mhCurls(head,'boucles','#d6b560',true,5);assert.ok(g.attributes.position.count>20000,'dense coverage '+g.attributes.position.count);});
+
+test('Lot 9 · the cuts have different silhouettes: fade tall on top, crop low and short, slicked volume to the back',()=>{
+ const top=(st,x,y,z)=>mhHair(st,x,y,z).t;assert.ok(top('degrade',0,.1,-.06)>top('court',0,.1,-.06)*2.2,'the fade is taller than the crop at the front');
+ assert.ok(top('plaque',0,.1,.08)>top('plaque',0,.1,-.06)*1.8,'slicked hair carries its volume to the back');assert.ok(mhHair('court',.07,.045,0).d>.8&&mhHair('degrade',.07,.045,0).d<.1,'the crop reaches lower on the sides than the fade');
+ assert.ok(MH_HAIR.plaque.rough<MH_HAIR.court.rough,'slicked hair is shinier');});
+
+test('Lot 9 · young-adult neutral face: closed mouth settings and a leaner lower face are part of every shape',()=>{const p=mhShapeParams(3);for(const k of ['mouth-scale-horiz-incr!','mouth-cupidsbow-incr!','head-fat-decr!','chin-bones-incr!','l-cheek-inner-decr!','r-cheek-inner-decr!'])assert.ok(p.mods[k]>0,k);
+ const a=buildMHHead(D,{race:[.34,.33,.33],gender:.9,mods:{}}).head,b=buildMHHead(D,mhShapeParams(0)).head;let diff=0;const pa=a.attributes.position,pb=b.attributes.position;for(let i=0;i<pa.count;i++)diff=Math.max(diff,Math.abs(pa.getZ(i)-pb.getZ(i)));assert.ok(diff>.002&&diff<.03,'the neutral settings reshape the face by a few millimetres '+diff);});
