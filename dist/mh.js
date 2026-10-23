@@ -3,7 +3,7 @@
 // morph targets (sparse offsets). A face is the base mesh plus weighted targets: race blend and gender first, then the
 // fine adjustments (jaw, nose, lips, ears...). Units in the file are decimetres, front = +z; the game wants metres, front = -z.
 import * as T from './vendor/three.module.js';
-import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-8';
+import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-8b';
 export const MH_EYE_Y=7.28,MH_S=.1,MH_ZC=.65;
 let cache=null;
 export async function loadMH(url='./mh/head.json'){if(!cache)cache=fetch(url).then(r=>r.json());return cache;}
@@ -188,10 +188,10 @@ export const MH_NEUTRAL_MODS={'mouth-upperlip-middle-down!':.55,'mouth-lowerlip-
 const SYM=(name,v)=>({['l-'+name+'!']:v,['r-'+name+'!']:v});
 export const MH_SHAPES=[
  {race:[.34,.33,.33],gender:.9,mods:{}},                                                                                                                       // 0 balanced
- {race:[.1,.1,.8],gender:1,mods:{'head-square!':.9,'chin-width-incr!':.7,'chin-prominent-incr!':.5,...SYM('cheek-bones-incr',.45),'forehead-temple-incr!':.4,'neck-scale-horiz-incr!':.3}},          // 1 square jaw
- {race:[0,.8,.2],gender:.7,mods:{'head-oval!':1,'chin-width-decr!':.6,'chin-height-incr!':.4,...SYM('cheek-volume-decr',.6),'nose-scale-horiz-decr!':.5,'nose-width1-decr!':.4}},                    // 2 slim oval
+ {race:[.1,.1,.8],gender:1,mods:{'head-square!':.5,'chin-width-incr!':.35,'chin-prominent-incr!':.28,...SYM('cheek-bones-incr',.35),'forehead-temple-incr!':.3,'neck-scale-horiz-incr!':.25}},         // 1 firm jaw
+ {race:[0,.8,.2],gender:.75,mods:{'head-oval!':.8,'chin-width-decr!':.08,'chin-prominent-incr!':.32,'chin-bones-incr!':.3,'chin-height-incr!':.2,...SYM('cheek-volume-decr',.5),'nose-scale-horiz-decr!':.5,'nose-width1-decr!':.4}}, // 2 slim oval with a defined jaw
  {race:[.8,0,.2],gender:.9,mods:{'head-round!':.9,...SYM('cheek-volume-incr',.7),'nose-scale-horiz-incr!':.5,'nose-flaring-incr!':.5,'chin-prominent-decr!':.3}},                                   // 3 full round
- {race:[.25,0,.75],gender:1,mods:{'head-rectangular!':.8,'chin-prominent-incr!':.6,...SYM('cheek-bones-incr',.7),'nose-hump-incr!':.5,'forehead-nubian-incr!':.45,'chin-height-incr!':.4}},       // 4 angular
- {race:[.1,.7,.2],gender:.6,mods:{'head-invertedtriangular!':.8,'chin-width-decr!':.4,'nose-point-up!':.5,...SYM('eye-scale-incr',.25),...SYM('cheek-volume-incr',.35),'nose-width1-decr!':.3}}      // 5 soft
+ {race:[.25,0,.75],gender:1,mods:{'head-rectangular!':.45,'chin-prominent-incr!':.35,...SYM('cheek-bones-incr',.55),'nose-hump-incr!':.45,'forehead-nubian-incr!':.4,'chin-height-incr!':.3}},        // 4 angular
+ {race:[.1,.7,.2],gender:.65,mods:{'head-invertedtriangular!':.45,'chin-prominent-incr!':.3,'chin-bones-incr!':.28,'nose-point-up!':.5,...SYM('eye-scale-incr',.25),...SYM('cheek-volume-incr',.3),'nose-width1-decr!':.3}} // 5 soft with a defined jaw
 ];
 export function mhShapeParams(i){const sh=MH_SHAPES[((i%MH_SHAPES.length)+MH_SHAPES.length)%MH_SHAPES.length];return {race:sh.race,gender:sh.gender,mods:{...MH_NEUTRAL_MODS,...sh.mods}};}

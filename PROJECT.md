@@ -340,3 +340,5 @@ Méthode demandée : une seule tête et une seule coupe validées en images (dé
 - **Moteur** : `makePlayer` utilise cette tête dans le vestiaire (toujours) et pour le héros en match ; les autres joueurs gardent la tête générée (coût en triangles). Le cou du corps est masqué au-dessus du col (`clippingPlanes`). Vue « visage » du vestiaire avec un objectif plus long (pas de déformation). Correction : le vestiaire restait en détail réduit après la génération des vignettes.
 - **Tests** : `tests/lot8-mh.test.mjs` (7 tests : données, proportions, six formes distinctes, noms de cibles, coupes, barbes, boucles/coque/creux). 210 tests au total.
 - **Restes** : têtes MakeHuman pour tous les joueurs de match (LOD), regard (micro-mouvements des yeux), allègement du fichier de données, couleur des yeux.
+
+- **8b** : retours du créateur sur les formes de visage : les formes 2 et 5 (colonne de droite de la galerie) retrouvent une mâchoire et un menton définis (`chin-prominent`, `chin-bones`, moins de `chin-width-decr`), les formes 1 et 4 (colonne du milieu) sont moins carrées (`head-square` 0,9→0,5, `head-rectangular` 0,8→0,45).
