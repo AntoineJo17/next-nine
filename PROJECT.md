@@ -297,3 +297,14 @@ La configuration Capacitor est préparatoire. Aucun projet iOS/Android ni binair
 4. Silhouette plus fine et épaules carrées : ligne d'épaules quasi horizontale, taille plus étroite, cuisses, mollets et bras amincis, le maillot recouvre le haut du short.
 5. Tête plus ovale et plus petite : rayon réduit, hauteur × 1,22, mâchoire plus étroite, cou plus fin.
 - Tests adaptés : les marquages sont une donnée (userData.marking du torse) et non plus des plans.
+
+## V20 — lot 6 : corps et visages refaits (retours du créateur après le lot 5b)
+1. Corps en une seule peau continue : peau, maillot, short, chaussettes et gants sont des surfaces lissées (sections quasi elliptiques le long d'un axe) fusionnées en UN SkinnedMesh lié à neuf os (colonne, hanches, genoux, épaules, coudes). Plus de tubes séparés : épaules, coudes et genoux se plient sans coupure ni moignon. Le haut de la manche est un dôme fermé (épaule carrée), la ligne d'épaules est presque horizontale ; largeur d'épaules réaliste (≈ 0,49 m avec les manches).
+2. Proportions : bras allongés (coude à 0,30 m de l'épaule, avant-bras 0,27 m), jambes inchangées (le cycle de marche s'appuie sur 0,86 m), cou incliné vers l'avant, tête plus basse.
+3. Mains : paume plate face à la cuisse, quatre doigts légèrement refermés et un pouce ; gants plus gros pour le gardien (manches longues).
+4. Chaussures : empeigne sculptée, semelle posée dessous sans décollement, six crampons ; semelle à 10 cm sous la cheville, exactement la hauteur où le cycle de marche pose le pied.
+5. Tête anatomique (en mètres, ligne des yeux à 0) : crâne rond, pommettes, mâchoire qui se resserre vers le menton, profil de visage et d'arrière de crâne. Fini l'œuf. Relief du visage défini en millimètres : orbites, arcade, nez (pont, ailes, narines), lèvres, menton, pommettes.
+6. Visage peint en dimensions réelles : chaque trait est placé en mètres puis converti sur la texture, donc un œil mesure 28 mm quelle que soit la déformation de la carte (yeux en amande, iris, paupières, cils, sourcils poil par poil, narines, plis, lèvres, pores). Maillage de la tête 120 × 96.
+7. Pelouse plus naturelle, filet dynamique, numéros imprimés sur le maillot : voir lot 5b.
+- Tests : les os remplacent les groupes (genou.children[1] devient p.boots[i]) ; nouveaux tests « une seule peau partagée, neuf os » et « plier un coude ne bouge que l'avant-bras ».
+- 195 tests passent.
