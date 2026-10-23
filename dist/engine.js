@@ -1,45 +1,11 @@
 import * as T from './vendor/three.module.js';
-import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-6';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-7';
+import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-7';
+export {FACE_SHAPES,HAIR_STYLES,headPoint,uvOf};
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
 export const BALL_VISUAL=.15;
 export function shirtInk(color){const c=new T.Color(color);return .2126*c.r+.7152*c.g+.0722*c.b>.35?'#10232b':'#ffffff';}
-// Lot 4 · Sculpted heads. A sphere is reshaped into a skull with brow ridge, eye sockets, cheekbones, nose, lips,
-// chin and jaw. Every feature sits at a longitude/latitude (0,0 = straight ahead, + = towards the player's right
-// as seen from in front) shared with the painted face map, so the paint always lands on its relief.
-const FACE_W=1024,FACE_H=512,PXR=FACE_W/(2*Math.PI);
-const bump=(l,f,cl,cf,sl,sf)=>{const a=(l-cl)/sl,b=(f-cf)/sf;return Math.exp(-a*a-b*b);};
-const ease=(e0,e1,x)=>{const t=clamp((x-e0)/(e1-e0),0,1);return t*t*(3-2*t);};
-export const FACE_SHAPES=[{nose:1,jaw:1,brow:1,wide:0},{nose:1.15,jaw:1.1,brow:1.15,wide:.4},{nose:.9,jaw:.92,brow:.9,wide:-.3},{nose:1.05,jaw:1.15,brow:1.05,wide:.7},{nose:.95,jaw:.96,brow:1.2,wide:-.1},{nose:1.2,jaw:1,brow:.95,wide:.2}];
-export const HAIR_STYLES=['court','degrade','boucles','afro','plaque','chignon','rase','crane'];
-const HR=.104,E=2/2.3,YK=[[-1.5708,-.12],[-1.1,-.112],[-.7,-.1],[-.375,-.075],[-.2,-.045],[.095,0],[.26,.028],[.64,.07],[1,.1],[1.5708,.117]];
-const AK=[[-.12,.012],[-.108,.03],[-.095,.044],[-.08,.056],[-.06,.063],[-.035,.069],[-.01,.073],[.02,.076]],FK=[[-.12,.02],[-.11,.04],[-.1,.072],[-.075,.082],[-.045,.082],[-.01,.083],[.02,.09]],BK=[[-.12,.02],[-.105,.04],[-.09,.062],[-.06,.085],[-.03,.094],[0,.097],[.02,.098]];
-// Anatomical head, in metres with the eye line at Y = 0: a round cranium, cheekbones, a jaw narrowing to the chin.
-function headDims(Y,v){const top=Y>=.02,t=top?(Y-.02)/.098:0,dome=top?Math.sqrt(Math.max(0,1-t*t)):1;let a=top?.076*dome:catmull(AK,Y);if(Y<-.03)a*=1+(v.jaw-1)*.5;a*=1+.04*v.wide;return {a,bf:top?.092*dome:catmull(FK,Y),bb:top?.098*dome:catmull(BK,Y)};}
-const PHI=l=>l+.55*Math.sin(l)*Math.cos(l);
-// Where a point of the face (x, Y in metres) sits on the painted map: (longitude, latitude). The features are drawn
-// in real dimensions through this mapping, so an eye is 28 mm wide whatever the stretch of the texture.
-export function uvOf(x,Y,v=FACE_SHAPES[0]){let lo=-1.5708,hi=1.5708;for(let i=0;i<28;i++){const m=(lo+hi)/2;if(catmull(YK,m)<Y)lo=m;else hi=m;}const f=(lo+hi)/2,a=headDims(Y,v).a,s=-Math.sign(x)*Math.min(1,Math.pow(Math.abs(x)/a,1/E)),phi=Math.asin(s);let l=phi/1.3;for(let i=0;i<8;i++)l-=(PHI(l)-phi)/(1+.55*Math.cos(2*l));return [l,f];}
-const G2=(dx,sx,dy,sy)=>Math.exp(-((dx/sx)**2)-((dy/sy)**2));
-// Relief of the face in metres (outwards): sockets, brow ridge, nose, lips, chin, cheekbones.
-function reliefM(x,Y,z,v){if(z>-.01)return 0;const ax=Math.abs(x),fm=clamp(-z/.06,0,1),nb=smooth(.012,-.037,Y);let r=0;
- r+=-.0055*G2(ax-.031,.016,Y-.002,.011)+.0035*G2(ax-.031,.012,Y,.0075);
- r+=.007*v.brow*G2(ax-.03,.034,Y-.026,.007);
- r+=(.003+.019*nb)*v.nose*Math.exp(-((x/(.006+.007*nb))**2))*smooth(-.05,-.038,Y)*smooth(.03,.012,Y);
- r+=.006*v.nose*G2(ax-.0145,.007,Y+.034,.007)-.004*G2(ax-.008,.005,Y+.0415,.004)-.002*G2(x,.004,Y+.055,.01);
- r+=.005*G2(x,.022,Y+.0715,.0045)+.0065*G2(x,.02,Y+.0825,.006)-.003*G2(x,.026,Y+.0755,.0018);
- r+=.008*v.jaw*G2(x,.018,Y+.108,.01)+.005*G2(ax-.052,.02,Y+.015,.016)-.004*G2(ax-.05,.02,Y+.05,.018)-.003*G2(ax-.062,.014,Y-.03,.02);
- return r*fm;}
-export function headPoint(l,f,v,lift=0){const Y=catmull(YK,f),{a,bf,bb}=headDims(Y,v),phi=PHI(l),s=Math.sin(phi),c=Math.cos(phi),x=-Math.sign(s)*Math.pow(Math.abs(s),E)*a,z=c>0?-Math.pow(c,E)*bf:Math.pow(-c,E)*bb;
- const d=new T.Vector3(x,Y*.35,z).normalize(),rel=reliefM(x,Y,z,v)+lift*HR;return new T.Vector3(x+d.x*rel,Y+d.y*rel,z+d.z*rel);}
-const HAIRLINE=[[0,.64],[.32,.63],[.58,.55],[.9,.43],[1.12,.18],[1.26,-.08],[1.36,-.06],[1.45,.22],[1.6,.3],[1.8,.18],[2.1,-.24],[2.6,-.48],[3.2,-.58]];
-export function hairline(l){const a=Math.abs(l);for(let i=1;i<HAIRLINE.length;i++){const [a1,f1]=HAIRLINE[i],[a0,f0]=HAIRLINE[i-1];if(a<=a1)return f0+(f1-f0)*(a-a0)/(a1-a0);}return -.6;}
-function hairThickness(style,l,f,seed){const top=ease(.3,.95,f),curl=.5+.5*Math.sin(l*23+seed)*Math.sin(f*27+seed*.7);
- switch(style){case 'court':return .007+.005*top;case 'degrade':return .003+.018*top+.008*bump(l,f,0,.62,.45,.18);case 'boucles':return .005+(.024+.01*curl)*top;case 'afro':return .014+(.04+.008*curl)*ease(-.25,.6,f);case 'plaque':return .01+.012*bump(l,f,0,.68,.55,.24)+.004*top;case 'chignon':return .008+.003*top;case 'rase':return .0022;default:return 0;}}
-// Welds the normals of coincident vertices (sphere seam and poles) so the sculpted head shows no crease.
-function weldNormals(geo){const pos=geo.attributes.position,nor=geo.attributes.normal,groups=new Map();for(let i=0;i<pos.count;i++){const k=Math.round(pos.getX(i)*1e5)+'|'+Math.round(pos.getY(i)*1e5)+'|'+Math.round(pos.getZ(i)*1e5);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(i);}for(const ids of groups.values()){if(ids.length<2)continue;let x=0,y=0,z=0;for(const i of ids){x+=nor.getX(i);y+=nor.getY(i);z+=nor.getZ(i);}const l=Math.hypot(x,y,z)||1;for(const i of ids)nor.setXYZ(i,x/l,y/l,z/l);}nor.needsUpdate=true;}
-function sculpt(v,lift,w=120,h=96){const geo=new T.SphereGeometry(1,w,h,Math.PI/2),pos=geo.attributes.position,p=new T.Vector3();for(let i=0;i<pos.count;i++){p.fromBufferAttribute(pos,i).normalize();const l=Math.atan2(-p.x,-p.z),f=Math.asin(clamp(p.y,-1,1));pos.setXYZ(i,...headPoint(l,f,v,lift?lift(l,f):0).toArray());}geo.computeVertexNormals();weldNormals(geo);return geo;}
-export function beardMask(kind,l,f){const a=Math.abs(l);if(kind==='bouc')return a<.26&&f<-.27&&f>-.82&&!(a<.2&&f<-.33&&f>-.47)||a<.22&&f>-.33&&f<-.24;if(f>-.05||a>1.32||f<-1.05)return false;if(a<.2&&f<-.335&&f>-.465)return false;const cheek=-.06-(1.3-a)*.22;return f<cheek||a<.24&&f<-.24;}
 // Lot 5 · A real football: 12 pentagons and 20 hexagons (Voronoi cells of the icosahedron's vertices and faces)
 // with dark stitched seams, painted on an equirectangular map.
 function ballTexture(){const c=document.createElement('canvas');if(!c.getContext||typeof c.getContext('2d')?.createImageData!=='function')return null;c.width=512;c.height=256;const g=c.getContext('2d'),img=g.createImageData(512,256),d=img.data,ph=(1+Math.sqrt(5))/2,V=[];
@@ -51,14 +17,11 @@ function ballTexture(){const c=document.createElement('canvas');if(!c.getContext
 // Lot 5 · Athletic bodies. Every limb is a tube whose width and depth follow a smooth profile (Catmull-Rom through
 // a few keys) with a superellipse cross-section, plus muscle bulges at the front or back: V-shaped torso, chest and
 // shoulder blades, quads, calves, biceps and forearms. Geometries are shared between players.
-const catmull=(keys,t)=>{if(t<=keys[0][0])return keys[0][1];for(let i=0;i<keys.length-1;i++){const [t1,v1]=keys[i],[t2,v2]=keys[i+1];if(t<=t2){const v0=(keys[i-1]||keys[i])[1],v3=(keys[i+2]||keys[i+1])[1],u=(t-t1)/(t2-t1),u2=u*u,u3=u2*u;return .5*(2*v1+(-v0+v2)*u+(2*v0-5*v1+4*v2-v3)*u2+(-v0+3*v1-3*v2+v3)*u3);}}return keys[keys.length-1][1];};
 // ===== Lot 6 · One continuous skinned body =====
 // Skin, shirt, shorts, socks and gloves are lofted surfaces (superellipse sections along a spine) merged into ONE
 // SkinnedMesh and bound to nine bones, so shoulders, elbows, hips and knees bend smoothly with no seams or stubs.
 // Coordinates are in the player's rest pose (metres, y up, front = -z). Bone order:
 // 0 spine · 1-2 hips (L,R) · 3-4 knees · 5-6 shoulders · 7-8 elbows. Side -1 = x < 0 = index 0.
-const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
-const gauss=(t,c,s)=>Math.exp(-(((t-c)/s)**2));
 const top4=w=>{const s=w.filter(q=>q[1]>1e-4).sort((p,q)=>q[1]-p[1]).slice(0,4);let t=0;for(const q of s)t+=q[1];const o=[[0,0],[0,0],[0,0],[0,0]];s.forEach((q,i)=>{o[i]=[q[0],q[1]/t];});return o;};
 const SHX=.19,SHY=.5,HIPX=.094,HIPY=-.04;
 const spineW=()=>[[0,1]];
@@ -95,11 +58,11 @@ function mergeParts(parts,skinned){const order=parts.slice().sort((a,b)=>a.mat-b
 // Materials: 0 skin · 1 shirt · 2 shorts · 3 socks · 4 trim · 5 gloves
 function buildBody(keeper){const P=[],ser=(arr,f)=>arr.map(([y,a])=>[y,a*f]);
  // Torso (shirt): V-shaped, squared shoulders, chest and shoulder blades. Texture u=.5 is the front.
- const torsoA=[[-.1,.2],[-.03,.19],[.05,.178],[.14,.172],[.27,.18],[.38,.188],[.45,.197],[.5,.2],[.535,.19],[.553,.15],[.565,.1],[.572,.058]],torsoB=[[-.1,.13],[0,.116],[.1,.104],[.27,.108],[.38,.116],[.45,.112],[.5,.104],[.54,.09],[.565,.07],[.572,.055]];
- P.push(loft({A:torsoA,B:torsoB,seg:32,sub:3,n:2.2,mat:1,weights:spineW,front:(y,sx)=>.012*gauss(y,.38,.07)*(1-.5*gauss(sx,0,.25)),back:(y,sx)=>.008*gauss(y,.43,.07)}));
+ const torsoA=[[-.1,.2],[-.03,.19],[.05,.178],[.14,.172],[.27,.18],[.38,.188],[.45,.197],[.5,.2],[.53,.19],[.55,.165],[.565,.13],[.578,.098],[.588,.07]],torsoB=[[-.1,.13],[0,.116],[.1,.104],[.27,.108],[.38,.116],[.45,.112],[.5,.104],[.54,.092],[.565,.08],[.58,.068],[.588,.06]];
+ P.push(loft({A:torsoA,B:torsoB,seg:32,sub:3,n:2.2,mat:1,weights:spineW,front:(y,sx)=>.012*gauss(y,.38,.07)*(1-.5*gauss(sx,0,.25)),back:(y,sx)=>.008*gauss(y,.43,.07)+.028*smooth(.47,.585,y)}));
  // Neck and collar
- P.push(loft({A:[[.5,.056],[.6,.052],[.7,.048]],B:[[.5,.062],[.6,.054],[.7,.046]],Z:[[.5,.03],[.7,-.004]],seg:20,mat:0,weights:spineW}));
- P.push(loft({A:[[.555,.06],[.565,.066],[.58,.067],[.595,.061],[.6,.055]],B:[[.555,.058],[.565,.064],[.58,.065],[.595,.059],[.6,.053]],Z:[[.55,.03],[.6,.026]],seg:24,sub:2,mat:4,weights:spineW}));
+ P.push(loft({A:[[.5,.056],[.6,.052],[.7,.048]],B:[[.5,.062],[.6,.054],[.7,.046]],Z:[[.5,.036],[.7,-.004]],seg:20,mat:0,weights:spineW}));
+ P.push(loft({A:[[.565,.062],[.575,.068],[.59,.069],[.605,.063],[.612,.056]],B:[[.565,.06],[.575,.066],[.59,.067],[.605,.061],[.612,.054]],Z:[[.56,.03],[.61,.026]],seg:24,sub:2,mat:4,weights:spineW}));
  // Pelvis and shorts
  P.push(loft({A:[[-.16,.165],[-.08,.172],[0,.16],[.03,.148]],B:[[-.16,.098],[-.08,.108],[0,.1],[.03,.092]],seg:28,sub:2,mat:2,weights:spineW}));
  for(const side of [-1,1]){const k=side>0?1:0,cx=side*HIPX,u=side>0?0:.5;
@@ -281,86 +244,14 @@ animateCrowd(time,goal){const c=this.crowd;if(!c||!c.group.visible)return;const 
  });c.heads.instanceMatrix.needsUpdate=true;c.bodies.instanceMatrix.needsUpdate=true;c.legs.instanceMatrix.needsUpdate=true;c.arms.instanceMatrix.needsUpdate=true;c.flags.forEach((f,i)=>f.rotation.y=Math.sin(time*2+i)*.25);
 }
 // Lot 2 · Painted face on the head (eyes with iris and highlight, brows, nose shading, lips, optional beard), cached per look.
-headGeometry(shape){this.headGeos=this.headGeos||new Map();const k='h'+shape;if(!this.headGeos.has(k))this.headGeos.set(k,sculpt(FACE_SHAPES[shape],null));return this.headGeos.get(k);}
-hairGeometry(shape,style,seed){this.headGeos=this.headGeos||new Map();const k=['hair',shape,style,seed%3].join('|');if(!this.headGeos.has(k))this.headGeos.set(k,sculpt(FACE_SHAPES[shape],(l,f)=>{const w=ease(-.035,.03,f-hairline(l));return w*hairThickness(style,l,f,seed%3)*(.35+.65*ease(0,.16,f-hairline(l)))/.104-(1-w)*.05;},96,72));return this.headGeos.get(k);}
-// The face map: skin tones (warmer cheeks, nose and ears, shade under the jaw), pores, almond eyes with iris and
-// lids, eyebrows drawn hair by hair, a shaded nose with nostrils, nasolabial folds, shaped lips, stubble or beard,
-// and the hair colour painted under the hairline so short cuts read as hair. A matching roughness map makes the
-// eyes and lips glossy and the skin matte; a bump map carries pores and stubble.
-faceTexture(skin,hair,eye,beard,style,shape=0){const key=[skin,hair,eye,beard,style,shape].join('|');this.faces=this.faces||new Map();if(this.faces.has(key))return this.faces.get(key);
- const make=(w,h)=>{const cv=document.createElement('canvas');cv.width=w;cv.height=h;return cv;},cv=make(FACE_W,FACE_H),c=cv.getContext('2d'),V=FACE_SHAPES[shape%FACE_SHAPES.length];
- if(typeof c?.fillRect!=='function'||typeof c.arc!=='function'||typeof c.ellipse!=='function'||typeof c.createRadialGradient!=='function'){const t={map:new T.CanvasTexture(cv)};this.faces.set(key,t);return t;}
- const col=hex=>new T.Color(hex),css=cl=>'#'+cl.getHexString(),tone=(hex,f)=>{const cl=col(hex);cl.lerp(col(f<0?0x1a0d08:0xffffff),Math.abs(f));return css(cl);},rgba=(hex,a)=>{const cl=col(hex);return `rgba(${Math.round(cl.r*255)},${Math.round(cl.g*255)},${Math.round(cl.b*255)},${a})`;};
- const dark=col(skin).getHSL({}).l<.35;let seed=0;for(const ch of key)seed=(seed*31+ch.charCodeAt(0))>>>0;const rnd=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};
- // Everything below is placed in metres on the face (x across, Y up, eyes at 0) and mapped to texture pixels.
- const px=(x,Y)=>{const [l,f]=uvOf(x,Y,V);return [FACE_W/2+l*PXR,FACE_H/2-f*PXR];};
- const poly=(pts,fill)=>{c.beginPath();pts.forEach((p,i)=>{const [X,Yy]=px(p[0],p[1]);if(i)c.lineTo(X,Yy);else c.moveTo(X,Yy);});c.closePath();c.fillStyle=fill;c.fill();};
- const quad=(p0,pc,p1,n=12)=>{const o=[];for(let i=0;i<=n;i++){const t=i/n,u=1-t;o.push([u*u*p0[0]+2*u*t*pc[0]+t*t*p1[0],u*u*p0[1]+2*u*t*pc[1]+t*t*p1[1]]);}return o;};
- const ribbon=(pts,w,fill)=>{const L=[],R=[];pts.forEach((p,i)=>{const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)];let dx=b[0]-a[0],dy=b[1]-a[1];const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;const ww=(typeof w==='function'?w(i/(pts.length-1)):w)/2;L.push([p[0]-dy*ww,p[1]+dx*ww]);R.push([p[0]+dy*ww,p[1]-dx*ww]);});poly([...L,...R.reverse()],fill);};
- const ell=(x,Y,rx,ry,fill,n=20)=>{const o=[];for(let i=0;i<n;i++){const t=i/n*Math.PI*2;o.push([x+Math.cos(t)*rx,Y+Math.sin(t)*ry]);}poly(o,fill);};
- const blob=(x,Y,rx,ry,color,alpha)=>{const [cx,cy]=px(x,Y),dx=Math.abs(px(x+rx,Y)[0]-cx)||1,dy=Math.abs(px(x,Y+ry)[1]-cy)||1,g=c.createRadialGradient(0,0,0,0,0,1);g.addColorStop(0,rgba(color,alpha));g.addColorStop(1,rgba(color,0));c.save();c.translate(cx,cy);c.scale(dx,dy);c.fillStyle=g;c.fillRect(-1,-1,2,2);c.restore();};
- c.fillStyle=skin;c.fillRect(0,0,FACE_W,FACE_H);
- const warm=dark?0x7a2a22:0xc4524a,ink=0x2a1610;
- blob(0,.065,.05,.022,0xffffff,.07);                                  // forehead catches the light
- for(const s of [-1,1]){blob(s*.052,-.024,.024,.018,warm,dark?.07:.1);blob(s*.0725,-.005,.012,.03,warm,.16);   // cheeks, ears
-  blob(s*.031,-.013,.017,.007,ink,.15);blob(s*.031,.009,.02,.011,ink,.12);                                   // under the eyes, lids
-  blob(s*.056,-.07,.02,.022,ink,.05);}                                                                        // hollow under the cheekbones
- blob(0,-.037,.011,.009,warm,dark?.12:.2);                                                                     // tip of the nose
- {const g=c.createLinearGradient(0,px(0,-.085)[1],0,FACE_H);g.addColorStop(0,rgba(ink,0));g.addColorStop(1,rgba(ink,.35));c.fillStyle=g;c.fillRect(0,px(0,-.085)[1],FACE_W,FACE_H);} // shade under the jaw
- if(!beard)for(const [x,Y] of [[-.036,-.075],[.036,-.075],[0,-.1]])blob(x,Y,.03,.024,0x2a3540,dark?.05:.08);   // shaved beard shadow
- for(let i=0;i<9000;i++){c.fillStyle=rnd()<.5?'rgba(40,20,12,.05)':'rgba(255,240,225,.045)';c.fillRect(rnd()*FACE_W,rnd()*FACE_H,1.4,1.4);} // pores
- // nose: shaded sides, wing creases, nostrils, philtrum
- for(const s of [-1,1]){ribbon([[s*.0105,.008],[s*.012,-.02],[s*.0145,-.033]],.0018,rgba(ink,.12));
-  ribbon([[s*.0135,-.031],[s*.0185,-.0365],[s*.0148,-.0435]],.0013,rgba(ink,.26));ell(s*.0082,-.0415,.0042,.0022,rgba(0x1a0805,.75));
-  ribbon([[s*.019,-.036],[s*.026,-.056],[s*.0285,-.075]],.0015,rgba(ink,.08));}                                // nasolabial folds
- ribbon([[0,.012],[0,-.03]],.004,rgba(0xffffff,.1));ribbon([[0,-.047],[0,-.066]],.0045,rgba(ink,.06));
- // eyes: almond lids, sclera with shaded corners, iris, pupil, highlight, lashes
- for(const s of [-1,1]){const X=v=>s*v,inner=[X(.017),-.001],outer=[X(.046),.002],up=quad(inner,[X(.031),.0145],outer),lo=quad(outer,[X(.031),-.0062],inner),lid=[...up,...lo];
-  ribbon(up.map(p=>[p[0],p[1]+.0045]),.0011,rgba(ink,.28));                                                       // eyelid crease
-  poly(lid,'#ece5da');c.save();c.beginPath();lid.forEach((p,i)=>{const [a,b]=px(p[0],p[1]);if(i)c.lineTo(a,b);else c.moveTo(a,b);});c.closePath();c.clip();
-  blob(X(.018),0,.006,.005,0xd07a70,.6);blob(X(.045),0,.005,.006,0x806050,.3);
-  const [ix,iy]=px(X(.0316),.0012),dx=Math.abs(px(X(.0316)+.0054,.0012)[0]-ix),dy=Math.abs(px(X(.0316),.0012+.0054)[1]-iy),g=c.createRadialGradient(0,0,.1,0,0,1);g.addColorStop(0,tone(eye,.28));g.addColorStop(.7,eye);g.addColorStop(1,tone(eye,-.62));
-  c.save();c.translate(ix,iy);c.scale(dx,dy);c.fillStyle=g;c.beginPath();c.arc(0,0,1,0,Math.PI*2);c.fill();c.fillStyle='#070605';c.beginPath();c.arc(0,0,.4,0,Math.PI*2);c.fill();c.fillStyle='rgba(255,255,255,.95)';c.beginPath();c.arc(.32,-.38,.2,0,Math.PI*2);c.fill();c.restore();
-  blob(X(.0316),.0082,.018,.005,0x120805,.55);c.restore();                                                          // the upper lid shades the eyeball
-  ribbon(up,.0016,'#160c08');ribbon(lo,.0007,rgba(ink,.45));}
- // eyebrows: a soft base and individual hairs, upright at the inner end, combed outwards
- for(const s of [-1,1]){const arch=quad([s*.011,.0215],[s*.036,.0335],[s*.06,.0165],14);ribbon(arch,t=>.0045*(1-.5*t),rgba(col(hair).lerp(col(0x000000),.2).getHex(),.5));
-  for(let i=0;i<110;i++){const t=rnd(),k=Math.min(13,Math.floor(t*14)),p=arch[k],q=arch[Math.min(13,k+1)],ang=Math.atan2(q[1]-p[1],q[0]-p[0])*(s>0?1:1),len=.0045+rnd()*.003,up=t<.22?.9:.18,x0=p[0]+(rnd()-.5)*.002,y0=p[1]+(rnd()-.5)*.004;
-   ribbon([[x0,y0],[x0+s*Math.abs(Math.cos(ang))*len*(1-up*.6),y0+len*(up*.9+Math.abs(Math.sin(ang))*.3)]],.0006,rgba(col(hair).lerp(col(0x000000),.15).getHex(),.55+rnd()*.35));}}
- // lips: a cupid's bow upper lip, a fuller lower lip with a highlight, a dark mouth line
- {const lipCol=col(skin).lerp(col(dark?0x5a2a24:0xa8504a),dark?.35:.42),mouth=[[.026,-.0752],[.013,-.0758],[0,-.0757],[-.013,-.0758],[-.026,-.0752]];
-  poly([[-.026,-.0752],[-.019,-.0726],[-.011,-.0692],[-.004,-.07],[0,-.0716],[.004,-.07],[.011,-.0692],[.019,-.0726],[.026,-.0752],...mouth],css(lipCol.clone().lerp(col(0x1a0d08),.12)));
-  poly([...mouth,[.025,-.0753],[.018,-.083],[.008,-.0877],[0,-.0885],[-.008,-.0877],[-.018,-.083],[-.025,-.0753]],css(lipCol));blob(0,-.0825,.009,.0028,0xffffff,.24);
-  ribbon([[-.027,-.0752],[-.013,-.0762],[0,-.0761],[.013,-.0762],[.027,-.0752]],.0012,css(lipCol.clone().lerp(col(0x100604),.6)));blob(-.0265,-.0755,.005,.004,ink,.3);blob(.0265,-.0755,.005,.004,ink,.3);}
- blob(0,-.108,.014,.008,0xffffff,.08);
- // hair colour under the hairline (soft edge)
- if(style!=='crane'){c.fillStyle=hair;for(let x=0;x<FACE_W;x+=2){const l=(x-FACE_W/2)/PXR,y=FACE_H/2-hairline(l)*PXR;c.globalAlpha=.9;c.fillRect(x,0,2,y-5);for(let k=0;k<6;k++){c.globalAlpha=.9*(1-k/6);c.fillRect(x,y-5+k*2,2,2);}}c.globalAlpha=1;
-  for(let i=0;i<3500;i++){const l=(rnd()-.5)*2*Math.PI,f=hairline(l)-rnd()*.04,X=FACE_W/2+l*PXR,Yy=FACE_H/2-f*PXR;c.fillStyle=rgba(col(hair).getHex(),.5);c.fillRect(X,Yy,1.3,1.3);}}
- else blob(0,.095,.06,.02,0xffffff,.08);
- // stubble, beard or goatee
- if(beard){const hc=col(hair).getHex(),dense=beard==='barbe'?1:beard==='bouc'?.9:.45;
-  if(beard==='barbe')for(let i=0;i<9000;i++){const l=(rnd()-.5)*2.8,f=-.02-rnd()*1.05;if(beardMask(beard,l,f)){const X=FACE_W/2+l*PXR,Yy=FACE_H/2-f*PXR;c.fillStyle=rgba(hc,.35);c.fillRect(X-2,Yy-2,5,5);}}
-  for(let i=0;i<26000*dense;i++){const l=(rnd()-.5)*2.8,f=-.02-rnd()*1.05;if(!beardMask(beard,l,f))continue;const X=FACE_W/2+l*PXR,Yy=FACE_H/2-f*PXR;c.fillStyle=rgba(hc,beard==='barbe3j'?.42:.75);c.fillRect(X,Yy,beard==='barbe3j'?1.2:1.8,beard==='barbe3j'?1.2:2.6);}}
- const map=new T.CanvasTexture(cv);map.colorSpace=T.SRGBColorSpace;map.anisotropy=4;
- // roughness: matte skin, glossy eyes and lips, a little shine on the nose and forehead
- const rv=make(256,128),r=rv.getContext('2d'),RP=(x,Y)=>{const [X,Yy]=px(x,Y);return [X/4,Yy/4];};r.fillStyle='rgb(170,170,170)';r.fillRect(0,0,256,128);
- const spot=(x,Y,rx,ry,vv)=>{const [X,Yy]=RP(x,Y),[X2]=RP(x+rx,Y),[,Y2]=RP(x,Y+ry);r.fillStyle=`rgb(${vv},${vv},${vv})`;r.beginPath();r.ellipse(X,Yy,Math.abs(X2-X)||1,Math.abs(Y2-Yy)||1,0,0,Math.PI*2);r.fill();};
- for(const s of [-1,1])spot(s*.0316,.0007,.0125,.0075,35);spot(0,-.08,.02,.007,95);spot(0,-.034,.007,.01,120);spot(0,.062,.04,.012,140);
- if(style!=='crane'){r.fillStyle='rgb(235,235,235)';for(let x=0;x<256;x++){const y=FACE_H/8-hairline((x-128)*2*Math.PI/256)*PXR/4;r.fillRect(x,0,1,y);}}
- const roughnessMap=new T.CanvasTexture(rv);
- const bv=make(512,256),b=bv.getContext('2d');b.fillStyle='rgb(128,128,128)';b.fillRect(0,0,512,256);for(let i=0;i<14000;i++){const vv=110+Math.floor(rnd()*36);b.fillStyle=`rgb(${vv},${vv},${vv})`;b.fillRect(rnd()*512,rnd()*256,1,1);}
- const t={map,roughnessMap,bumpMap:new T.CanvasTexture(bv)};this.faces.set(key,t);return t;}
-hairTexture(hair,style){const key='hair|'+hair+'|'+style;this.faces=this.faces||new Map();if(this.faces.has(key))return this.faces.get(key);
- const cv=document.createElement('canvas');cv.width=512;cv.height=256;const c=cv.getContext('2d');if(typeof c?.fillRect!=='function'||typeof c.arc!=='function'){const t={map:new T.CanvasTexture(cv)};this.faces.set(key,t);return t;}
- const base=new T.Color(hair),shade=(k,a)=>{const cl=base.clone().lerp(new T.Color(k>0?0xffffff:0x000000),Math.abs(k));return `rgba(${Math.round(cl.r*255)},${Math.round(cl.g*255)},${Math.round(cl.b*255)},${a})`;};let seed=hair.length*97+style.length*13;const rnd=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};
- c.fillStyle='#'+base.getHexString();c.fillRect(0,0,512,256);
- const curly=style==='boucles'||style==='afro';
- for(let i=0;i<(curly?5200:6500);i++){const x=rnd()*512,y=rnd()*256,k=(rnd()-.55)*.5;c.strokeStyle=shade(k,.5);c.lineWidth=curly?1.6:1.1;c.beginPath();
-  if(curly){const r=2+rnd()*3.5;c.arc(x,y,r,rnd()*6,rnd()*6+3.5);}
-  else{/* strands flow from the crown down and, at the front, back over the head */const len=8+rnd()*16,sway=(rnd()-.5)*4,dir=style==='plaque'&&y>70?-1:1;c.moveTo(x,y);c.quadraticCurveTo(x+sway,y+len*.5*dir,x+sway*2,y+len*dir);}
-  c.stroke();}
- const map=new T.CanvasTexture(cv);map.colorSpace=T.SRGBColorSpace;map.wrapS=T.RepeatWrapping;map.anisotropy=4;const t={map,bumpMap:map};this.faces.set(key,t);return t;}
-// Shared geometry: built once per shape, reused by every player (and kept when players are cleared).
+headGeometry(shape,detail='low'){return this.shared('head|'+shape+'|'+detail,()=>buildHead(shape,detail));}
+earGeometry(side,detail='low'){return this.shared('ear|'+side+'|'+detail,()=>buildEar(side,detail));}
+hairShell(style,shape,seed,detail){return this.shared(['shell',style,shape,seed%3,detail].join('|'),()=>buildHairShell(style,shape,seed,detail));}
+curls(style,shape,seed,detail,hex){return this.shared(['curls',style,shape,seed%3,detail,hex].join('|'),()=>buildCurls(style,shape,seed,detail,hex));}
+faceTexture(skin,hair,eye,beard,style,shape=0,detail='low'){const key=['face',skin,hair,eye,beard,style,shape,detail].join('|');this.faces=this.faces||new Map();if(!this.faces.has(key))this.faces.set(key,paintFace(skin,hair,eye,beard,style,shape,detail));return this.faces.get(key);}
+hairTexture(hair,style){const key='hair|'+hair+'|'+style;this.faces=this.faces||new Map();if(!this.faces.has(key))this.faces.set(key,paintHair(hair,style));return this.faces.get(key);}
+// Blink and gaze of the detailed faces (locker room only).
+updateFace(p,dt,now){if(p?.face)animateEyes(p.face,dt,now);}
 shared(key,make){this.geoCache=this.geoCache||new Map();if(!this.geoCache.has(key)){const g=make();g.userData.shared=true;this.geoCache.set(key,g);}return this.geoCache.get(key);}
 // Lot 5 · Kit fabric: the team colour with a soft sheen gradient, darker side panels, a subtle sublimated
 // diagonal pattern, fine fabric grain and trim on the shoulders. Painted on the torso tube (u = 0 at the back,
@@ -394,15 +285,20 @@ makePlayer(x,z,color,num,own=false,keeper=false,displayName="Rivage"){
   // Lot 6 · one continuous skinned body (see buildBody): skin, shirt, shorts, socks and gloves share nine bones.
   const marks={num,name:displayName,ink:shirtInk(color)};
   const mats=[new T.MeshStandardMaterial({color:skin,roughness:.55}),this.kitMaterial(color,trim,'shirt',marks),this.kitMaterial(shorts,trim,'shorts'),new T.MeshStandardMaterial({color:sock,roughness:.78}),new T.MeshStandardMaterial({color:trim,roughness:.6}),this.gloveMat||(this.gloveMat=new T.MeshStandardMaterial({color:0xe9eeee,roughness:.6}))];
- // Lot 4 · sculpted head, painted face, ears, sculpted hair (eight cuts) and a beard with volume.
- const shape=seed%FACE_SHAPES.length,style=own?(HAIR_STYLES.includes(this.appearance.hairStyle)?this.appearance.hairStyle:'degrade'):HAIR_STYLES[(seed*7+3)%HAIR_STYLES.length],hv=FACE_SHAPES[shape],HY=.74,HZ=.006;
- const face=this.faceTexture(skin,hair,eyes[seed%eyes.length],beard,style,shape);
- const faceMat=new T.MeshPhysicalMaterial({map:face.map,roughnessMap:face.roughnessMap||null,bumpMap:face.bumpMap||null,bumpScale:.5,roughness:face.roughnessMap?1:.7,sheen:.35,sheenRoughness:.7,sheenColor:new T.Color(0xff9a80)});/* sheen: the warm halo of light through skin at grazing angles */
- const head=new T.Mesh(this.headGeometry(shape),faceMat);head.position.set(0,HY,HZ);head.castShadow=true;head.name='Visage';pose.add(head);
- for(const side of [-1,1]){const p=headPoint(-side*1.6,.02,hv),ear=this.mesh(new T.SphereGeometry(.026,14,10),skin);ear.position.set(p.x-side*.003,HY+p.y,HZ+p.z+.004);ear.scale.set(.26,1,.62);ear.rotation.y=-side*.3;ear.castShadow=true;ear.name='Oreille';pose.add(ear);
-  const bowl=this.mesh(new T.SphereGeometry(.017,10,8),new T.Color(skin).multiplyScalar(.72).getHex());bowl.position.set(side*.006,.002,-.002);bowl.scale.set(.5,1,.8);ear.add(bowl);}
- if(style!=='crane'){const ht=this.hairTexture(hair,style),hm=new T.MeshStandardMaterial({map:ht.map,bumpMap:ht.bumpMap||null,bumpScale:1,roughness:.75});const hairMesh=new T.Mesh(this.hairGeometry(shape,style,seed),hm);hairMesh.position.set(0,HY,HZ);hairMesh.castShadow=true;hairMesh.name='Cheveux';pose.add(hairMesh);
-  if(style==='chignon'){const p=headPoint(Math.PI,.66,hv,.14),bun=new T.Mesh(new T.SphereGeometry(.043,16,12),hm);bun.position.set(p.x,HY+p.y,HZ+p.z);bun.scale.set(1,.9,.9);pose.add(bun);}}
+  // Lot 7 · head (see heads.js): continuous skull, detailed ears, eyes with real lids in the locker room, soft skin, curls and fades.
+ const detail=this.detail==='high'?'high':'low',hi=detail==='high',eyeHex=eyes[seed%eyes.length];
+ const shape=seed%FACE_SHAPES.length,style=own?(HAIR_STYLES.includes(this.appearance.hairStyle)?this.appearance.hairStyle:'degrade'):HAIR_STYLES[(seed*7+3)%HAIR_STYLES.length],hv=FACE_SHAPES[shape];
+ const headG=new T.Group();headG.position.set(0,HEAD_Y,.006);headG.name='Tête';pose.add(headG);
+ const face=this.faceTexture(skin,hair,eyeHex,beard,style,shape,detail),skinProps={map:face.map,roughnessMap:face.roughnessMap||null,bumpMap:face.bumpMap||null,bumpScale:.14,roughness:face.roughnessMap?1:.66,metalness:0};
+ const faceMat=hi?new T.MeshPhysicalMaterial({...skinProps,sheen:.22,sheenRoughness:.7,sheenColor:new T.Color(0xff9a80)}):new T.MeshStandardMaterial(skinProps);
+ const head=new T.Mesh(this.headGeometry(shape,detail),faceMat);head.castShadow=true;head.name='Visage';headG.add(head);
+ const plainSkin=new T.MeshStandardMaterial({color:skin,roughness:.62,metalness:0});
+ for(const side of [-1,1]){const m=earMount(side,hv),ear=new T.Mesh(this.earGeometry(side,detail),plainSkin);ear.position.set(m.x,m.y,m.z);ear.rotation.set(0,m.ry,m.rz);ear.castShadow=true;ear.name='Oreille';headG.add(ear);}
+ let faceRig=null;if(hi){const pairs=[];for(const side of [-1,1]){const e=buildEye(side,hv,eyeHex,plainSkin);headG.add(e.pivot);headG.add(buildEyeRim(side,hv,skin));pairs.push(e);}faceRig={eyes:pairs};}
+ if(style!=='crane'){const ht=this.hairTexture(hair,style),hm=new T.MeshStandardMaterial({map:ht.map,bumpMap:ht.bumpMap||null,bumpScale:.4,roughness:.9,metalness:0});
+  const shell=new T.Mesh(this.hairShell(style,shape,seed,detail),hm);shell.castShadow=true;shell.name='Cheveux';headG.add(shell);
+  if(style==='boucles'||style==='afro'){const cm=new T.Mesh(this.curls(style,shape,seed,detail,hair),new T.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0}));cm.castShadow=true;cm.name='Boucles';headG.add(cm);}
+  if(style==='chignon'){const p=headPoint(Math.PI,.66,hv,.016),bun=new T.Mesh(buildBun(),hm);bun.position.set(p.x,p.y,p.z);bun.scale.set(1,.9,.9);headG.add(bun);}}
   const spine=new T.Bone();pose.add(spine);const legs=[],knees=[],arms=[],elbows=[],bootRig=[],hands=[],bones=[spine,0,0,0,0,0,0,0,0];
   const soleMat=this.soleMat||(this.soleMat=new T.MeshStandardMaterial({color:0x1b1d1d,roughness:.8})),studMat=this.studMat||(this.studMat=new T.MeshStandardMaterial({color:0xb9bec2,roughness:.5})),bootMat=new T.MeshStandardMaterial({color:boots,roughness:.38});
   for(const side of [-1,1]){const k=side>0?1:0;
@@ -415,7 +311,7 @@ makePlayer(x,z,color,num,own=false,keeper=false,displayName="Rivage"){
   const body=new T.SkinnedMesh(this.shared(keeper?'bodyK':'bodyO',()=>buildBody(keeper)),mats);body.castShadow=true;body.frustumCulled=false;pose.add(body);g.updateMatrixWorld(true);body.bind(new T.Skeleton(bones));
  body.userData.marking={ink:shirtInk(color),number:num,displayName};/* printed on the shirt fabric (see kitTexture) */
  if(own){const ring=new T.Mesh(new T.RingGeometry(.62,.78,36),new T.MeshBasicMaterial({color:0xd3f96a,side:T.DoubleSide,transparent:true,opacity:.9}));ring.rotation.x=-Math.PI/2;ring.position.y=.035;g.add(ring);}
- this.scene.add(g);const p={g,pose,body,arms,elbows,legs,knees,boots:bootRig,hands,keeper,lastAngle:keeper?Math.PI:0,stride:own?0:seed,idle:seed*.37};this.players.push(p);return p;
+ this.scene.add(g);const p={g,pose,body,arms,elbows,legs,knees,boots:bootRig,hands,face:faceRig,keeper,lastAngle:keeper?Math.PI:0,stride:own?0:seed,idle:seed*.37};this.players.push(p);return p;
 }
 clearPlayers(){for(const p of this.players){this.scene.remove(p.g);p.g.traverse(o=>{if(o.skeleton)o.skeleton.dispose();if(o.geometry&&!o.geometry.userData?.shared)o.geometry.dispose();if(o.material){for(const m of [].concat(o.material)){if(m.map)m.map.dispose();m.dispose();}}});}this.players=[];}
 setup(a){this.action=a;this.camPos=null;this.cinePos=null;this.clearPlayers();this.referee=null;this.hero=this.makePlayer(a.hero.x,a.hero.z,0x63b9f4,this.appearance.number,true,false,this.appearance.name||'Espoir');this.teammates=(a.teammates||[a.receiver]).filter(Boolean).map((t,i)=>this.makePlayer(t.x,t.z,0x63b9f4,t.number||11+i,false,false,t.name||['Martin','Lopez','Morel','Diallo','Petit','Garcia','Leroy','Roux','Faye','Blanc'][i%10]));this.receiver=this.teammates[0]||null;this.defenders=a.defenders.map((d,i)=>this.makePlayer(d.x,d.z,0xd96955,d.number||4+i,false,false,d.name||['Bernard','Thomas','Robert','Dubois','Laurent','Michel','Simon','Durand','Adam','Henry'][i%10]));this.keeper=this.makePlayer(a.keeper.x,a.keeper.z,0xe5c45c,1,false,true,'Gardien');
@@ -560,10 +456,11 @@ render(a,dt,now){this.stepCity(now,dt);this.updateNets(dt);if(a===this.action){i
 // Lot 5 · "Mon joueur" studio: the player alone on a lit turntable. Drag to turn him; the camera frames the whole
 // body or moves in on the face. Thumbnails of every haircut and beard are rendered with the same lights.
 export class Locker{
-constructor(canvas){this.canvas=canvas;const r=this.r=new T.WebGLRenderer({canvas,antialias:true});r.setPixelRatio(Math.min(devicePixelRatio||1,2));r.outputColorSpace=T.SRGBColorSpace;r.toneMapping=T.ACESFilmicToneMapping;r.toneMappingExposure=1.15;r.shadowMap.enabled=true;r.shadowMap.type=T.PCFSoftShadowMap;
- const e=this.e=Object.create(Pitch3D.prototype);e.scene=new T.Scene();e.players=[];e.appearance={};const s=this.scene=e.scene;s.background=new T.Color('#101b16');s.fog=new T.Fog('#101b16',7,16);
- s.add(new T.HemisphereLight(0xe8f3ff,0x24402c,1.4));const key=new T.DirectionalLight(0xfff1dc,3.2);key.position.set(-2.5,4,-4);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=key.shadow.camera.bottom=-2;key.shadow.camera.right=key.shadow.camera.top=2;s.add(key);
- const rim=new T.DirectionalLight(0x9fd8ff,2.2);rim.position.set(3,3,4);s.add(rim);const fill=new T.DirectionalLight(0xd3f96a,.5);fill.position.set(3,1,-3);s.add(fill);
+constructor(canvas){this.canvas=canvas;const r=this.r=new T.WebGLRenderer({canvas,antialias:true});r.setPixelRatio(Math.min(devicePixelRatio||1,2));r.outputColorSpace=T.SRGBColorSpace;r.toneMapping=T.ACESFilmicToneMapping;r.toneMappingExposure=1.05;r.shadowMap.enabled=true;r.shadowMap.type=T.PCFSoftShadowMap;
+ const e=this.e=Object.create(Pitch3D.prototype);e.scene=new T.Scene();e.players=[];e.appearance={};e.detail='high';const s=this.scene=e.scene;s.background=new T.Color('#101b16');s.fog=new T.Fog('#101b16',7,16);
+ // Soft studio light: a wide, gentle key from the front left, a light fill from the right, a cool rim from behind; moderate shadows.
+ s.add(new T.HemisphereLight(0xeaf2ff,0x2a4030,1.15));const key=new T.DirectionalLight(0xfff3e4,2.1);key.position.set(-2.4,2.8,-3.4);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=key.shadow.camera.bottom=-2;key.shadow.camera.right=key.shadow.camera.top=2;key.shadow.bias=-.0004;key.shadow.normalBias=.015;s.add(key);
+ const fill=new T.DirectionalLight(0xdce8ff,.9);fill.position.set(2.6,1.4,-3);s.add(fill);const rim=new T.DirectionalLight(0x9fd8ff,1.2);rim.position.set(2,3,4);s.add(rim);
  const c=document.createElement('canvas');let floorMat=new T.MeshStandardMaterial({color:0x1d3a2a,roughness:.9});if(c.getContext?.('2d')?.createRadialGradient){c.width=c.height=256;const g=c.getContext('2d'),gr=g.createRadialGradient(128,128,10,128,128,128);gr.addColorStop(0,'#3d7a45');gr.addColorStop(.62,'#25502f');gr.addColorStop(.7,'#d3f96a');gr.addColorStop(.72,'#1c3a26');gr.addColorStop(1,'#101b16');g.fillStyle=gr;g.fillRect(0,0,256,256);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;floorMat=new T.MeshStandardMaterial({map:t,roughness:.85});}
  const floor=new T.Mesh(new T.CircleGeometry(1.6,48),floorMat);floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;s.add(floor);
  this.cam=new T.PerspectiveCamera(30,1,.05,40);this.yaw=.35;this.view='body';this.camT={y:1,d:4.4,look:1};this.camNow={...this.camT};
@@ -573,11 +470,11 @@ setView(v){this.view=v;this.camT=v==='face'?{y:1.75,d:1.1,look:1.73}:{y:1.05,d:4
 resize(){const w=this.canvas.clientWidth,h=this.canvas.clientHeight;if(!w||!h)return;if(this.w!==w||this.h!==h){this.w=w;this.h=h;this.r.setSize(w,h,false);this.cam.aspect=w/h;this.cam.updateProjectionMatrix();}}
 frame(now){if(!this.running)return;const dt=Math.min(.05,(now-(this.last||now))/1000);this.last=now;this.resize();if(performance.now()-(this.touched||0)>2500)this.yaw+=dt*.35;
  for(const k of ['y','d','look'])this.camNow[k]+=(this.camT[k]-this.camNow[k])*Math.min(1,dt*5);const c=this.camNow;this.cam.position.set(0,c.y,-c.d);this.cam.lookAt(0,c.look,0);
- if(this.p)this.e.posePlayer(this.p,{x:0,z:0,angle:this.yaw,speed:0,kickTimer:-1},dt,now/1000);this.r.render(this.scene,this.cam);requestAnimationFrame(t=>this.frame(t));}
+ if(this.p){this.e.posePlayer(this.p,{x:0,z:0,angle:this.yaw,speed:0,kickTimer:-1},dt,now/1000);this.e.updateFace(this.p,dt,now/1000);}this.r.render(this.scene,this.cam);requestAnimationFrame(t=>this.frame(t));}
 start(){if(this.running)return;this.running=true;this.last=null;requestAnimationFrame(t=>this.frame(t));}
 stop(){this.running=false;}
 // Head-and-shoulders portraits for the option cards, rendered off screen with the studio lights.
-portraits(list){const cv=document.createElement('canvas');cv.width=cv.height=192;const r=new T.WebGLRenderer({canvas:cv,antialias:true,preserveDrawingBuffer:true});r.outputColorSpace=T.SRGBColorSpace;r.toneMapping=T.ACESFilmicToneMapping;r.toneMappingExposure=1.15;r.setSize(192,192,false);const cam=new T.PerspectiveCamera(26,1,.05,20),out=[],keep=this.p,saved=this.e.appearance;
+portraits(list){const cv=document.createElement('canvas');cv.width=cv.height=192;const r=new T.WebGLRenderer({canvas:cv,antialias:true,preserveDrawingBuffer:true});r.outputColorSpace=T.SRGBColorSpace;r.toneMapping=T.ACESFilmicToneMapping;r.toneMappingExposure=1.15;r.setSize(192,192,false);const cam=new T.PerspectiveCamera(26,1,.05,20),out=[],keep=this.p,saved=this.e.appearance,detail0=this.e.detail;this.e.detail='low';
  for(const app of list){this.setAppearance(app);this.e.posePlayer(this.p,{x:0,z:0,angle:.45,speed:0,kickTimer:-1},.016,0);this.p.g.rotation.y=.45;this.p.lastAngle=.45;this.p.g.updateMatrixWorld(true);cam.position.set(0,1.76,-1.0);cam.lookAt(0,1.72,0);r.render(this.scene,cam);out.push(cv.toDataURL('image/png'));}
  r.dispose();r.forceContextLoss?.();this.setAppearance(saved);return out;}
 }
