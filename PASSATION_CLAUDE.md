@@ -53,7 +53,7 @@ Lot 1 « sensations de jeu » tiré de l'audit ChatGPT : passe d'introduction r�
 Terrain réel 105 × 68 m et stade complet ; interface du match épurée (menu ⋯) ; gardien en position, vraie course (rythme × 1,35, touches de 5 m), arrêt sur image pendant les décisions ; jeu aérien (têtes, retournée, lobs, moins de centres) ; duels d'épaule, tacles glissés, fautes et cartons ; hors-jeu avec juge de touche ; 15 célébrations aléatoires en cinématique ; compte à rebours et lecteur de replay à quatre caméras ; quartier vivant autour du stade. Détail et chiffres dans PROJECT.md, section V19.
 
 ## Publier une mise à jour
-1. `npm run check` (214 tests, 1 min 30 à 4 min selon la charge du Mac).
+1. `npm run check` (215 tests, 1 min 30 à 4 min selon la charge du Mac).
 2. `npm run stamp -- "<libellé>" <jeton>`.
 3. Commit, puis envoi via GitHub Desktop (« Push origin ») : le terminal n'a pas d'identifiants GitHub.
 4. GitHub Actions relance les tests et publie dist/ sur https://antoinejo17.github.io/next-nine/.

@@ -1,6 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
 import * as T from '../dist/vendor/three.module.js';
-import {mouthLine,buildMHHead,morphWeights,mhHair,mhBeard,mhCurls,hairShell,cavity,smoothField,MH_SHAPES,mhShapeParams,MH_NEUTRAL_MODS,MH_HAIR} from '../dist/mh.js';
+import {commissure,landmarks,mouthLine,buildMHHead,morphWeights,mhHair,mhBeard,mhCurls,hairShell,cavity,smoothField,MH_SHAPES,mhShapeParams,MH_NEUTRAL_MODS,MH_HAIR} from '../dist/mh.js';
 const D=JSON.parse(fs.readFileSync(new URL('../dist/mh/head.json',import.meta.url),'utf8'));
 const bbox=g=>{g.computeBoundingBox();return g.boundingBox;};
 
@@ -59,3 +59,7 @@ test('Lot 9 · young-adult neutral face: closed mouth settings and a leaner lowe
 test('Lot 9c · the closing line between the lips is a very slight curve: level in the middle, corners a hair lower, ending at the corners',()=>{const lm={ym:-.07,xc:.021};
  const mid=mouthLine(lm,0),corner=mouthLine(lm,lm.xc),out=mouthLine(lm,lm.xc*2);assert.ok(corner<mid&&mid-corner<.0015,'a hair lower at the corners, not a smile or a frown '+(mid-corner));assert.ok(Math.abs(out-corner)<1e-9,'the curve stops at the corner and does not run on across the skin');
  const a=mouthLine(lm,.004),b=mouthLine(lm,.012);assert.ok(Math.abs(a-mid)<.0006&&b<a,'smooth from the middle to the corner');});
+
+test('Lot 9d · lower-face proportions and mouth: the chin is no longer overlong, the lips sit near the profile line, the commissure is where the lips meet',()=>{
+ for(const i of [0,1,2,3,4,5]){const {head}=buildMHHead(D,mhShapeParams(i)),lm=landmarks(head,D),pos=head.attributes.position;let chin=9;for(let k=0;k<pos.count;k++)if(pos.getZ(k)<-.04&&Math.abs(pos.getX(k))<.02&&pos.getY(k)<chin)chin=pos.getY(k);
+  const sg=(lm.ym-chin)*1000;assert.ok(sg>37&&sg<56,'shape '+i+' mouth-to-chin '+sg.toFixed(1)+' mm');const cx=commissure(head,D);assert.ok(cx>.02&&cx<.03,'commissure '+cx);}});
