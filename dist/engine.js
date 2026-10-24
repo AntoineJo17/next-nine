@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.js';
-import {mhHeadGroup,mhShapeParams} from './mh.js?v=20-9k';
-import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-9k';
-import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-9k';
+import {mhHeadGroup,mhShapeParams} from './mh.js?v=20-9l';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-9l';
+import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-9l';
 export {FACE_SHAPES,HAIR_STYLES,headPoint,uvOf};
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
@@ -474,7 +474,7 @@ setAppearance(app){const e=this.e;if(this.p){e.scene.remove(this.p.g);this.p.g.t
 setView(v,yaw){this.view=v;if(yaw!=null){this.yaw=yaw;this.touched=performance.now()+8000;}   // the turntable pauses a few seconds on the chosen angle; dragging still turns the player freely
  this.camT=v==='face'?{y:1.735,d:2.4,look:1.712,fov:14}:{y:1.05,d:4.5,look:.96,fov:30};}   // the face is seen through a longer lens: no distortion of the nose and chin
 resize(){const w=this.canvas.clientWidth,h=this.canvas.clientHeight;if(!w||!h)return;if(this.w!==w||this.h!==h){this.w=w;this.h=h;this.r.setSize(w,h,false);this.cam.aspect=w/h;this.cam.updateProjectionMatrix();}}
-frame(now){if(!this.running)return;const dt=Math.min(.05,(now-(this.last||now))/1000);this.last=now;this.resize();if(performance.now()-(this.touched||0)>2500)this.yaw+=dt*.35;
+frame(now){if(!this.running)return;const dt=Math.min(.05,(now-(this.last||now))/1000);this.last=now;this.resize();
  for(const k of ['y','d','look','fov'])this.camNow[k]+=(this.camT[k]-this.camNow[k])*Math.min(1,dt*5);const c=this.camNow;if(Math.abs(this.cam.fov-c.fov)>.01){this.cam.fov=c.fov;this.cam.updateProjectionMatrix();}this.cam.position.set(0,c.y,-c.d);this.cam.lookAt(0,c.look,0);
  if(this.p){this.e.posePlayer(this.p,{x:0,z:0,angle:this.yaw,speed:0,kickTimer:-1},dt,now/1000);this.e.updateFace(this.p,dt,now/1000);}this.r.render(this.scene,this.cam);requestAnimationFrame(t=>this.frame(t));}
 start(){if(this.running)return;this.running=true;this.last=null;requestAnimationFrame(t=>this.frame(t));}

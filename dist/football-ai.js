@@ -1,4 +1,4 @@
-import {clamp,R,PITCH} from './physics.js?v=20-9k';
+import {clamp,R,PITCH} from './physics.js?v=20-9l';
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export function laneClearance(from,to,defenders){const dx=to.x-from.x,dz=to.z-from.z,ll=dx*dx+dz*dz;return defenders.reduce((best,d)=>{const u=((d.x-from.x)*dx+(d.z-from.z)*dz)/(ll||1);if(u<.08||u>.96)return best;return Math.min(best,Math.hypot(d.x-from.x-u*dx,d.z-from.z-u*dz));},20);}
 // Lot 1 · How good a shot is from here (0 = none): the angle between the posts, the distance and the open lanes.

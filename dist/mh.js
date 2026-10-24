@@ -3,10 +3,12 @@
 // morph targets (sparse offsets). A face is the base mesh plus weighted targets: race blend and gender first, then the
 // fine adjustments (jaw, nose, lips, ears...). Units in the file are decimetres, front = +z; the game wants metres, front = -z.
 import * as T from './vendor/three.module.js';
-import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-9k';
+import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-9l';
 export const MH_EYE_Y=7.28,MH_S=.1,MH_ZC=.65;
 let cache=null;
-export async function loadMH(url='./mh/head.json'){if(!cache)cache=fetch(url).then(r=>r.json());const D=await cache;if(typeof document!=='undefined'){if(!eyeTex)eyeTex=calmEyeTexture();await eyeTex.userData.ready;}return D;}   // the eye texture is ready before the first head (thumbnails included)
+export async function loadMH(url='./mh/head.json'){if(!cache)cache=fetch(url).then(r=>r.json()).then(async D=>{   // the hand-painted red of the lips (optional picture, see _levres.html)
+  if(typeof document!=='undefined')try{const im=await new Promise((ok,ko)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=ko;i.src=url.replace('head.json','levres.png');}),c=document.createElement('canvas');c.width=im.width;c.height=im.height;const x=c.getContext('2d');x.drawImage(im,0,0);D.levres={w:c.width,h:c.height,data:x.getImageData(0,0,c.width,c.height).data};}catch(e){}
+  return D;});const D=await cache;if(typeof document!=='undefined'){if(!eyeTex)eyeTex=calmEyeTexture();await eyeTex.userData.ready;}return D;}   // the eye texture is ready before the first head (thumbnails included)
 const RACES=['african','asian','caucasian'];
 // params: {race:[african,asian,caucasian] (sum 1), gender:0..1 (1 = male), mods:{target-name: weight}}
 // A name ending in ! is an exact target ("mouth-lowerlip-middle-up!"). A modifier "nose-width" with weight +w uses "nose-width-incr", with −w uses "nose-width-decr".
@@ -84,11 +86,11 @@ export const mouthLine=(lm,ax)=>lm.ym-.0008*Math.pow(Math.min(1,ax/lm.xc),2)+.00
 const vnoise=(x,y,z)=>{const xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z),fx=x-xi,fy=y-yi,fz=z-zi,sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy),sz=fz*fz*(3-2*fz),h=(i,j,k)=>hash3(xi+i,yi+j,zi+k),l=(a,b,t)=>a+(b-a)*t;return l(l(l(h(0,0,0),h(1,0,0),sx),l(h(0,1,0),h(1,1,0),sx),sy),l(l(h(0,0,1),h(1,0,1),sx),l(h(0,1,1),h(1,1,1),sx),sy),sz);};
 // Shine of the skin: a little oilier on the forehead, nose and chin, drier on the cheeks, moist on the lips.
 const skinRough=(x,y,z,L)=>{const ax=Math.abs(x),front=smooth(-.04,-.075,z);let r=.66+.05*(vnoise(x*120,y*120,z*120)-.5);r-=front*(.1*smooth(.034,.012,ax)*smooth(.022,.045,y)+.12*Math.exp(-((ax/.012)**2)-(((y+.03)/.016)**2))+.07*Math.exp(-((ax/.018)**2)-(((y+.108)/.012)**2)));r+=front*.05*Math.exp(-(((ax-.05)/.022)**2)-(((y+.02)/.025)**2));r=r*(1-L)+.6*L;return Math.min(.95,Math.max(.3,r));};
-export function bakeSkin(geo,lip,{skin,hair,style,beard='',lm,W=1024,cav,eyeC,lipRed=0}){
+export function bakeSkin(geo,lip,{skin,hair,style,beard='',lm,W=1024,cav,eyeC,lipRed=0,paint=null}){
  const pos=geo.attributes.position,uv=geo.attributes.uv,idx=geo.index.array,cv=document.createElement('canvas');cv.width=cv.height=W;const c=cv.getContext('2d');
  const base=new T.Color(skin),hc=new T.Color(hair),dark=base.getHSL({}).l<.35,lipC=base.clone().lerp(new T.Color(dark?0x5a2a24:0xa8504a),Math.max(0,Math.min(.9,.42+.4*lipRed))),warm=new T.Color(dark?0x7a2a22:0xc4524a);
  c.fillStyle='#'+base.getHexString();c.fillRect(0,0,W,W);const img=c.getImageData(0,0,W,W),D=img.data,cov=new Uint8Array(W*W),R=new Uint8ClampedArray(W*W*4);
- const col=new T.Color(),mix=(a,b,t)=>a.clone().lerp(b,t);
+ const col=new T.Color(),pc=new T.Color(),mix=(a,b,t)=>a.clone().lerp(b,t);
  const shade=(x,y,z,L,C)=>{col.copy(base);
   const ax=Math.abs(x),front=smooth(-.04,-.075,z);
   col.lerp(warm,front*(dark?.05:.09)*Math.exp(-(((ax-.052)/.02)**2)-(((y+.02)/.022)**2)));           // cheeks
@@ -96,7 +98,8 @@ export function bakeSkin(geo,lip,{skin,hair,style,beard='',lm,W=1024,cav,eyeC,li
   col.multiplyScalar(1-.05*front*Math.exp(-(((ax-.031)/.02)**2)-(((y-.003)/.014)**2)));               // soft shadow around the eyes
   if(front>0){const nz=vnoise(x*70,y*70,z*70)-.5,rd=Math.max(0,vnoise(x*55+9,y*55+3,z*55)-.5);col.multiplyScalar(1+.04*nz*front);col.lerp(warm,.07*rd*front);   // slow, faint variations of tone and redness (no grain)
    col.multiplyScalar(1-.05*front*Math.exp(-(((ax-.03)/.016)**2)-(((y+.011)/.0065)**2)));col.lerp(warm,front*(dark?.04:.07)*Math.exp(-(((ax-.013)/.006)**2)-(((y+.046)/.006)**2)));}   // under the eyes a little darker, the wings of the nose a little redder
-  if(L>0){col.lerp(globalThis.MH_DEBUG_LIP?new T.Color(0xff00aa):lipC,L);const ol=4*L*(1-L);if(ol>0)col.multiplyScalar(1-.06*ol);}   // a barely darker border   // the vermilion border is a little darker
+  if(paint&&lm&&front>0){const u=(.03-x)/.06,v=(lm.ym+.012-y)/.024;if(u>=0&&u<1&&v>=0&&v<1){const k=(Math.floor(v*paint.h)*paint.w+Math.floor(u*paint.w))*4,a=paint.data[k+3]/255;if(a>0)col.lerp(pc.setRGB(paint.data[k]/255,paint.data[k+1]/255,paint.data[k+2]/255,T.SRGBColorSpace),Math.min(1,a*Math.max(.15,1+.6*lipRed)));}}   // the red drawn by hand replaces the generated one
+  if(L>0&&!paint){col.lerp(globalThis.MH_DEBUG_LIP?new T.Color(0xff00aa):lipC,L);const ol=4*L*(1-L);if(ol>0)col.multiplyScalar(1-.06*ol);}   // a barely darker border   // the vermilion border is a little darker
   if(lm&&front>0)C*=1-.8*Math.exp(-(((y-mouthLine(lm,ax))/.0022)**2))*smooth(lm.xc+.002,lm.xc-.003,ax);   // the crease between the lips is drawn by the closing line, not by a black cavity
   col.multiplyScalar(1-.26*Math.max(0,C)*(1-.5*L)+.03*Math.max(0,-C));
   if(lm&&front>0&&ax<lm.xc){const u=ax/lm.xc,dl=y-mouthLine(lm,ax),th=.00085*(.45+.55*smooth(1,.45,u)),k=.2*smooth(.93,.68,u)*(.55+.45*smooth(.9,.3,u));col.lerp(lipC.clone().multiplyScalar(.6),k*Math.exp(-((dl/th)**2)));col.multiplyScalar(1-.2*smooth(.93,.7,u)*Math.exp(-(((dl+.0007)/.0007)**2)));}   // the fine closing line: a very slight curve that ends at the corners of the mouth
@@ -207,7 +210,7 @@ export function landmarks(head,D){const pos=head.attributes.position;let up=1e9,
  return {ym,yn:ty-.011,yc};}
 export function mhHeadGroup(D,p,look,W=1024){const {head,eyes}=buildMHHead(D,p);const cx=commissure(head,D),lipW=lipMask(head,D,cx),lm=landmarks(head,D);lm.xc=cx;if(!look.original)integrateMouth(head,D,lipW,lm);   // look.original: the base MakeHuman mouth, for comparisons
  const eyeC=[-1,1].map(sd=>{const pe=eyes.attributes.position;let sx=0,sy=0,sz=0,n=0;for(let i=0;i<pe.count;i++)if(Math.sign(pe.getX(i))===sd){sx+=pe.getX(i);sy+=pe.getY(i);sz+=pe.getZ(i);n++;}return {x:sx/n,y:sy/n,z:sz/n};});
- const map=bakeSkin(head,lipW,{skin:look.skin,hair:look.hair,style:look.style,beard:look.beard||'',lm:look.original?undefined:lm,lipRed:+look.lipRed||0,cav:cavity(head),W,eyeC}),g=new T.Group();
+ const map=bakeSkin(head,lipW,{skin:look.skin,hair:look.hair,style:look.style,beard:look.beard||'',lm:look.original?undefined:lm,lipRed:+look.lipRed||0,paint:look.original?null:(D.levres||null),cav:cavity(head),W,eyeC}),g=new T.Group();
  const skinMat=new T.MeshStandardMaterial({map,roughness:1,roughnessMap:map.userData.rough,metalness:0}),m=new T.Mesh(head,skinMat);m.name='Visage';m.castShadow=true;g.add(m);
  {const mo=new T.Mesh(new T.PlaneGeometry(2*lm.xc,.0045),new T.MeshBasicMaterial({color:0x2b1411,side:T.DoubleSide}));mo.position.set(0,lm.ym,-.079);mo.name='Bouche';g.add(mo);}   // the dark inside of the mouth, seen only through the fine slit between the lips
  if(!eyeTex)eyeTex=calmEyeTexture();
@@ -245,6 +248,9 @@ export const MH_SHAPES=[
  {race:[.1,.7,.2],gender:.65,mods:{'head-invertedtriangular!':.45,'chin-prominent-incr!':.3,'chin-bones-incr!':.28,'nose-point-up!':.5,...SYM('eye-scale-incr',.25),...SYM('cheek-volume-incr',.3),'nose-width1-decr!':.3}} // 5 soft with a defined jaw
 ];
 // The player's own face settings (each −1..1, 0 = the default face): they move a few base targets up or down from where the shape put them.
-export const FACE_SLIDERS=[['lipFull','Volume des lèvres',['mouth-upperlip-volume','mouth-lowerlip-volume'],.6],['lipHeight','Hauteur des lèvres',['mouth-upperlip-height','mouth-lowerlip-height'],.6],['chin','Menton avancé',['chin-prominent'],.7],['eyes','Ouverture des yeux',['l-eye-height1','r-eye-height1','l-eye-height2','r-eye-height2'],.6],['lipRed','Rouge des lèvres',[],0]];   // lipRed is painted, not a target: it changes how strongly the lips are coloured
+export const FACE_SLIDERS=[['lipFull','Volume des lèvres',['mouth-upperlip-volume','mouth-lowerlip-volume'],.6],['lipHeight','Hauteur des lèvres',['mouth-upperlip-height','mouth-lowerlip-height'],.6],['chin','Menton avancé',['chin-prominent'],.7],['eyes','Ouverture des yeux',['l-eye-height1','r-eye-height1','l-eye-height2','r-eye-height2'],.6],['lipRed','Rouge des lèvres',[],0],
+ ['lipWidth','Largeur de la bouche',['mouth-scale-horiz'],.5],['noseWidth','Largeur du nez',['nose-scale-horiz'],.6],['noseLength','Longueur du nez',['nose-scale-vert'],.6],['noseOut','Avancée du nez',['nose-scale-depth'],.6],
+ ['jaw','Largeur du menton',['chin-width'],.6],['cheekBones','Pommettes',['l-cheek-bones','r-cheek-bones'],.6],['cheekFull','Joues pleines',['l-cheek-volume','r-cheek-volume'],.6],
+ ['faceWidth','Largeur du visage',['head-scale-horiz'],.5],['faceLength','Longueur du visage',['head-scale-vert'],.5],['forehead','Hauteur du front',['forehead-scale-vert'],.6],['eyeSize','Taille des yeux',['l-eye-scale','r-eye-scale'],.5],['neck','Épaisseur du cou',['neck-scale-horiz'],.5],['age','Âge du visage',['head-age'],.6]];   // lipRed is painted, not a target: it changes how strongly the lips are coloured
 export function applyFace(mods,face){const m={...mods};if(!face)return m;for(const [k,,names,gain] of FACE_SLIDERS){const v=Math.max(-1,Math.min(1,+face[k]||0));if(!v)continue;for(const n of names){const base=(m[n+'-incr!']||0)-(m[n+'-decr!']||0),t=Math.max(-1,Math.min(1,base+v*gain));delete m[n+'-incr!'];delete m[n+'-decr!'];if(t>0)m[n+'-incr!']=t;else if(t<0)m[n+'-decr!']=-t;}}return m;}
 export function mhShapeParams(i,face){const sh=MH_SHAPES[((i%MH_SHAPES.length)+MH_SHAPES.length)%MH_SHAPES.length];return {race:sh.race.map((v,i)=>.25*v+.75*[.04,.04,.92][i]),gender:sh.gender,mods:applyFace({...MH_NEUTRAL_MODS,...sh.mods},face)};}
