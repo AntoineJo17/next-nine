@@ -6,8 +6,8 @@ import * as T from './vendor/three.module.js';
 import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-9s';
 export const MH_EYE_Y=7.28,MH_S=.1,MH_ZC=.65;
 let cache=null;
-export async function loadMH(url='./mh/head.json'){if(!cache)cache=fetch(url).then(r=>r.json()).then(async D=>{   // the hand-painted red of the lips (optional picture, see _levres.html)
-  if(typeof document!=='undefined')try{const im=await new Promise((ok,ko)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=ko;i.src=url.replace('head.json','levres.png');}),c=document.createElement('canvas');c.width=im.width;c.height=im.height;const x=c.getContext('2d');x.drawImage(im,0,0);D.levres={w:c.width,h:c.height,data:x.getImageData(0,0,c.width,c.height).data};}catch(e){}
+export async function loadMH(url='./mh/head.json'){if(!cache)cache=fetch(url).then(r=>r.json()).then(async D=>{   // the hand-painted red of the lips: only fetched when head.json says the picture exists ("paintedLips":true), so no 404 otherwise
+  if(D.paintedLips&&typeof document!=='undefined')try{const im=await new Promise((ok,ko)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=ko;i.src=url.replace('head.json','levres.png');}),c=document.createElement('canvas');c.width=im.width;c.height=im.height;const x=c.getContext('2d');x.drawImage(im,0,0);D.levres={w:c.width,h:c.height,data:x.getImageData(0,0,c.width,c.height).data};}catch(e){}
   return D;});const D=await cache;if(typeof document!=='undefined'){if(!eyeTex)eyeTex=calmEyeTexture();await eyeTex.userData.ready;}return D;}   // the eye texture is ready before the first head (thumbnails included)
 const RACES=['african','asian','caucasian'];
 // params: {race:[african,asian,caucasian] (sum 1), gender:0..1 (1 = male), mods:{target-name: weight}}
