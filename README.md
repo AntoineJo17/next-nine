@@ -19,7 +19,7 @@ Avec Node.js 20 ou supérieur et npm :
 npm run check
 ```
 
-215 tests passent sur cette version (V20 · lot 9d). Les tests ne remplacent pas un essai visuel et tactile sur téléphone.
+216 tests passent sur cette version (V20 · lot 9e). Les tests ne remplacent pas un essai visuel et tactile sur téléphone.
 
 Après une modification, change le numéro de version pour que les téléphones rechargent tous les fichiers :
 

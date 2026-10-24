@@ -1,6 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
 import * as T from '../dist/vendor/three.module.js';
-import {commissure,landmarks,mouthLine,buildMHHead,morphWeights,mhHair,mhBeard,mhCurls,hairShell,cavity,smoothField,MH_SHAPES,mhShapeParams,MH_NEUTRAL_MODS,MH_HAIR} from '../dist/mh.js';
+import {MH_LIP_BACK,commissure,landmarks,mouthLine,buildMHHead,morphWeights,mhHair,mhBeard,mhCurls,hairShell,cavity,smoothField,MH_SHAPES,mhShapeParams,MH_NEUTRAL_MODS,MH_HAIR} from '../dist/mh.js';
 const D=JSON.parse(fs.readFileSync(new URL('../dist/mh/head.json',import.meta.url),'utf8'));
 const bbox=g=>{g.computeBoundingBox();return g.boundingBox;};
 
@@ -63,3 +63,7 @@ test('Lot 9c · the closing line between the lips is a very slight curve: level 
 test('Lot 9d · lower-face proportions and mouth: the chin is no longer overlong, the lips sit near the profile line, the commissure is where the lips meet',()=>{
  for(const i of [0,1,2,3,4,5]){const {head}=buildMHHead(D,mhShapeParams(i)),lm=landmarks(head,D),pos=head.attributes.position;let chin=9;for(let k=0;k<pos.count;k++)if(pos.getZ(k)<-.04&&Math.abs(pos.getX(k))<.02&&pos.getY(k)<chin)chin=pos.getY(k);
   const sg=(lm.ym-chin)*1000;assert.ok(sg>37&&sg<56,'shape '+i+' mouth-to-chin '+sg.toFixed(1)+' mm');const cx=commissure(head,D);assert.ok(cx>.02&&cx<.03,'commissure '+cx);}});
+
+test('Lot 9e · a shaved cut has no cap, the chin landmark is the real chin (not the collar), the lips are eased back',()=>{const {head}=buildMHHead(D,mhShapeParams(0)),lm=landmarks(head,D);assert.equal(hairShell(head,'rase'),null);assert.ok(hairShell(head,'degrade','#222222'));
+ const d=(lm.ym-lm.yc)*1000;assert.ok(d>38&&d<62,'mouth to chin '+d.toFixed(1)+' mm');assert.ok(MH_LIP_BACK>.0015&&MH_LIP_BACK<.004);
+ const b=mhBeard('barbe',0,lm.yc-.06,-.03,lm);assert.equal(b,0,'no stubble far down the neck');});
