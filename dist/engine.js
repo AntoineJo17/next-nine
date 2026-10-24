@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.js';
-import {mhHeadGroup,mhShapeParams} from './mh.js?v=20-9l';
-import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-9l';
-import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-9l';
+import {mhHeadGroup,mhShapeParams} from './mh.js?v=20-9m';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-9m';
+import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-9m';
 export {FACE_SHAPES,HAIR_STYLES,headPoint,uvOf};
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
@@ -59,11 +59,11 @@ function mergeParts(parts,skinned){const order=parts.slice().sort((a,b)=>a.mat-b
 // Materials: 0 skin · 1 shirt · 2 shorts · 3 socks · 4 trim · 5 gloves
 function buildBody(keeper){const P=[],ser=(arr,f)=>arr.map(([y,a])=>[y,a*f]);
  // Torso (shirt): V-shaped, squared shoulders, chest and shoulder blades. Texture u=.5 is the front.
- const torsoA=[[-.1,.2],[-.03,.19],[.05,.178],[.14,.172],[.27,.18],[.38,.188],[.45,.197],[.5,.2],[.53,.19],[.55,.165],[.565,.13],[.578,.098],[.588,.07]],torsoB=[[-.1,.13],[0,.116],[.1,.104],[.27,.108],[.38,.116],[.45,.112],[.5,.104],[.54,.092],[.565,.08],[.58,.068],[.588,.06]];
+ const torsoA=[[-.1,.2],[-.03,.19],[.05,.178],[.14,.172],[.27,.18],[.38,.19],[.45,.2],[.5,.214],[.52,.21],[.535,.202],[.55,.188],[.565,.148],[.577,.105],[.588,.07]],torsoB=[[-.1,.13],[0,.116],[.1,.104],[.27,.108],[.38,.116],[.45,.112],[.5,.104],[.54,.092],[.565,.08],[.58,.068],[.588,.06]];
  P.push(loft({A:torsoA,B:torsoB,seg:32,sub:3,n:2.2,mat:1,weights:spineW,front:(y,sx)=>.012*gauss(y,.38,.07)*(1-.5*gauss(sx,0,.25)),back:(y,sx)=>.008*gauss(y,.43,.07)+.028*smooth(.47,.585,y)}));
  // Neck and collar
  P.push(loft({A:[[.5,.056],[.6,.052],[.7,.048]],B:[[.5,.062],[.6,.054],[.7,.046]],Z:[[.5,.036],[.7,-.004]],seg:20,mat:0,weights:spineW}));
- P.push(loft({A:[[.565,.062],[.575,.068],[.59,.069],[.605,.063],[.612,.056]],B:[[.565,.06],[.575,.066],[.59,.067],[.605,.061],[.612,.054]],Z:[[.56,.03],[.61,.026]],seg:24,sub:2,mat:4,weights:spineW}));
+ P.push(loft({A:[[.565,.06],[.575,.064],[.59,.064],[.605,.058],[.612,.054]],B:[[.565,.058],[.575,.062],[.59,.062],[.605,.056],[.612,.052]],Z:[[.56,.028],[.61,.025]],seg:24,sub:2,mat:4,weights:spineW}));
  // Pelvis and shorts
  P.push(loft({A:[[-.16,.165],[-.08,.172],[0,.16],[.03,.148]],B:[[-.16,.098],[-.08,.108],[0,.1],[.03,.092]],seg:28,sub:2,mat:2,weights:spineW}));
  for(const side of [-1,1]){const k=side>0?1:0,cx=side*HIPX,u=side>0?0:.5;
@@ -79,7 +79,7 @@ function buildBody(keeper){const P=[],ser=(arr,f)=>arr.map(([y,a])=>[y,a*f]);
   const armA=[[-.075,.025],[-.0,.03],[.06,.036],[.14,.04],[.2,.036],[.3,.043],[.4,.047],[.47,.047]],armB=[[-.075,.027],[0,.031],[.06,.037],[.14,.041],[.2,.038],[.3,.046],[.4,.05],[.47,.05]],ax=side*SHX;
   P.push(loft({A:armA,B:armB,cx:ax,seg:20,sub:3,mat:0,weights:armW(side),front:y=>.007*gauss(y,.36,.07)}));
   if(keeper){const sA=[[-.07,.036],[0,.038],[.1,.044],[.2,.046],[.3,.052],[.4,.058],[.5,.06],[.53,.045],[.545,.02],[.55,.004]];P.push(loft({A:sA,B:sA.map(([y,a])=>[y,a*.97]),cx:ax,seg:22,sub:3,mat:1,weights:armW(side),uv:(uu,t)=>[.12,.5]}));}
-  else{const sA=[[.335,.059],[.34,.059],[.4,.061],[.45,.062],[.5,.059],[.53,.045],[.545,.02],[.55,.004]];P.push(loft({A:sA,B:sA.map(([y,a])=>[y,a*.96]),cx:ax,seg:22,sub:3,n:2.4,mat:1,weights:shoW(side),uv:()=>[.12,.5]}));
+  else{const sA=[[.335,.059],[.34,.059],[.4,.062],[.45,.065],[.5,.067],[.52,.063],[.535,.054],[.547,.036],[.555,.016],[.559,.004]];P.push(loft({A:sA,B:sA.map(([y,a])=>[y,a*(y<.4?1:1+.3*Math.min(1,(y-.4)/.1))]),cx:ax,seg:22,sub:3,n:2.4,mat:1,weights:shoW(side),uv:()=>[.12,.5]}));
    P.push(loft({A:[[.31,.0605],[.337,.0605]],B:[[.31,.0585],[.337,.0585]],cx:ax,seg:22,sub:1,mat:4,weights:shoW(side)}));}
   // Hand: flat palm facing the thigh, four curled fingers and a thumb. Gloves for the keeper are bigger.
   const m=keeper?5:0,sc=keeper?1.3:1,dx=-side;
