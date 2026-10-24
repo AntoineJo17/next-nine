@@ -3,7 +3,7 @@
 // morph targets (sparse offsets). A face is the base mesh plus weighted targets: race blend and gender first, then the
 // fine adjustments (jaw, nose, lips, ears...). Units in the file are decimetres, front = +z; the game wants metres, front = -z.
 import * as T from './vendor/three.module.js';
-import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-9n';
+import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-9o';
 export const MH_EYE_Y=7.28,MH_S=.1,MH_ZC=.65;
 let cache=null;
 export async function loadMH(url='./mh/head.json'){if(!cache)cache=fetch(url).then(r=>r.json()).then(async D=>{   // the hand-painted red of the lips (optional picture, see _levres.html)
@@ -118,7 +118,7 @@ export function bakeSkin(geo,lip,{skin,hair,style,beard='',lm,W=1024,cav,eyeC,li
   // beard: stubble grains whose density follows mhBeard (the grain is decided per texel, so the edges fade out)
   if(beard&&lm){const bd=mhBeard(beard,x,y,z,lm)*(1-L);if(bd>.02){   // fine strands: each grain is a short stroke along the direction the hair grows (down and a little towards the chin on the cheeks, outwards under the nose, straight down on the neck)
     const sx=Math.sign(x)||1,mu=smooth(lm.ym+.003,lm.ym+.011,y)*smooth(.03,.018,ax),nk=smooth(lm.yc-.004,lm.yc-.022,y);let dx=(-sx*.3*(1-nk))*(1-mu)+sx*.85*mu,dy=-1*(1-mu)-.45*mu;const dl=Math.hypot(dx,dy);dx/=dl;dy/=dl;
-    const al=x*dx+y*dy,ac=-x*dy+y*dx,g=vnoise(ac*2500,al*800,sx*7.3),a=clamp((bd-(g-.2)*1.35)*2.2,0,1)*.62;col.multiplyScalar(1-.05*bd);col.lerp(hc.clone().multiplyScalar(.66+.3*vnoise(ac*600,al*200,sx*3.1)),a);}}
+    const al=x*dx+y*dy,ac=-x*dy+y*dx,hl=hc.r*.3+hc.g*.59+hc.b*.11,g=vnoise(ac*3600,al*1100,sx*7.3),a=clamp((bd-(g-.2)*1.1)*2.2,0,1)*.62*(1-.6*Math.min(1,hl*1.6));col.multiplyScalar(1-.05*bd);col.lerp(hc.clone().multiplyScalar(.66-.14*Math.min(1,hl*1.6)+.3*vnoise(ac*600,al*200,sx*3.1)),a);}}
   const n=(hash3(x*3,y*3,z*3)-.5)*.02;col.r=clamp(col.r+n,0,1);col.g=clamp(col.g+n,0,1);col.b=clamp(col.b+n,0,1);return col;};
  const put=(px,py,x,y,z,L,C)=>{if(px<0||py<0||px>=W||py>=W)return;const k=(py*W+px)*4,cl=shade(x,y,z,L,C);cl.convertLinearToSRGB();D[k]=cl.r*255;D[k+1]=cl.g*255;D[k+2]=cl.b*255;D[k+3]=255;cov[py*W+px]=1;const rv=skinRough(x,y,z,L)*255;R[k]=R[k+1]=R[k+2]=rv;R[k+3]=255;};
  for(let t=0;t<idx.length;t+=3){const a=idx[t],b=idx[t+1],d=idx[t+2],U=[uv.getX(a),uv.getX(b),uv.getX(d)].map(v=>v*W),Vv=[uv.getY(a),uv.getY(b),uv.getY(d)].map(v=>(1-v)*W),
@@ -215,7 +215,7 @@ export function mhHeadGroup(D,p,look,W=1024){const {head,eyes}=buildMHHead(D,p);
  {const mo=new T.Mesh(new T.PlaneGeometry(2*lm.xc,.0045),new T.MeshBasicMaterial({color:0x2b1411,side:T.DoubleSide}));mo.position.set(0,lm.ym,-.079);mo.name='Bouche';g.add(mo);}   // the dark inside of the mouth, seen only through the fine slit between the lips
  if(!eyeTex)eyeTex=calmEyeTexture();
  const em=new T.Mesh(eyes,new T.MeshStandardMaterial({map:eyeTex,color:0xfff4ea,emissive:0xffffff,emissiveMap:eyeTex,emissiveIntensity:.16,roughness:.2,metalness:0,transparent:true,alphaTest:.2}));em.name='Yeux';g.add(em);
- const hs=hairShell(head,look.style,look.hair);if(hs){const hm=new T.Mesh(hs,new T.MeshStandardMaterial({map,roughness:(MH_HAIR[look.style]||MH_HAIR.degrade).rough,metalness:0}));hm.name='Cheveux';g.add(hm);}
+ const hs=hairShell(head,look.style,look.hair);if(hs){const hm=new T.Mesh(hs,new T.MeshStandardMaterial({map,roughness:Math.min(.95,Math.max(.72,(MH_HAIR[look.style]||MH_HAIR.degrade).rough)+.12*new T.Color(look.hair).getHSL({}).l),metalness:0}));hm.name='Cheveux';g.add(hm);}
  {const cg=mhCurls(head,look.style,look.hair,W>=1024,look.seed||1);if(cg){const cm=new T.Mesh(cg,new T.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0}));cm.name='Boucles';cm.castShadow=true;g.add(cm);}
   if(look.style==='chignon'){const bun=new T.Mesh(new T.SphereGeometry(.05,18,12),new T.MeshStandardMaterial({color:look.hair,roughness:.55}));bun.position.set(0,.082,.112);bun.scale.set(1,.9,.9);bun.name='Chignon';g.add(bun);}}
  // Blink: the skin of the eyelids slides over the eyeball (the lash line painted in the texture travels with it).

@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.js';
-import {mhHeadGroup,mhShapeParams} from './mh.js?v=20-9n';
-import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-9n';
-import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-9n';
+import {mhHeadGroup,mhShapeParams} from './mh.js?v=20-9o';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-9o';
+import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-9o';
 export {FACE_SHAPES,HAIR_STYLES,headPoint,uvOf};
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
@@ -465,12 +465,13 @@ constructor(canvas){this.canvas=canvas;const r=this.r=new T.WebGLRenderer({canva
  const e=this.e=Object.create(Pitch3D.prototype);e.scene=new T.Scene();e.players=[];e.appearance={};e.detail='high';const s=this.scene=e.scene;s.background=new T.Color('#101b16');s.fog=new T.Fog('#101b16',7,16);
  // Soft studio light: a wide, gentle key from the front left, a light fill from the right, a cool rim from behind; moderate shadows.
  s.add(new T.HemisphereLight(0xeaf2ff,0x2a4030,1.15));const key=new T.DirectionalLight(0xfff3e4,2.1);key.position.set(-2.4,2.8,-3.4);key.castShadow=true;key.shadow.mapSize.set(1024,1024);key.shadow.camera.left=key.shadow.camera.bottom=-2;key.shadow.camera.right=key.shadow.camera.top=2;key.shadow.bias=-.0004;key.shadow.normalBias=.015;s.add(key);
- const fill=new T.DirectionalLight(0xdce8ff,.9);fill.position.set(2.6,1.4,-3);s.add(fill);const rim=new T.DirectionalLight(0x9fd8ff,1.2);rim.position.set(2,3,4);s.add(rim);
+ const fill=new T.DirectionalLight(0xdce8ff,.9);fill.position.set(2.6,1.4,-3);s.add(fill);this.front=new T.DirectionalLight(0xfff4ea,.3);this.front.position.set(0,1.9,-4);s.add(this.front);   // a soft light straight from the camera side: it lifts the features of dark skin tones (set in setAppearance)
+ const rim=new T.DirectionalLight(0x9fd8ff,1.2);rim.position.set(2,3,4);s.add(rim);
  const c=document.createElement('canvas');let floorMat=new T.MeshStandardMaterial({color:0x1d3a2a,roughness:.9});if(c.getContext?.('2d')?.createRadialGradient){c.width=c.height=256;const g=c.getContext('2d'),gr=g.createRadialGradient(128,128,10,128,128,128);gr.addColorStop(0,'#3d7a45');gr.addColorStop(.62,'#25502f');gr.addColorStop(.7,'#d3f96a');gr.addColorStop(.72,'#1c3a26');gr.addColorStop(1,'#101b16');g.fillStyle=gr;g.fillRect(0,0,256,256);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;floorMat=new T.MeshStandardMaterial({map:t,roughness:.85});}
  const floor=new T.Mesh(new T.CircleGeometry(1.6,48),floorMat);floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;s.add(floor);
  this.cam=new T.PerspectiveCamera(30,1,.05,40);this.yaw=.35;this.view='body';this.camT={y:1,d:4.4,look:1,fov:30};this.camNow={...this.camT};
  const at=e=>e.touches?e.touches[0]:e;canvas.addEventListener('pointerdown',ev=>{this.dragX=ev.clientX;this.touched=performance.now();canvas.setPointerCapture?.(ev.pointerId);});canvas.addEventListener('pointermove',ev=>{if(this.dragX==null)return;this.yaw-=(ev.clientX-this.dragX)*.012;this.dragX=ev.clientX;this.touched=performance.now();});const up=()=>{this.dragX=null;};canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.style.touchAction='none';}
-setAppearance(app){const e=this.e;if(this.p){e.scene.remove(this.p.g);this.p.g.traverse(o=>{if(o.geometry&&!o.geometry.userData?.shared)o.geometry.dispose();});e.players=[];}e.appearance=app;const p=this.p=e.makePlayer(0,0,0x63b9f4,app.number||9,true,false,(app.name||'Joueur').slice(0,14));p.g.children.filter(o=>o.geometry?.type==='RingGeometry').forEach(o=>o.visible=false);p.g.traverse(o=>{if(o.isMesh)o.castShadow=true;});}
+setAppearance(app){const e=this.e;{const l=new T.Color(app.skin||'#c98b62').getHSL({}).l;this.front.intensity=.3+1.1*Math.max(0,.58-l)/.58;}if(this.p){e.scene.remove(this.p.g);this.p.g.traverse(o=>{if(o.geometry&&!o.geometry.userData?.shared)o.geometry.dispose();});e.players=[];}e.appearance=app;const p=this.p=e.makePlayer(0,0,0x63b9f4,app.number||9,true,false,(app.name||'Joueur').slice(0,14));p.g.children.filter(o=>o.geometry?.type==='RingGeometry').forEach(o=>o.visible=false);p.g.traverse(o=>{if(o.isMesh)o.castShadow=true;});}
 setView(v,yaw){this.view=v;if(yaw!=null){this.yaw=yaw;this.touched=performance.now()+8000;}   // the turntable pauses a few seconds on the chosen angle; dragging still turns the player freely
  this.camT=v==='face'?{y:1.735,d:2.4,look:1.712,fov:14}:{y:1.05,d:4.5,look:.96,fov:30};}   // the face is seen through a longer lens: no distortion of the nose and chin
 resize(){const w=this.canvas.clientWidth,h=this.canvas.clientHeight;if(!w||!h)return;if(this.w!==w||this.h!==h){this.w=w;this.h=h;this.r.setSize(w,h,false);this.cam.aspect=w/h;this.cam.updateProjectionMatrix();}}
