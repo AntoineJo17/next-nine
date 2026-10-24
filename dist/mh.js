@@ -3,7 +3,7 @@
 // morph targets (sparse offsets). A face is the base mesh plus weighted targets: race blend and gender first, then the
 // fine adjustments (jaw, nose, lips, ears...). Units in the file are decimetres, front = +z; the game wants metres, front = -z.
 import * as T from './vendor/three.module.js';
-import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-9e';
+import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-9f';
 export const MH_EYE_Y=7.28,MH_S=.1,MH_ZC=.65;
 let cache=null;
 export async function loadMH(url='./mh/head.json'){if(!cache)cache=fetch(url).then(r=>r.json());const D=await cache;if(typeof document!=='undefined'){if(!eyeTex)eyeTex=calmEyeTexture();await eyeTex.userData.ready;}return D;}   // the eye texture is ready before the first head (thumbnails included)
@@ -227,8 +227,8 @@ const SYMN=(name,v)=>({['l-'+name+'!']:v,['r-'+name+'!']:v});
 // Young adult, athletic, neutral: lips drawn back and slimmer, closed at rest, a clear cupid's bow and corners; cheeks less round (also
 // beside the mouth), cheekbones a little forward; a more defined jaw and chin; adult proportions instead of a child's.
 export const MH_LIP_BACK=.0026;
-export const MH_NEUTRAL_MODS={'mouth-upperlip-middle-down!':.75,'mouth-lowerlip-middle-up!':.45,'mouth-lowerlip-volume-decr!':.2,'mouth-upperlip-volume-decr!':.05,'mouth-lowerlip-height-decr!':.45,'mouth-upperlip-height-decr!':.15,'mouth-cupidsbow-incr!':1,'mouth-scale-horiz-incr!':.3,'mouth-angles-up!':.2,'mouth-scale-depth-decr!':.2,'mouth-trans-backward!':.1,'mouth-philtrum-volume-decr!':.35,
- 'head-fat-decr!':.25,...SYMN('cheek-inner-decr',.4),...SYMN('cheek-bones-incr',.3),'chin-prominent-incr!':.22,'chin-bones-incr!':.3,'chin-height-decr!':.5,'head-age-incr!':.15};
+export const MH_NEUTRAL_MODS={'mouth-upperlip-middle-down!':.75,'mouth-lowerlip-middle-up!':.45,'mouth-lowerlip-volume-decr!':.2,'mouth-upperlip-volume-decr!':.05,'mouth-lowerlip-height-decr!':.65,'mouth-upperlip-height-decr!':.5,'mouth-scale-vert-decr!':.25,'mouth-cupidsbow-incr!':1,'mouth-scale-horiz-incr!':.3,'mouth-angles-up!':.2,'mouth-scale-depth-decr!':.2,'mouth-trans-backward!':.1,'mouth-philtrum-volume-decr!':.35,
+ 'head-fat-decr!':.25,...SYMN('cheek-inner-decr',.4),...SYMN('cheek-bones-incr',.3),'chin-prominent-incr!':.5,'chin-bones-incr!':.3,'chin-height-decr!':.5,'head-age-incr!':.15,...SYMN('eye-height1-incr',.45),...SYMN('eye-height2-incr',.3)};
 
 // Six face shapes, independent of the skin colour: a mix of the three base types (race blend and gender of MakeHuman only change
 // the shape of the bones) plus a few fine adjustments. Names ending in * are applied to both sides (l-/r- targets).
@@ -241,4 +241,4 @@ export const MH_SHAPES=[
  {race:[.25,0,.75],gender:1,mods:{'head-rectangular!':.45,'chin-prominent-incr!':.35,...SYM('cheek-bones-incr',.55),'nose-hump-incr!':.45,'forehead-nubian-incr!':.4,'chin-height-incr!':.1}},        // 4 angular
  {race:[.1,.7,.2],gender:.65,mods:{'head-invertedtriangular!':.45,'chin-prominent-incr!':.3,'chin-bones-incr!':.28,'nose-point-up!':.5,...SYM('eye-scale-incr',.25),...SYM('cheek-volume-incr',.3),'nose-width1-decr!':.3}} // 5 soft with a defined jaw
 ];
-export function mhShapeParams(i){const sh=MH_SHAPES[((i%MH_SHAPES.length)+MH_SHAPES.length)%MH_SHAPES.length];return {race:sh.race,gender:sh.gender,mods:{...MH_NEUTRAL_MODS,...sh.mods}};}
+export function mhShapeParams(i){const sh=MH_SHAPES[((i%MH_SHAPES.length)+MH_SHAPES.length)%MH_SHAPES.length];return {race:sh.race.map((v,i)=>.25*v+.75*[.04,.04,.92][i]),gender:sh.gender,mods:{...MH_NEUTRAL_MODS,...sh.mods}};}

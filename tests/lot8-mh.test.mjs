@@ -17,7 +17,7 @@ test('Lot 8 · a face is human-sized, centred on the eye line and looks towards 
 test('Lot 8 · the six face shapes are different faces and none breaks the mesh',()=>{const geos=MH_SHAPES.map((_,i)=>buildMHHead(D,mhShapeParams(i)).head);
  for(let i=0;i<geos.length;i++)for(let j=i+1;j<geos.length;j++){let d=0;const a=geos[i].attributes.position,b=geos[j].attributes.position;for(let k=0;k<a.count;k++)d=Math.max(d,Math.hypot(a.getX(k)-b.getX(k),a.getY(k)-b.getY(k),a.getZ(k)-b.getZ(k)));assert.ok(d>.004,`shape ${i} and ${j} differ by ${(d*1000).toFixed(1)} mm`);}
  for(const g of geos){const bb=bbox(g);assert.ok(bb.max.x-bb.min.x<.2&&bb.max.y-bb.min.y<.36);}
- assert.equal(mhShapeParams(7).race.join(),MH_SHAPES[1].race.join(),'shape index wraps');});
+ assert.equal(mhShapeParams(7).race.join(),mhShapeParams(1).race.join(),'shape index wraps');for(let i=0;i<6;i++){const r=mhShapeParams(i).race;assert.ok(r[2]>.55&&Math.abs(r[0]+r[1]+r[2]-1)<1e-9,'a European-leaning blend under every shape');}});
 
 test('Lot 8 · mouth presets close the lips and keep every target name valid',()=>{for(const k of Object.keys(MH_NEUTRAL_MODS))assert.ok(k.endsWith('!')&&D.targets[k.slice(0,-1)],'neutral '+k);
  for(const sh of MH_SHAPES)for(const k of Object.keys(sh.mods)){const n=k.endsWith('!')?k.slice(0,-1):null;assert.ok(n&&D.targets[n],'shape target '+k);}
