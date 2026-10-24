@@ -1,0 +1,326 @@
+[
+ {
+  "mode": "souris_case",
+  "ok": 20,
+  "fail": [],
+  "ms": [
+   341,
+   67,
+   55,
+   105,
+   32,
+   33,
+   60,
+   49,
+   58,
+   67,
+   65,
+   48,
+   56,
+   67,
+   50,
+   56,
+   72,
+   34,
+   51,
+   57
+  ],
+  "max_ms": 341,
+  "events_tail": [
+   [
+    "click",
+    false
+   ],
+   [
+    "input",
+    false
+   ],
+   [
+    "change",
+    false
+   ],
+   [
+    "click",
+    true
+   ],
+   [
+    "input",
+    true
+   ],
+   [
+    "change",
+    true
+   ]
+  ]
+ },
+ {
+  "mode": "souris_label",
+  "ok": 20,
+  "fail": [],
+  "ms": [
+   140,
+   118,
+   70,
+   55,
+   54,
+   75,
+   107,
+   91,
+   44,
+   71,
+   233,
+   106,
+   50,
+   156,
+   77,
+   104,
+   53,
+   139,
+   38,
+   86
+  ],
+  "max_ms": 233,
+  "events_tail": [
+   [
+    "click",
+    false
+   ],
+   [
+    "input",
+    false
+   ],
+   [
+    "change",
+    false
+   ],
+   [
+    "click",
+    true
+   ],
+   [
+    "input",
+    true
+   ],
+   [
+    "change",
+    true
+   ]
+  ]
+ },
+ {
+  "mode": "set_checked",
+  "ok": 20,
+  "fail": [],
+  "ms": [
+   121,
+   180,
+   52,
+   97,
+   91,
+   165,
+   52,
+   68,
+   129,
+   349,
+   475,
+   229,
+   126,
+   222,
+   210,
+   349,
+   275,
+   176,
+   197,
+   155
+  ],
+  "max_ms": 475,
+  "events_tail": [
+   [
+    "click",
+    false
+   ],
+   [
+    "input",
+    false
+   ],
+   [
+    "change",
+    false
+   ],
+   [
+    "click",
+    true
+   ],
+   [
+    "input",
+    true
+   ],
+   [
+    "change",
+    true
+   ]
+  ]
+ },
+ {
+  "mode": "clavier_tab_espace",
+  "ok": 20,
+  "fail": [],
+  "ms": [
+   300,
+   69,
+   558,
+   236,
+   461,
+   117,
+   57,
+   50,
+   31,
+   86,
+   407,
+   65,
+   99,
+   178,
+   217,
+   132,
+   30,
+   58,
+   245,
+   308
+  ],
+  "max_ms": 558,
+  "events_tail": [
+   [
+    "click",
+    false
+   ],
+   [
+    "input",
+    false
+   ],
+   [
+    "change",
+    false
+   ],
+   [
+    "click",
+    true
+   ],
+   [
+    "input",
+    true
+   ],
+   [
+    "change",
+    true
+   ]
+  ]
+ },
+ {
+  "mode": "tactile_tap_case",
+  "ok": 20,
+  "fail": [],
+  "ms": [
+   284,
+   149,
+   106,
+   54,
+   59,
+   78,
+   114,
+   94,
+   58,
+   131,
+   281,
+   127,
+   82,
+   130,
+   153,
+   94,
+   67,
+   173,
+   83,
+   144
+  ],
+  "max_ms": 284,
+  "events_tail": [
+   [
+    "click",
+    false
+   ],
+   [
+    "input",
+    false
+   ],
+   [
+    "change",
+    false
+   ],
+   [
+    "click",
+    true
+   ],
+   [
+    "input",
+    true
+   ],
+   [
+    "change",
+    true
+   ]
+  ]
+ },
+ {
+  "mode": "tactile_tap_label",
+  "ok": 20,
+  "fail": [],
+  "ms": [
+   122,
+   67,
+   93,
+   100,
+   87,
+   60,
+   61,
+   87,
+   110,
+   126,
+   139,
+   115,
+   137,
+   240,
+   121,
+   149,
+   94,
+   169,
+   161,
+   97
+  ],
+  "max_ms": 240,
+  "events_tail": [
+   [
+    "click",
+    false
+   ],
+   [
+    "input",
+    false
+   ],
+   [
+    "change",
+    false
+   ],
+   [
+    "click",
+    true
+   ],
+   [
+    "input",
+    true
+   ],
+   [
+    "change",
+    true
+   ]
+  ]
+ }
+]

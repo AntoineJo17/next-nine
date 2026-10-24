@@ -24,7 +24,7 @@ body.playing{overflow:hidden;overscroll-behavior:none}body.playing header,body.p
 
 #match #leave{padding:0;margin:0;text-decoration:none;color:#effbdc}
 
-.crowd-option{display:flex;align-items:center;justify-content:center;gap:9px;font-size:11px;color:var(--muted);margin:10px 0}.crowd-option input{width:16px;height:16px;margin:0;accent-color:var(--lime)}
+.crowd-option{display:flex;align-items:center;justify-content:center;gap:9px;font-size:11px;color:var(--muted);margin:10px 0;min-height:44px}.crowd-option input{width:16px;height:16px;margin:0;accent-color:var(--lime)}
 
 /* V6: learning and portable career, keeping the playing field open. */
 #practice{width:100%;margin-top:12px}.save-actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.save-actions button{font-size:13px;padding:10px 14px}.lesson-panel{position:absolute;z-index:8;left:12px;right:12px;top:29%;max-width:430px;margin:auto;background:rgba(13,27,21,.94);border:1px solid #d6fa76;border-radius:16px;padding:12px 16px;pointer-events:auto}.lesson-panel p{font-size:14px;line-height:1.45;margin:0 0 8px}.lesson-panel button{padding:8px 12px;font-size:13px}.lesson-panel[hidden]{display:none}#timeline{max-width:75vw;margin:4px 0;color:#e2efcc;font-size:11px}#abilities{color:#d5fa76}#resultEvents{line-height:1.6}@media(max-height:500px){.lesson-panel{top:23%;left:auto;right:12px;width:240px}.arena-context #timeline{max-width:45vw}}

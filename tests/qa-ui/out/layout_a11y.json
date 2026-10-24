@@ -1,0 +1,617 @@
+{
+ "390/accueil": {
+  "over": {
+   "scrollW": 390,
+   "W": 390,
+   "bodyScrollW": 390,
+   "bad": []
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 310x41",
+   "#practice \"Prendre ses marques · Entraî\" 310x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 320x18",
+   "label \"\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"\" 294x17",
+   "#position \"select-one\" 141x36",
+   "#exportSave \"submit\" 320x42",
+   "#importSave \"submit\" 320x42"
+  ]
+ },
+ "390/profil_options": {
+  "over": {
+   "scrollW": 390,
+   "W": 390,
+   "bodyScrollW": 390,
+   "bad": []
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 310x41",
+   "#practice \"Prendre ses marques · Entraî\" 310x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 320x18",
+   "label \"NOM DU JOUEUR\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"Poste sur le terrain\n＋\" 294x17",
+   "#position \"select-one\" 141x36",
+   "#exportSave \"Exporter ma carrière\" 320x42",
+   "#importSave \"Importer une carrière\" 320x42"
+  ]
+ },
+ "390/vestiaire_coupe": {
+  "over": {
+   "scrollW": 390,
+   "W": 390,
+   "bodyScrollW": 390,
+   "bad": [
+    "button. 385..455"
+   ]
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 310x41",
+   "#practice \"Prendre ses marques · Entraî\" 310x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 320x18",
+   "label \"NOM DU JOUEUR\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"Poste sur le terrain\n＋\" 294x17",
+   "#position \"select-one\" 141x36",
+   "#exportSave \"Exporter ma carrière\" 320x42",
+   "#importSave \"Importer une carrière\" 320x42",
+   "#lockerBack \"‹\" 42x42",
+   "button \"Face\" 51x34",
+   "button \"Profil\" 53x34",
+   "button \"Dos\" 45x34",
+   "#zoomOut \"−\" 40x34",
+   "#zoomIn \"+\" 40x34",
+   "button \"Coupe\" 69x36",
+   "button \"Cheveux\" 81x36",
+   "button \"Teint\" 59x36",
+   "button \"Barbe\" 65x36",
+   "button \"Visage\" 69x36",
+   "button \"Maillot\" 70x36"
+  ],
+  "a11y": [
+   "canvas#lockerCanvas sans role/aria"
+  ]
+ },
+ "390/vestiaire_cheveux": {
+  "over": {
+   "scrollW": 390,
+   "W": 390,
+   "bodyScrollW": 390,
+   "bad": [
+    "button. 385..455"
+   ]
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 310x41",
+   "#practice \"Prendre ses marques · Entraî\" 310x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 320x18",
+   "label \"NOM DU JOUEUR\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"Poste sur le terrain\n＋\" 294x17",
+   "#position \"select-one\" 141x36",
+   "#exportSave \"Exporter ma carrière\" 320x42",
+   "#importSave \"Importer une carrière\" 320x42",
+   "#lockerBack \"‹\" 42x42",
+   "button \"Face\" 51x34",
+   "button \"Profil\" 53x34",
+   "button \"Dos\" 45x34",
+   "#zoomOut \"−\" 40x34",
+   "#zoomIn \"+\" 40x34",
+   "button \"Coupe\" 69x36",
+   "button \"Cheveux\" 81x36",
+   "button \"Teint\" 59x36",
+   "button \"Barbe\" 65x36",
+   "button \"Visage\" 69x36",
+   "button \"Maillot\" 70x36",
+   "button \"Cheveux\" 117x37",
+   "button \"Sourcils\" 117x37",
+   "button \"Barbe\" 117x37"
+  ],
+  "a11y": [
+   "canvas#lockerCanvas sans role/aria"
+  ]
+ },
+ "390/vestiaire_teint": {
+  "over": {
+   "scrollW": 390,
+   "W": 390,
+   "bodyScrollW": 390,
+   "bad": [
+    "button. 385..455"
+   ]
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 310x41",
+   "#practice \"Prendre ses marques · Entraî\" 310x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 320x18",
+   "label \"NOM DU JOUEUR\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"Poste sur le terrain\n＋\" 294x17",
+   "#position \"select-one\" 141x36",
+   "#exportSave \"Exporter ma carrière\" 320x42",
+   "#importSave \"Importer une carrière\" 320x42",
+   "#lockerBack \"‹\" 42x42",
+   "button \"Face\" 51x34",
+   "button \"Profil\" 53x34",
+   "button \"Dos\" 45x34",
+   "#zoomOut \"−\" 40x34",
+   "#zoomIn \"+\" 40x34",
+   "button \"Coupe\" 69x36",
+   "button \"Cheveux\" 81x36",
+   "button \"Teint\" 59x36",
+   "button \"Barbe\" 65x36",
+   "button \"Visage\" 69x36",
+   "button \"Maillot\" 70x36"
+  ],
+  "a11y": [
+   "canvas#lockerCanvas sans role/aria"
+  ]
+ },
+ "390/vestiaire_barbe": {
+  "over": {
+   "scrollW": 390,
+   "W": 390,
+   "bodyScrollW": 390,
+   "bad": [
+    "button. 385..455"
+   ]
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 310x41",
+   "#practice \"Prendre ses marques · Entraî\" 310x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 320x18",
+   "label \"NOM DU JOUEUR\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"Poste sur le terrain\n＋\" 294x17",
+   "#position \"select-one\" 141x36",
+   "#exportSave \"Exporter ma carrière\" 320x42",
+   "#importSave \"Importer une carrière\" 320x42",
+   "#lockerBack \"‹\" 42x42",
+   "button \"Face\" 51x34",
+   "button \"Profil\" 53x34",
+   "button \"Dos\" 45x34",
+   "#zoomOut \"−\" 40x34",
+   "#zoomIn \"+\" 40x34",
+   "button \"Coupe\" 69x36",
+   "button \"Cheveux\" 81x36",
+   "button \"Teint\" 59x36",
+   "button \"Barbe\" 65x36",
+   "button \"Visage\" 69x36",
+   "button \"Maillot\" 70x36"
+  ],
+  "a11y": [
+   "canvas#lockerCanvas sans role/aria"
+  ]
+ },
+ "390/vestiaire_visage": {
+  "over": {
+   "scrollW": 390,
+   "W": 390,
+   "bodyScrollW": 390,
+   "bad": [
+    "button. 385..455",
+    "button. 388..441"
+   ]
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 310x41",
+   "#practice \"Prendre ses marques · Entraî\" 310x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 320x18",
+   "label \"NOM DU JOUEUR\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"Poste sur le terrain\n＋\" 294x17",
+   "#position \"select-one\" 141x36",
+   "#exportSave \"Exporter ma carrière\" 320x42",
+   "#importSave \"Importer une carrière\" 320x42",
+   "#lockerBack \"‹\" 42x42",
+   "button \"Face\" 51x34",
+   "button \"Profil\" 53x34",
+   "button \"Dos\" 45x34",
+   "#zoomOut \"−\" 40x34",
+   "#zoomIn \"+\" 40x34",
+   "button \"Coupe\" 69x36",
+   "button \"Cheveux\" 81x36",
+   "button \"Teint\" 59x36",
+   "button \"Barbe\" 65x36",
+   "button \"Visage\" 69x36",
+   "button \"Maillot\" 70x36",
+   "button \"Départ\" 75x37",
+   "button \"Fin\" 49x37",
+   "button \"Athlète\" 77x37",
+   "button \"Rond\" 63x37",
+   "button \"Jeune\" 69x37",
+   "button \"Dur\" 53x37",
+   "button \"Maintenir pour voir mon visa\" 287x37",
+   "input \"Volume des lèvres\" 358x32",
+   "input \"Hauteur des lèvres\" 358x32",
+   "input \"Largeur de la bouche\" 358x32",
+   "input \"Rouge des lèvres\" 358x32",
+   "input \"Ouverture des yeux\" 358x32",
+   "input \"Taille des yeux\" 358x32",
+   "input \"Largeur du nez\" 358x32",
+   "input \"Longueur du nez\" 358x32",
+   "input \"Avancée du nez\" 358x32",
+   "input \"Menton avancé\" 358x32",
+   "input \"Largeur du menton\" 358x32",
+   "input \"Pommettes\" 358x32",
+   "input \"Joues\" 358x32",
+   "input \"Largeur du visage\" 358x32",
+   "input \"Longueur du visage\" 358x32",
+   "input \"Hauteur du front\" 358x32",
+   "input \"Épaisseur du cou\" 358x32",
+   "input \"Âge du visage\" 358x32",
+   "button \"Tout remettre aux réglages d\" 309x43"
+  ],
+  "a11y": [
+   "canvas#lockerCanvas sans role/aria"
+  ]
+ },
+ "390/vestiaire_maillot": {
+  "over": {
+   "scrollW": 390,
+   "W": 390,
+   "bodyScrollW": 390,
+   "bad": [
+    "button. -53..16"
+   ]
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 310x41",
+   "#practice \"Prendre ses marques · Entraî\" 310x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 320x18",
+   "label \"NOM DU JOUEUR\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"Poste sur le terrain\n＋\" 294x17",
+   "#position \"select-one\" 141x36",
+   "#exportSave \"Exporter ma carrière\" 320x42",
+   "#importSave \"Importer une carrière\" 320x42",
+   "#lockerBack \"‹\" 42x42",
+   "button \"Face\" 51x34",
+   "button \"Profil\" 53x34",
+   "button \"Dos\" 45x34",
+   "#zoomOut \"−\" 40x34",
+   "#zoomIn \"+\" 40x34",
+   "button \"Coupe\" 69x36",
+   "button \"Cheveux\" 81x36",
+   "button \"Teint\" 59x36",
+   "button \"Barbe\" 65x36",
+   "button \"Visage\" 69x36",
+   "button \"Maillot\" 70x36",
+   "label \"Nom floqué dans le dos\" 358x18",
+   "#flockName \"text\" 358x18",
+   "label \"Numéro\" 358x18",
+   "#flockNumber \"Numéro du maillot\" 358x18"
+  ],
+  "a11y": [
+   "canvas#lockerCanvas sans role/aria"
+  ]
+ },
+ "a11y_global": [
+  "canvas#lockerCanvas sans role/aria"
+ ],
+ "dialog": {
+  "role": "dialog",
+  "modal": "true",
+  "label": "Mon joueur — vestiaire",
+  "tabsRole": "tablist",
+  "tabAria": [
+   "tab:false",
+   "tab:false",
+   "tab:false",
+   "tab:false",
+   "tab:false",
+   "tab:true"
+  ],
+  "panelRole": null
+ },
+ "360/accueil": {
+  "over": {
+   "scrollW": 360,
+   "W": 360,
+   "bodyScrollW": 360,
+   "bad": []
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 280x41",
+   "#practice \"Prendre ses marques · Entraî\" 280x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 290x18",
+   "label \"\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"\" 264x17",
+   "#position \"select-one\" 126x36",
+   "#exportSave \"submit\" 290x42",
+   "#importSave \"submit\" 290x42"
+  ]
+ },
+ "360/profil_options": {
+  "over": {
+   "scrollW": 360,
+   "W": 360,
+   "bodyScrollW": 360,
+   "bad": []
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 280x41",
+   "#practice \"Prendre ses marques · Entraî\" 280x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 290x18",
+   "label \"NOM DU JOUEUR\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"Poste sur le terrain\n＋\" 264x17",
+   "#position \"select-one\" 126x36",
+   "#exportSave \"Exporter ma carrière\" 290x42",
+   "#importSave \"Importer une carrière\" 290x42"
+  ]
+ },
+ "360/vestiaire_coupe": {
+  "over": {
+   "scrollW": 360,
+   "W": 360,
+   "bodyScrollW": 360,
+   "bad": [
+    "button. 310..379",
+    "button. 385..455"
+   ]
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 280x41",
+   "#practice \"Prendre ses marques · Entraî\" 280x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 290x18",
+   "label \"NOM DU JOUEUR\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"Poste sur le terrain\n＋\" 264x17",
+   "#position \"select-one\" 126x36",
+   "#exportSave \"Exporter ma carrière\" 290x42",
+   "#importSave \"Importer une carrière\" 290x42",
+   "#lockerBack \"‹\" 42x42",
+   "button \"Face\" 51x34",
+   "button \"Profil\" 53x34",
+   "button \"Dos\" 45x34",
+   "#zoomOut \"−\" 40x34",
+   "#zoomIn \"+\" 40x34",
+   "button \"Coupe\" 69x36",
+   "button \"Cheveux\" 81x36",
+   "button \"Teint\" 59x36",
+   "button \"Barbe\" 65x36",
+   "button \"Visage\" 69x36",
+   "button \"Maillot\" 70x36"
+  ]
+ },
+ "360/vestiaire_cheveux": {
+  "over": {
+   "scrollW": 360,
+   "W": 360,
+   "bodyScrollW": 360,
+   "bad": [
+    "button. 310..379",
+    "button. 385..455"
+   ]
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 280x41",
+   "#practice \"Prendre ses marques · Entraî\" 280x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 290x18",
+   "label \"NOM DU JOUEUR\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"Poste sur le terrain\n＋\" 264x17",
+   "#position \"select-one\" 126x36",
+   "#exportSave \"Exporter ma carrière\" 290x42",
+   "#importSave \"Importer une carrière\" 290x42",
+   "#lockerBack \"‹\" 42x42",
+   "button \"Face\" 51x34",
+   "button \"Profil\" 53x34",
+   "button \"Dos\" 45x34",
+   "#zoomOut \"−\" 40x34",
+   "#zoomIn \"+\" 40x34",
+   "button \"Coupe\" 69x36",
+   "button \"Cheveux\" 81x36",
+   "button \"Teint\" 59x36",
+   "button \"Barbe\" 65x36",
+   "button \"Visage\" 69x36",
+   "button \"Maillot\" 70x36",
+   "button \"Cheveux\" 107x37",
+   "button \"Sourcils\" 107x37",
+   "button \"Barbe\" 107x37"
+  ]
+ },
+ "360/vestiaire_teint": {
+  "over": {
+   "scrollW": 360,
+   "W": 360,
+   "bodyScrollW": 360,
+   "bad": [
+    "button. 310..379",
+    "button. 385..455"
+   ]
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 280x41",
+   "#practice \"Prendre ses marques · Entraî\" 280x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 290x18",
+   "label \"NOM DU JOUEUR\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"Poste sur le terrain\n＋\" 264x17",
+   "#position \"select-one\" 126x36",
+   "#exportSave \"Exporter ma carrière\" 290x42",
+   "#importSave \"Importer une carrière\" 290x42",
+   "#lockerBack \"‹\" 42x42",
+   "button \"Face\" 51x34",
+   "button \"Profil\" 53x34",
+   "button \"Dos\" 45x34",
+   "#zoomOut \"−\" 40x34",
+   "#zoomIn \"+\" 40x34",
+   "button \"Coupe\" 69x36",
+   "button \"Cheveux\" 81x36",
+   "button \"Teint\" 59x36",
+   "button \"Barbe\" 65x36",
+   "button \"Visage\" 69x36",
+   "button \"Maillot\" 70x36"
+  ]
+ },
+ "360/vestiaire_barbe": {
+  "over": {
+   "scrollW": 360,
+   "W": 360,
+   "bodyScrollW": 360,
+   "bad": [
+    "button. 310..379",
+    "button. 385..455"
+   ]
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 280x41",
+   "#practice \"Prendre ses marques · Entraî\" 280x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 290x18",
+   "label \"NOM DU JOUEUR\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"Poste sur le terrain\n＋\" 264x17",
+   "#position \"select-one\" 126x36",
+   "#exportSave \"Exporter ma carrière\" 290x42",
+   "#importSave \"Importer une carrière\" 290x42",
+   "#lockerBack \"‹\" 42x42",
+   "button \"Face\" 51x34",
+   "button \"Profil\" 53x34",
+   "button \"Dos\" 45x34",
+   "#zoomOut \"−\" 40x34",
+   "#zoomIn \"+\" 40x34",
+   "button \"Coupe\" 69x36",
+   "button \"Cheveux\" 81x36",
+   "button \"Teint\" 59x36",
+   "button \"Barbe\" 65x36",
+   "button \"Visage\" 69x36",
+   "button \"Maillot\" 70x36"
+  ]
+ },
+ "360/vestiaire_visage": {
+  "over": {
+   "scrollW": 360,
+   "W": 360,
+   "bodyScrollW": 360,
+   "bad": [
+    "button. -7..62",
+    "button. 366..436",
+    "button. 311..380",
+    "button. 388..441"
+   ]
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 280x41",
+   "#practice \"Prendre ses marques · Entraî\" 280x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 290x18",
+   "label \"NOM DU JOUEUR\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"Poste sur le terrain\n＋\" 264x17",
+   "#position \"select-one\" 126x36",
+   "#exportSave \"Exporter ma carrière\" 290x42",
+   "#importSave \"Importer une carrière\" 290x42",
+   "#lockerBack \"‹\" 42x42",
+   "button \"Face\" 51x34",
+   "button \"Profil\" 53x34",
+   "button \"Dos\" 45x34",
+   "#zoomOut \"−\" 40x34",
+   "#zoomIn \"+\" 40x34",
+   "button \"Coupe\" 69x36",
+   "button \"Cheveux\" 81x36",
+   "button \"Teint\" 59x36",
+   "button \"Barbe\" 65x36",
+   "button \"Visage\" 69x36",
+   "button \"Maillot\" 70x36",
+   "button \"Départ\" 75x37",
+   "button \"Fin\" 49x37",
+   "button \"Athlète\" 77x37",
+   "button \"Rond\" 63x37",
+   "button \"Jeune\" 69x37",
+   "button \"Dur\" 53x37",
+   "button \"Maintenir pour voir mon visa\" 287x37",
+   "input \"Volume des lèvres\" 328x32",
+   "input \"Hauteur des lèvres\" 328x32",
+   "input \"Largeur de la bouche\" 328x32",
+   "input \"Rouge des lèvres\" 328x32",
+   "input \"Ouverture des yeux\" 328x32",
+   "input \"Taille des yeux\" 328x32",
+   "input \"Largeur du nez\" 328x32",
+   "input \"Longueur du nez\" 328x32",
+   "input \"Avancée du nez\" 328x32",
+   "input \"Menton avancé\" 328x32",
+   "input \"Largeur du menton\" 328x32",
+   "input \"Pommettes\" 328x32",
+   "input \"Joues\" 328x32",
+   "input \"Largeur du visage\" 328x32",
+   "input \"Longueur du visage\" 328x32",
+   "input \"Hauteur du front\" 328x32",
+   "input \"Épaisseur du cou\" 328x32",
+   "input \"Âge du visage\" 328x32",
+   "button \"Tout remettre aux réglages d\" 309x43"
+  ]
+ },
+ "360/vestiaire_maillot": {
+  "over": {
+   "scrollW": 360,
+   "W": 360,
+   "bodyScrollW": 360,
+   "bad": [
+    "button. -95..-26",
+    "button. -20..61"
+   ]
+  },
+  "small": [
+   "a \"NEXTNINE●\" 99x30",
+   "#tactic \"Équilibrée\nPressing haut · r\" 280x41",
+   "#practice \"Prendre ses marques · Entraî\" 280x42",
+   "#rest \"Récupérer · +20 %\" 92x24",
+   "summary \"Profil et sauvegarde\n＋\" 290x18",
+   "label \"NOM DU JOUEUR\" 79x13",
+   "#name \"text\" 79x13",
+   "summary \"Poste sur le terrain\n＋\" 264x17",
+   "#position \"select-one\" 126x36",
+   "#exportSave \"Exporter ma carrière\" 290x42",
+   "#importSave \"Importer une carrière\" 290x42",
+   "#lockerBack \"‹\" 42x42",
+   "button \"Face\" 51x34",
+   "button \"Profil\" 53x34",
+   "button \"Dos\" 45x34",
+   "#zoomOut \"−\" 40x34",
+   "#zoomIn \"+\" 40x34",
+   "button \"Coupe\" 69x36",
+   "button \"Cheveux\" 81x36",
+   "button \"Teint\" 59x36",
+   "button \"Barbe\" 65x36",
+   "button \"Visage\" 69x36",
+   "button \"Maillot\" 70x36",
+   "label \"Nom floqué dans le dos\" 328x18",
+   "#flockName \"text\" 328x18",
+   "label \"Numéro\" 328x18",
+   "#flockNumber \"Numéro du maillot\" 328x18"
+  ]
+ }
+}
