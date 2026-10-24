@@ -1,0 +1,67 @@
+{
+ "meta": {
+  "machine": [
+   "Apple M2",
+   "8589934592",
+   "Darwin 23.4.0 arm64",
+   ""
+  ],
+  "chromium": "156.0.8078.4",
+  "backend_arg": "metal-uncapped",
+  "chromium_args": [
+   "--use-angle=metal",
+   "--enable-gpu",
+   "--ignore-gpu-blocklist",
+   "--disable-frame-rate-limit",
+   "--disable-gpu-vsync"
+  ],
+  "webgl": {
+   "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+   "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2, Unspecified Version)",
+   "vendor": "Google Inc. (Apple)"
+  },
+  "pages": 1,
+  "warmup_s": 3,
+  "duration_s": 10,
+  "viewport": "390x844",
+  "python": "3.13.17"
+ },
+ "results": {
+  "match3d": [
+   {
+    "frames": 1516,
+    "duration_s": 10.13,
+    "frame_ms": {
+     "p50": 6.2,
+     "p95": 9.6,
+     "p99": 22.68,
+     "max": 36.7
+    },
+    "fps_mean": 149.59,
+    "js_cb_ms": {
+     "p50": 5.9,
+     "p95": 7.8,
+     "max": 26.9
+    },
+    "draw_calls": {
+     "p50": 176.0,
+     "max": 182
+    },
+    "triangles": {
+     "p50": 625713.0,
+     "max": 625897
+    },
+    "frames_over_50ms": 0,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 31.57,
+     "last": 31.57
+    },
+    "page_errors": [],
+    "setup_notes": [
+     "phase 'ready' statique (aucune action declenchee)"
+    ]
+   }
+  ]
+ }
+}

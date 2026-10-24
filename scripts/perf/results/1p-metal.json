@@ -1,0 +1,188 @@
+{
+ "meta": {
+  "machine": [
+   "Apple M2",
+   "8589934592",
+   "Darwin 23.4.0 arm64",
+   ""
+  ],
+  "chromium": "156.0.8078.4",
+  "backend_arg": "metal",
+  "chromium_args": [
+   "--use-angle=metal",
+   "--enable-gpu",
+   "--ignore-gpu-blocklist"
+  ],
+  "webgl": {
+   "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+   "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2, Unspecified Version)",
+   "vendor": "Google Inc. (Apple)"
+  },
+  "pages": 1,
+  "warmup_s": 3,
+  "duration_s": 10,
+  "viewport": "390x844",
+  "python": "3.13.17"
+ },
+ "results": {
+  "home": [
+   {
+    "frames": 600,
+    "duration_s": 10.0,
+    "frame_ms": {
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8
+    },
+    "fps_mean": 60.0,
+    "js_cb_ms": {
+     "p50": 0.0,
+     "p95": 0.1,
+     "max": 0.2
+    },
+    "draw_calls": {
+     "p50": 0.0,
+     "max": 0
+    },
+    "triangles": {
+     "p50": 0.0,
+     "max": 0
+    },
+    "frames_over_50ms": 0,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 33.47,
+     "last": 33.47
+    },
+    "page_errors": [],
+    "setup_notes": []
+   }
+  ],
+  "locker": [
+   {
+    "frames": 600,
+    "duration_s": 10.0,
+    "frame_ms": {
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8
+    },
+    "fps_mean": 60.0,
+    "js_cb_ms": {
+     "p50": 0.5,
+     "p95": 1.1,
+     "max": 1.6
+    },
+    "draw_calls": {
+     "p50": 25.0,
+     "max": 25
+    },
+    "triangles": {
+     "p50": 49248.0,
+     "max": 49248
+    },
+    "frames_over_50ms": 0,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 48.07,
+     "last": 48.07
+    },
+    "page_errors": [],
+    "setup_notes": []
+   }
+  ],
+  "match3d": [
+   {
+    "frames": 599,
+    "duration_s": 9.98,
+    "frame_ms": {
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8
+    },
+    "fps_mean": 60.0,
+    "js_cb_ms": {
+     "p50": 2.6,
+     "p95": 4.7,
+     "max": 5.8
+    },
+    "draw_calls": {
+     "p50": 176.0,
+     "max": 182
+    },
+    "triangles": {
+     "p50": 625713.0,
+     "max": 625897
+    },
+    "frames_over_50ms": 0,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 37.77,
+     "last": 37.77
+    },
+    "page_errors": [],
+    "setup_notes": [
+     "phase 'ready' statique (aucune action declenchee)"
+    ]
+   }
+  ],
+  "match3d-action": [
+   {
+    "frames": 636,
+    "duration_s": 10.6,
+    "frame_ms": {
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8
+    },
+    "fps_mean": 60.0,
+    "js_cb_ms": {
+     "p50": 2.5,
+     "p95": 5.1,
+     "max": 7.5
+    },
+    "draw_calls": {
+     "p50": 174.0,
+     "max": 184
+    },
+    "triangles": {
+     "p50": 625621.0,
+     "max": 625909
+    },
+    "frames_over_50ms": 0,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 33.47,
+     "last": 33.47
+    },
+    "page_errors": [],
+    "setup_notes": [
+     "pilote : tir/replay/continuer en boucle pendant la mesure"
+    ],
+    "driver": {
+     "gestures": 17,
+     "replays": 0,
+     "continues": 0
+    }
+   }
+  ],
+  "tactical2d": [
+   {
+    "frames": 0,
+    "page_errors": [
+     "Cannot read properties of undefined (reading 'x') | TypeError: Cannot read properties of undefined (reading 'x')\n    at moveToward (http://localhost:8773/movement.js?v=20-9s:4:125)\n    at updateActors (http://localhost:8773/game.js?v=20-9s:463:296)\n    at tick (http://localhost:8773/game.js?v=20-9s:518:172)\n    at loop (http://localhost:8773/game.js?v=20-9s:561:346)\n    at <anonymous>:23:40"
+    ],
+    "setup_notes": [],
+    "driver": {
+     "gestures": 50,
+     "replays": 0,
+     "continues": 0
+    }
+   }
+  ]
+ }
+}

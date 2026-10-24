@@ -239,11 +239,6 @@ stepCity(now,dt){if(!this.cars)return;for(const l of this.lights){const t=((now+
  for(const [i,s] of (this.swings||[]).entries())s.rotation.x=Math.sin(now*1.6+i*1.3)*.5;if(this.roundabout)this.roundabout.rotation.y=now*.8;}
 
 setCrowdVisible(show){if(this.crowd)this.crowd.group.visible=!!show;}
-animateCrowd(time,goal){const c=this.crowd;if(!c||!c.group.visible)return;const d=c.dummy;
- c.fans.forEach((f,i)=>{const excitement=goal?.6:.16,bob=Math.max(0,Math.sin(time*(goal?6:2)+f.phase))*(goal?.14:.025);d.position.set(f.x,f.base+.87+bob,f.z);d.rotation.set(0,0,0);d.updateMatrix();c.bodies.setMatrixAt(i,d.matrix);d.position.y=f.base+1.32+bob;d.updateMatrix();c.heads.setMatrixAt(i,d.matrix);
-  for(let side=0;side<2;side++){const sign=side?1:-1;d.position.set(f.x+sign*.11,f.base+.3+bob,f.z);d.rotation.set(0,0,0);d.updateMatrix();c.legs.setMatrixAt(i*2+side,d.matrix);d.position.set(f.x+sign*.28,f.base+.96+bob,f.z);d.rotation.set(Math.sin(time*2+f.phase)*.18,0,sign*(i%4===0||goal?2.6+Math.sin(time*4+f.phase)*excitement:.2));d.updateMatrix();c.arms.setMatrixAt(i*2+side,d.matrix);}
- });c.heads.instanceMatrix.needsUpdate=true;c.bodies.instanceMatrix.needsUpdate=true;c.legs.instanceMatrix.needsUpdate=true;c.arms.instanceMatrix.needsUpdate=true;c.flags.forEach((f,i)=>f.rotation.y=Math.sin(time*2+i)*.25);
-}
 // Lot 2 · Painted face on the head (eyes with iris and highlight, brows, nose shading, lips, optional beard), cached per look.
 headGeometry(shape,detail='low'){return this.shared('head|'+shape+'|'+detail,()=>buildHead(shape,detail));}
 earGeometry(side,detail='low'){return this.shared('ear|'+side+'|'+detail,()=>buildEar(side,detail));}
