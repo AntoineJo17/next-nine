@@ -65,5 +65,5 @@ test('Lot 9d · lower-face proportions and mouth: the chin is no longer overlong
   const sg=(lm.ym-chin)*1000;assert.ok(sg>37&&sg<56,'shape '+i+' mouth-to-chin '+sg.toFixed(1)+' mm');const cx=commissure(head,D);assert.ok(cx>.02&&cx<.03,'commissure '+cx);}});
 
 test('Lot 9e · a shaved cut has no cap, the chin landmark is the real chin (not the collar), the lips are eased back',()=>{const {head}=buildMHHead(D,mhShapeParams(0)),lm=landmarks(head,D);assert.equal(hairShell(head,'rase'),null);assert.ok(hairShell(head,'degrade','#222222'));
- const d=(lm.ym-lm.yc)*1000;assert.ok(d>38&&d<62,'mouth to chin '+d.toFixed(1)+' mm');assert.ok(MH_LIP_BACK>.0015&&MH_LIP_BACK<.004);
+ const d=(lm.ym-lm.yc)*1000;assert.ok(d>38&&d<62,'mouth to chin '+d.toFixed(1)+' mm');assert.ok(MH_LIP_BACK>.0005&&MH_LIP_BACK<.004);
  const b=mhBeard('barbe',0,lm.yc-.06,-.03,lm);assert.equal(b,0,'no stubble far down the neck');});

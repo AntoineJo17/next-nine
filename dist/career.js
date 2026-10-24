@@ -1,4 +1,4 @@
-import {clamp} from './physics.js?v=20-9f';
+import {clamp} from './physics.js?v=20-9g';
 export const LEVEL_XP=700;
 // 21 · Playing position: it decides where the player's chances come from.
 export const POSITIONS={BU:{label:'Avant-centre',short:'BU'},AIL:{label:'Ailier droit',short:'AIL'},MOC:{label:'Meneur de jeu',short:'MOC'}};
