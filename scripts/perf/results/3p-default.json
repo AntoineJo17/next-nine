@@ -1,0 +1,574 @@
+{
+ "meta": {
+  "machine": [
+   "Apple M2",
+   "8589934592",
+   "Darwin 23.4.0 arm64",
+   ""
+  ],
+  "chromium": "156.0.8078.4",
+  "backend_arg": "default",
+  "chromium_args": [],
+  "webgl": {
+   "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+   "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+   "vendor": "Google Inc. (Google)"
+  },
+  "pages": 3,
+  "warmup_s": 3,
+  "duration_s": 10,
+  "viewport": "390x844",
+  "python": "3.13.17"
+ },
+ "results": {
+  "home": [
+   {
+    "frames": 600,
+    "duration_s": 10.0,
+    "frame_ms": {
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8
+    },
+    "fps_mean": 60.0,
+    "js_cb_ms": {
+     "p50": 0.0,
+     "p95": 0.1,
+     "max": 0.1
+    },
+    "draw_calls": {
+     "p50": 0.0,
+     "max": 0
+    },
+    "triangles": {
+     "p50": 0.0,
+     "max": 0
+    },
+    "frames_over_50ms": 0,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 35.57,
+     "last": 35.57
+    },
+    "page_errors": [],
+    "setup_notes": [],
+    "engine_ready_s": 0.55
+   },
+   {
+    "frames": 600,
+    "duration_s": 10.0,
+    "frame_ms": {
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 16.8
+    },
+    "fps_mean": 60.0,
+    "js_cb_ms": {
+     "p50": 0.0,
+     "p95": 0.1,
+     "max": 0.2
+    },
+    "draw_calls": {
+     "p50": 0.0,
+     "max": 0
+    },
+    "triangles": {
+     "p50": 0.0,
+     "max": 0
+    },
+    "frames_over_50ms": 0,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 35.57,
+     "last": 35.57
+    },
+    "page_errors": [],
+    "setup_notes": [],
+    "engine_ready_s": 0.55
+   },
+   {
+    "frames": 600,
+    "duration_s": 10.0,
+    "frame_ms": {
+     "p50": 16.7,
+     "p95": 16.8,
+     "p99": 16.8,
+     "max": 16.8
+    },
+    "fps_mean": 60.0,
+    "js_cb_ms": {
+     "p50": 0.0,
+     "p95": 0.1,
+     "max": 0.3
+    },
+    "draw_calls": {
+     "p50": 0.0,
+     "max": 0
+    },
+    "triangles": {
+     "p50": 0.0,
+     "max": 0
+    },
+    "frames_over_50ms": 0,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 37.77,
+     "last": 37.77
+    },
+    "page_errors": [],
+    "setup_notes": [],
+    "engine_ready_s": 0.54
+   }
+  ],
+  "locker": [
+   {
+    "frames": 95,
+    "duration_s": 9.98,
+    "frame_ms": {
+     "p50": 100.0,
+     "p95": 133.33,
+     "p99": 205.99,
+     "max": 299.9
+    },
+    "fps_mean": 9.52,
+    "js_cb_ms": {
+     "p50": 0.8,
+     "p95": 1.1,
+     "max": 2.3
+    },
+    "draw_calls": {
+     "p50": 25.0,
+     "max": 25
+    },
+    "triangles": {
+     "p50": 49248.0,
+     "max": 49248
+    },
+    "frames_over_50ms": 95,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 48.07,
+     "last": 48.07
+    },
+    "page_errors": [],
+    "setup_notes": [],
+    "engine_ready_s": 0.47
+   },
+   {
+    "frames": 95,
+    "duration_s": 9.98,
+    "frame_ms": {
+     "p50": 100.0,
+     "p95": 138.41,
+     "p99": 221.6,
+     "max": 300
+    },
+    "fps_mean": 9.52,
+    "js_cb_ms": {
+     "p50": 0.8,
+     "p95": 1.1,
+     "max": 2.7
+    },
+    "draw_calls": {
+     "p50": 25.0,
+     "max": 25
+    },
+    "triangles": {
+     "p50": 49248.0,
+     "max": 49248
+    },
+    "frames_over_50ms": 95,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 40.15,
+     "last": 40.15
+    },
+    "page_errors": [],
+    "setup_notes": [],
+    "engine_ready_s": 0.5
+   },
+   {
+    "frames": 95,
+    "duration_s": 10.0,
+    "frame_ms": {
+     "p50": 100.0,
+     "p95": 133.4,
+     "p99": 220.6,
+     "max": 283.3
+    },
+    "fps_mean": 9.5,
+    "js_cb_ms": {
+     "p50": 0.8,
+     "p95": 1.33,
+     "max": 10.8
+    },
+    "draw_calls": {
+     "p50": 25.0,
+     "max": 25
+    },
+    "triangles": {
+     "p50": 49248.0,
+     "max": 49248
+    },
+    "frames_over_50ms": 95,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 42.63,
+     "last": 42.63
+    },
+    "page_errors": [],
+    "setup_notes": [],
+    "engine_ready_s": 0.47
+   }
+  ],
+  "match3d": [
+   {
+    "frames": 8,
+    "duration_s": 9.83,
+    "frame_ms": {
+     "p50": 1224.95,
+     "p95": 1249.97,
+     "p99": 1249.99,
+     "max": 1250
+    },
+    "fps_mean": 0.81,
+    "js_cb_ms": {
+     "p50": 4.3,
+     "p95": 6.62,
+     "max": 7
+    },
+    "draw_calls": {
+     "p50": 181.5,
+     "max": 182
+    },
+    "triangles": {
+     "p50": 625877.0,
+     "max": 625897
+    },
+    "frames_over_50ms": 8,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 35.57,
+     "last": 35.57
+    },
+    "page_errors": [],
+    "setup_notes": [
+     "phase 'ready' statique (aucune action declenchee)"
+    ],
+    "engine_ready_s": 0.61
+   },
+   {
+    "frames": 8,
+    "duration_s": 9.87,
+    "frame_ms": {
+     "p50": 1233.3,
+     "p95": 1260.75,
+     "p99": 1265.43,
+     "max": 1266.6
+    },
+    "fps_mean": 0.81,
+    "js_cb_ms": {
+     "p50": 4.7,
+     "p95": 6.0,
+     "max": 6
+    },
+    "draw_calls": {
+     "p50": 180.5,
+     "max": 182
+    },
+    "triangles": {
+     "p50": 625837.0,
+     "max": 625897
+    },
+    "frames_over_50ms": 8,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 33.47,
+     "last": 33.47
+    },
+    "page_errors": [],
+    "setup_notes": [
+     "phase 'ready' statique (aucune action declenchee)"
+    ],
+    "engine_ready_s": 0.61
+   },
+   {
+    "frames": 8,
+    "duration_s": 9.82,
+    "frame_ms": {
+     "p50": 1224.95,
+     "p95": 1249.97,
+     "p99": 1249.99,
+     "max": 1250
+    },
+    "fps_mean": 0.81,
+    "js_cb_ms": {
+     "p50": 4.45,
+     "p95": 7.86,
+     "max": 8.6
+    },
+    "draw_calls": {
+     "p50": 180.0,
+     "max": 182
+    },
+    "triangles": {
+     "p50": 625817.0,
+     "max": 625897
+    },
+    "frames_over_50ms": 8,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 33.47,
+     "last": 33.47
+    },
+    "page_errors": [],
+    "setup_notes": [
+     "phase 'ready' statique (aucune action declenchee)"
+    ],
+    "engine_ready_s": 0.61
+   }
+  ],
+  "match3d-action": [
+   {
+    "frames": 18,
+    "duration_s": 23.28,
+    "frame_ms": {
+     "p50": 1250.0,
+     "p95": 1464.8,
+     "p99": 1986.16,
+     "max": 2116.5
+    },
+    "fps_mean": 0.77,
+    "js_cb_ms": {
+     "p50": 6.35,
+     "p95": 81.97,
+     "max": 489.2
+    },
+    "draw_calls": {
+     "p50": 183.0,
+     "max": 183
+    },
+    "triangles": {
+     "p50": 625897.0,
+     "max": 625897
+    },
+    "frames_over_50ms": 18,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 29.75,
+     "last": 29.75
+    },
+    "page_errors": [],
+    "setup_notes": [
+     "pilote : tir/replay/continuer en boucle pendant la mesure"
+    ],
+    "engine_ready_s": 0.83,
+    "driver": {
+     "gestures": 3,
+     "replays": 0,
+     "continues": 0
+    }
+   },
+   {
+    "frames": 17,
+    "duration_s": 22.83,
+    "frame_ms": {
+     "p50": 1250.0,
+     "p95": 1703.22,
+     "p99": 2353.84,
+     "max": 2516.5
+    },
+    "fps_mean": 0.74,
+    "js_cb_ms": {
+     "p50": 6.1,
+     "p95": 189.56,
+     "max": 896.2
+    },
+    "draw_calls": {
+     "p50": 183.0,
+     "max": 183
+    },
+    "triangles": {
+     "p50": 625897.0,
+     "max": 625897
+    },
+    "frames_over_50ms": 17,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 23.37,
+     "last": 23.37
+    },
+    "page_errors": [],
+    "setup_notes": [
+     "pilote : tir/replay/continuer en boucle pendant la mesure"
+    ],
+    "engine_ready_s": 0.82,
+    "driver": {
+     "gestures": 3,
+     "replays": 0,
+     "continues": 0
+    }
+   },
+   {
+    "frames": 19,
+    "duration_s": 23.7,
+    "frame_ms": {
+     "p50": 1266.6,
+     "p95": 1398.2,
+     "p99": 1506.2,
+     "max": 1533.2
+    },
+    "fps_mean": 0.8,
+    "js_cb_ms": {
+     "p50": 6.8,
+     "p95": 20.62,
+     "max": 29.8
+    },
+    "draw_calls": {
+     "p50": 183.0,
+     "max": 183
+    },
+    "triangles": {
+     "p50": 625897.0,
+     "max": 625897
+    },
+    "frames_over_50ms": 19,
+    "tactical_visible_ratio": 0.0,
+    "js_heap_mb": {
+     "first": 37.77,
+     "last": 37.77
+    },
+    "page_errors": [],
+    "setup_notes": [
+     "pilote : tir/replay/continuer en boucle pendant la mesure"
+    ],
+    "engine_ready_s": 0.83,
+    "driver": {
+     "gestures": 3,
+     "replays": 0,
+     "continues": 0
+    }
+   }
+  ],
+  "tactical2d": [
+   {
+    "frames": 739,
+    "duration_s": 12.95,
+    "frame_ms": {
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.8,
+     "max": 649.9
+    },
+    "fps_mean": 57.07,
+    "js_cb_ms": {
+     "p50": 0.4,
+     "p95": 0.9,
+     "max": 6.8
+    },
+    "draw_calls": {
+     "p50": 0.0,
+     "max": 0
+    },
+    "triangles": {
+     "p50": 0.0,
+     "max": 0
+    },
+    "frames_over_50ms": 1,
+    "tactical_visible_ratio": 1.0,
+    "js_heap_mb": {
+     "first": 31.57,
+     "last": 31.57
+    },
+    "page_errors": [],
+    "setup_notes": [],
+    "engine_ready_s": 0.96,
+    "driver": {
+     "gestures": 3,
+     "replays": 0,
+     "continues": 0
+    }
+   },
+   {
+    "frames": 27,
+    "duration_s": 0.45,
+    "frame_ms": {
+     "p50": 16.7,
+     "p95": 16.77,
+     "p99": 16.8,
+     "max": 16.8
+    },
+    "fps_mean": 60.01,
+    "js_cb_ms": {
+     "p50": 0.4,
+     "p95": 0.5,
+     "max": 0.6
+    },
+    "draw_calls": {
+     "p50": 0.0,
+     "max": 0
+    },
+    "triangles": {
+     "p50": 0.0,
+     "max": 0
+    },
+    "frames_over_50ms": 0,
+    "tactical_visible_ratio": 1.0,
+    "js_heap_mb": {
+     "first": 31.57,
+     "last": 31.57
+    },
+    "page_errors": [],
+    "setup_notes": [],
+    "engine_ready_s": 0.91,
+    "driver": {
+     "gestures": 3,
+     "replays": 0,
+     "continues": 0
+    }
+   },
+   {
+    "frames": 14,
+    "duration_s": 0.23,
+    "frame_ms": {
+     "p50": 16.7,
+     "p95": 16.7,
+     "p99": 16.7,
+     "max": 16.7
+    },
+    "fps_mean": 60.01,
+    "js_cb_ms": {
+     "p50": 0.3,
+     "p95": 0.4,
+     "max": 0.4
+    },
+    "draw_calls": {
+     "p50": 0.0,
+     "max": 0
+    },
+    "triangles": {
+     "p50": 0.0,
+     "max": 0
+    },
+    "frames_over_50ms": 0,
+    "tactical_visible_ratio": 1.0,
+    "js_heap_mb": {
+     "first": 31.57,
+     "last": 31.57
+    },
+    "page_errors": [
+     "Cannot read properties of undefined (reading 'x') | TypeError: Cannot read properties of undefined (reading 'x')\n    at moveToward (http://localhost:8773/movement.js?v=20-9s:4:125)\n    at updateActors (http://localhost:8773/game.js?v=20-9s:463:296)\n    at tick (http://localhost:8773/game.js?v=20-9s:518:172)\n    at loop (http://localhost:8773/game.js?v=20-9s:561:346)\n    at <anonymous>:23:40"
+    ],
+    "setup_notes": [],
+    "engine_ready_s": 0.92,
+    "driver": {
+     "gestures": 3,
+     "replays": 0,
+     "continues": 0
+    }
+   }
+  ]
+ }
+}
