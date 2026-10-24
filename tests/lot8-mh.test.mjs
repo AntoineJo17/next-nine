@@ -1,6 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
 import * as T from '../dist/vendor/three.module.js';
-import {MH_LIP_BACK,commissure,landmarks,mouthLine,buildMHHead,morphWeights,mhHair,mhBeard,mhCurls,hairShell,cavity,smoothField,MH_SHAPES,mhShapeParams,MH_NEUTRAL_MODS,MH_HAIR} from '../dist/mh.js';
+import {applyFace,FACE_SLIDERS,MH_LIP_BACK,commissure,landmarks,mouthLine,buildMHHead,morphWeights,mhHair,mhBeard,mhCurls,hairShell,cavity,smoothField,MH_SHAPES,mhShapeParams,MH_NEUTRAL_MODS,MH_HAIR} from '../dist/mh.js';
 const D=JSON.parse(fs.readFileSync(new URL('../dist/mh/head.json',import.meta.url),'utf8'));
 const bbox=g=>{g.computeBoundingBox();return g.boundingBox;};
 
@@ -67,3 +67,8 @@ test('Lot 9d · lower-face proportions and mouth: the chin is no longer overlong
 test('Lot 9e · a shaved cut has no cap, the chin landmark is the real chin (not the collar), the lips are eased back',()=>{const {head}=buildMHHead(D,mhShapeParams(0)),lm=landmarks(head,D);assert.equal(hairShell(head,'rase'),null);assert.ok(hairShell(head,'degrade','#222222'));
  const d=(lm.ym-lm.yc)*1000;assert.ok(d>38&&d<62,'mouth to chin '+d.toFixed(1)+' mm');assert.ok(MH_LIP_BACK>.0003&&MH_LIP_BACK<.004);
  const b=mhBeard('barbe',0,lm.yc-.06,-.03,lm);assert.equal(b,0,'no stubble far down the neck');});
+
+test('Lot 9j · the face sliders: zero changes nothing, each slider moves its targets both ways and only valid targets are used',()=>{const base=mhShapeParams(0).mods;assert.deepEqual(applyFace(base,{lipFull:0,chin:0}),base);assert.deepEqual(applyFace(base,null),base);
+ const up=applyFace(base,{chin:1}),dn=applyFace(base,{chin:-1});assert.ok((up['chin-prominent-incr!']||0)>(base['chin-prominent-incr!']||0));assert.ok(!dn['chin-prominent-incr!']&&dn['chin-prominent-decr!']>0,'a negative value uses the decr target');
+ for(const [k,,names] of FACE_SLIDERS)for(const v of [-1,1])for(const key of Object.keys(applyFace(base,{[k]:v})))assert.ok(D.targets[key.slice(0,-1)],'valid target '+key);
+ const a=buildMHHead(D,mhShapeParams(0,{lipFull:1})).head.attributes.position,b=buildMHHead(D,mhShapeParams(0)).head.attributes.position;let d=0;for(let i=0;i<a.count;i++)d=Math.max(d,Math.abs(a.getZ(i)-b.getZ(i)));assert.ok(d>.001,'the lips move by '+(d*1000).toFixed(1)+' mm');});

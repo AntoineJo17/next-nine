@@ -3,7 +3,7 @@
 // morph targets (sparse offsets). A face is the base mesh plus weighted targets: race blend and gender first, then the
 // fine adjustments (jaw, nose, lips, ears...). Units in the file are decimetres, front = +z; the game wants metres, front = -z.
 import * as T from './vendor/three.module.js';
-import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-9i';
+import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-9j';
 export const MH_EYE_Y=7.28,MH_S=.1,MH_ZC=.65;
 let cache=null;
 export async function loadMH(url='./mh/head.json'){if(!cache)cache=fetch(url).then(r=>r.json());const D=await cache;if(typeof document!=='undefined'){if(!eyeTex)eyeTex=calmEyeTexture();await eyeTex.userData.ready;}return D;}   // the eye texture is ready before the first head (thumbnails included)
@@ -244,4 +244,7 @@ export const MH_SHAPES=[
  {race:[.25,0,.75],gender:1,mods:{'head-rectangular!':.45,'chin-prominent-incr!':.35,...SYM('cheek-bones-incr',.55),'nose-hump-incr!':.45,'forehead-nubian-incr!':.4,'chin-height-incr!':.1}},        // 4 angular
  {race:[.1,.7,.2],gender:.65,mods:{'head-invertedtriangular!':.45,'chin-prominent-incr!':.3,'chin-bones-incr!':.28,'nose-point-up!':.5,...SYM('eye-scale-incr',.25),...SYM('cheek-volume-incr',.3),'nose-width1-decr!':.3}} // 5 soft with a defined jaw
 ];
-export function mhShapeParams(i){const sh=MH_SHAPES[((i%MH_SHAPES.length)+MH_SHAPES.length)%MH_SHAPES.length];return {race:sh.race.map((v,i)=>.25*v+.75*[.04,.04,.92][i]),gender:sh.gender,mods:{...MH_NEUTRAL_MODS,...sh.mods}};}
+// The player's own face settings (each −1..1, 0 = the default face): they move a few base targets up or down from where the shape put them.
+export const FACE_SLIDERS=[['lipFull','Volume des lèvres',['mouth-upperlip-volume','mouth-lowerlip-volume'],.6],['lipHeight','Hauteur des lèvres',['mouth-upperlip-height','mouth-lowerlip-height'],.6],['chin','Menton avancé',['chin-prominent'],.7],['eyes','Ouverture des yeux',['l-eye-height1','r-eye-height1','l-eye-height2','r-eye-height2'],.6]];
+export function applyFace(mods,face){const m={...mods};if(!face)return m;for(const [k,,names,gain] of FACE_SLIDERS){const v=Math.max(-1,Math.min(1,+face[k]||0));if(!v)continue;for(const n of names){const base=(m[n+'-incr!']||0)-(m[n+'-decr!']||0),t=Math.max(-1,Math.min(1,base+v*gain));delete m[n+'-incr!'];delete m[n+'-decr!'];if(t>0)m[n+'-incr!']=t;else if(t<0)m[n+'-decr!']=-t;}}return m;}
+export function mhShapeParams(i,face){const sh=MH_SHAPES[((i%MH_SHAPES.length)+MH_SHAPES.length)%MH_SHAPES.length];return {race:sh.race.map((v,i)=>.25*v+.75*[.04,.04,.92][i]),gender:sh.gender,mods:applyFace({...MH_NEUTRAL_MODS,...sh.mods},face)};}
