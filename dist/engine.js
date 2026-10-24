@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.js';
-import {mhHeadGroup,mhShapeParams} from './mh.js?v=20-9j';
-import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-9j';
-import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-9j';
+import {mhHeadGroup,mhShapeParams} from './mh.js?v=20-9k';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-9k';
+import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-9k';
 export {FACE_SHAPES,HAIR_STYLES,headPoint,uvOf};
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
@@ -292,7 +292,7 @@ makePlayer(x,z,color,num,own=false,keeper=false,displayName="Rivage"){
  const headG=new T.Group();headG.position.set(0,HEAD_Y,.006);headG.name='Tête';pose.add(headG);
  let faceRig=null;if(this.mh&&(hi||own)){// the head brings its own neck: the body's skin is not drawn above the collar (tested in the body's own space, whatever the pose)
   mats[0].onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying float vBodyY;').replace('#include <begin_vertex>','#include <begin_vertex>\nvBodyY=position.y;');sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vBodyY;').replace('void main() {','void main() {\nif(vBodyY>.585)discard;');};mats[0].customProgramCacheKey=()=>'neckHidden';
-  const mhG=mhHeadGroup(this.mh,mhShapeParams(shape,own?this.appearance.face:null),{skin,hair,style,beard,seed},hi?1024:512);headG.add(mhG);faceRig={mh:mhG};}else{
+  const mhG=mhHeadGroup(this.mh,mhShapeParams(shape,own?this.appearance.face:null),{skin,hair,style,beard,seed,lipRed:own?this.appearance.face?.lipRed:0},hi?1024:512);headG.add(mhG);faceRig={mh:mhG};}else{
  const face=this.faceTexture(skin,hair,eyeHex,beard,style,shape,detail),skinProps={map:face.map,roughnessMap:face.roughnessMap||null,bumpMap:face.bumpMap||null,bumpScale:.14,roughness:face.roughnessMap?1:.66,metalness:0};
  const faceMat=hi?new T.MeshPhysicalMaterial({...skinProps,sheen:.22,sheenRoughness:.7,sheenColor:new T.Color(0xff9a80)}):new T.MeshStandardMaterial(skinProps);
  const head=new T.Mesh(this.headGeometry(shape,detail),faceMat);head.castShadow=true;head.name='Visage';headG.add(head);
