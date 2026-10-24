@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.js';
-import {mhHeadGroup,mhShapeParams} from './mh.js?v=20-9p';
-import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-9p';
-import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-9p';
+import {mhHeadGroup,mhShapeParams} from './mh.js?v=20-9q';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-9q';
+import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-9q';
 export {FACE_SHAPES,HAIR_STYLES,headPoint,uvOf};
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
@@ -469,13 +469,16 @@ constructor(canvas){this.canvas=canvas;const r=this.r=new T.WebGLRenderer({canva
  const rim=new T.DirectionalLight(0x9fd8ff,1.2);rim.position.set(2,3,4);s.add(rim);
  const c=document.createElement('canvas');let floorMat=new T.MeshStandardMaterial({color:0x1d3a2a,roughness:.9});if(c.getContext?.('2d')?.createRadialGradient){c.width=c.height=256;const g=c.getContext('2d'),gr=g.createRadialGradient(128,128,10,128,128,128);gr.addColorStop(0,'#3d7a45');gr.addColorStop(.62,'#25502f');gr.addColorStop(.7,'#d3f96a');gr.addColorStop(.72,'#1c3a26');gr.addColorStop(1,'#101b16');g.fillStyle=gr;g.fillRect(0,0,256,256);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;floorMat=new T.MeshStandardMaterial({map:t,roughness:.85});}
  const floor=new T.Mesh(new T.CircleGeometry(1.6,48),floorMat);floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;s.add(floor);
- this.cam=new T.PerspectiveCamera(30,1,.05,40);this.yaw=.35;this.view='body';this.camT={y:1,d:4.4,look:1,fov:30};this.camNow={...this.camT};
- const at=e=>e.touches?e.touches[0]:e;canvas.addEventListener('pointerdown',ev=>{this.dragX=ev.clientX;this.touched=performance.now();canvas.setPointerCapture?.(ev.pointerId);});canvas.addEventListener('pointermove',ev=>{if(this.dragX==null)return;this.yaw-=(ev.clientX-this.dragX)*.012;this.dragX=ev.clientX;this.touched=performance.now();});const up=()=>{this.dragX=null;};canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.style.touchAction='none';}
+ this.cam=new T.PerspectiveCamera(30,1,.05,40);this.yaw=.35;this.yawT=null;this.zoom=1;this.view='body';this.camT={y:1,d:4.4,look:1,fov:30};this.camNow={...this.camT};
+ const at=e=>e.touches?e.touches[0]:e;canvas.addEventListener('pointerdown',ev=>{this.yawT=null;this.dragX=ev.clientX;this.touched=performance.now();canvas.setPointerCapture?.(ev.pointerId);});canvas.addEventListener('pointermove',ev=>{if(this.dragX==null)return;this.yaw-=(ev.clientX-this.dragX)*.012;this.dragX=ev.clientX;this.touched=performance.now();});const up=()=>{this.dragX=null;};canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.style.touchAction='none';}
 setAppearance(app){const e=this.e;{const l=new T.Color(app.skin||'#c98b62').getHSL({}).l;this.front.intensity=.3+1.1*Math.max(0,.58-l)/.58;}if(this.p){e.scene.remove(this.p.g);this.p.g.traverse(o=>{if(o.geometry&&!o.geometry.userData?.shared)o.geometry.dispose();});e.players=[];}e.appearance=app;const p=this.p=e.makePlayer(0,0,0x63b9f4,app.number||9,true,false,(app.name||'Joueur').slice(0,14));p.g.children.filter(o=>o.geometry?.type==='RingGeometry').forEach(o=>o.visible=false);p.g.traverse(o=>{if(o.isMesh)o.castShadow=true;});}
 setView(v,yaw){this.view=v;if(yaw!=null){this.yaw=yaw;this.touched=performance.now()+8000;}   // the turntable pauses a few seconds on the chosen angle; dragging still turns the player freely
- this.camT=v==='face'?{y:1.735,d:2.4,look:1.712,fov:14}:{y:1.05,d:4.5,look:.96,fov:30};}   // the face is seen through a longer lens: no distortion of the nose and chin
+ this.viewBase=v==='face'?{y:1.735,d:2.4,look:1.712,fov:14}:{y:1.05,d:4.5,look:.96,fov:30};this.applyZoom();}
+applyZoom(){const b=this.viewBase||{y:1.05,d:4.5,look:.96,fov:30};this.camT={...b,fov:Math.max(4,b.fov/this.zoom)};}
+setAngle(a){this.yawT=a;}   // eased turn to a fixed angle: 0 front, ±π/2 profile, π back
+setZoom(z){this.zoom=Math.max(1,Math.min(3,z));this.applyZoom();}   // the face is seen through a longer lens: no distortion of the nose and chin
 resize(){const w=this.canvas.clientWidth,h=this.canvas.clientHeight;if(!w||!h)return;if(this.w!==w||this.h!==h){this.w=w;this.h=h;this.r.setSize(w,h,false);this.cam.aspect=w/h;this.cam.updateProjectionMatrix();}}
-frame(now){if(!this.running)return;const dt=Math.min(.05,(now-(this.last||now))/1000);this.last=now;this.resize();
+frame(now){if(!this.running)return;const dt=Math.min(.05,(now-(this.last||now))/1000);this.last=now;this.resize();if(this.yawT!=null){const d=Math.atan2(Math.sin(this.yawT-this.yaw),Math.cos(this.yawT-this.yaw));this.yaw+=d*Math.min(1,dt*8);if(Math.abs(d)<.002){this.yaw=this.yawT;this.yawT=null;}}
  for(const k of ['y','d','look','fov'])this.camNow[k]+=(this.camT[k]-this.camNow[k])*Math.min(1,dt*5);const c=this.camNow;if(Math.abs(this.cam.fov-c.fov)>.01){this.cam.fov=c.fov;this.cam.updateProjectionMatrix();}this.cam.position.set(0,c.y,-c.d);this.cam.lookAt(0,c.look,0);
  if(this.p){this.e.posePlayer(this.p,{x:0,z:0,angle:this.yaw,speed:0,kickTimer:-1},dt,now/1000);this.e.updateFace(this.p,dt,now/1000);}this.r.render(this.scene,this.cam);requestAnimationFrame(t=>this.frame(t));}
 start(){if(this.running)return;this.running=true;this.last=null;requestAnimationFrame(t=>this.frame(t));}
