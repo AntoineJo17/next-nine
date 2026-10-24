@@ -1,6 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
 import * as T from '../dist/vendor/three.module.js';
-import {buildMHHead,morphWeights,mhHair,mhBeard,mhCurls,hairShell,cavity,smoothField,MH_SHAPES,mhShapeParams,MH_NEUTRAL_MODS,MH_HAIR} from '../dist/mh.js';
+import {mouthLine,buildMHHead,morphWeights,mhHair,mhBeard,mhCurls,hairShell,cavity,smoothField,MH_SHAPES,mhShapeParams,MH_NEUTRAL_MODS,MH_HAIR} from '../dist/mh.js';
 const D=JSON.parse(fs.readFileSync(new URL('../dist/mh/head.json',import.meta.url),'utf8'));
 const bbox=g=>{g.computeBoundingBox();return g.boundingBox;};
 
@@ -55,3 +55,7 @@ test('Lot 9 · the cuts have different silhouettes: fade tall on top, crop low a
 
 test('Lot 9 · young-adult neutral face: closed mouth settings and a leaner lower face are part of every shape',()=>{const p=mhShapeParams(3);for(const k of ['mouth-scale-horiz-incr!','mouth-cupidsbow-incr!','head-fat-decr!','chin-bones-incr!','l-cheek-inner-decr!','r-cheek-inner-decr!'])assert.ok(p.mods[k]>0,k);
  const a=buildMHHead(D,{race:[.34,.33,.33],gender:.9,mods:{}}).head,b=buildMHHead(D,mhShapeParams(0)).head;let diff=0;const pa=a.attributes.position,pb=b.attributes.position;for(let i=0;i<pa.count;i++)diff=Math.max(diff,Math.abs(pa.getZ(i)-pb.getZ(i)));assert.ok(diff>.002&&diff<.03,'the neutral settings reshape the face by a few millimetres '+diff);});
+
+test('Lot 9c · the closing line between the lips is a very slight curve: level in the middle, corners a hair lower, ending at the corners',()=>{const lm={ym:-.07,xc:.021};
+ const mid=mouthLine(lm,0),corner=mouthLine(lm,lm.xc),out=mouthLine(lm,lm.xc*2);assert.ok(corner<mid&&mid-corner<.0015,'a hair lower at the corners, not a smile or a frown '+(mid-corner));assert.ok(Math.abs(out-corner)<1e-9,'the curve stops at the corner and does not run on across the skin');
+ const a=mouthLine(lm,.004),b=mouthLine(lm,.012);assert.ok(Math.abs(a-mid)<.0006&&b<a,'smooth from the middle to the corner');});

@@ -1,4 +1,4 @@
-import {clamp,GOAL_Z,G,R,PITCH} from './physics.js?v=20-9b';
+import {clamp,GOAL_Z,G,R,PITCH} from './physics.js?v=20-9c';
 // V19 · On the real 105 m pitch everybody runs 35 % faster: real sprint speeds, the same balance between players.
 export const PACE=1.35;
 export function moveToward(actor,target,speed,dt,acceleration=12,brake=true){speed*=PACE;acceleration*=PACE;const dx=target.x-actor.x,dz=target.z-actor.z,d=Math.hypot(dx,dz);if(d<.035){actor.speed=0;actor.vx=0;actor.vz=0;return true;}const desired=brake?Math.min(speed,Math.sqrt(16*d)):speed,tx=dx/d*desired,tz=dz/d*desired,cx=tx-(actor.vx||0),cz=tz-(actor.vz||0),change=Math.hypot(cx,cz)||1,gain=Math.min(1,acceleration*dt/change);actor.vx=(actor.vx||0)+cx*gain;actor.vz=(actor.vz||0)+cz*gain;const step=Math.hypot(actor.vx,actor.vz)*dt;if(step>=d&&actor.vx*dx+actor.vz*dz>0){actor.x=target.x;actor.z=target.z;actor.vx=actor.vz=actor.speed=0;return true;}actor.x+=actor.vx*dt;actor.z+=actor.vz*dt;actor.speed=Math.hypot(actor.vx,actor.vz);if(actor.speed>.03)actor.angle=Math.atan2(-actor.vx,-actor.vz);return false;}

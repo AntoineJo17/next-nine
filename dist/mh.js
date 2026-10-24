@@ -3,7 +3,7 @@
 // morph targets (sparse offsets). A face is the base mesh plus weighted targets: race blend and gender first, then the
 // fine adjustments (jaw, nose, lips, ears...). Units in the file are decimetres, front = +z; the game wants metres, front = -z.
 import * as T from './vendor/three.module.js';
-import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-9b';
+import {weldNormals,latOfY,fadeDensity,hairShellThickness,smooth,clamp} from './heads.js?v=20-9c';
 export const MH_EYE_Y=7.28,MH_S=.1,MH_ZC=.65;
 let cache=null;
 export async function loadMH(url='./mh/head.json'){if(!cache)cache=fetch(url).then(r=>r.json());const D=await cache;if(typeof document!=='undefined'){if(!eyeTex)eyeTex=calmEyeTexture();await eyeTex.userData.ready;}return D;}   // the eye texture is ready before the first head (thumbnails included)
@@ -79,6 +79,8 @@ export function cavity(geo){const pos=geo.attributes.position,nor=geo.attributes
  // two smoothing passes so the shading follows forms, not single vertices
  let cur=raw;for(let it=0;it<2;it++){const acc=new Float32Array(n),cnt=new Float32Array(n),addv=(a,b)=>{acc[canon[a]]+=cur[b];cnt[canon[a]]++;acc[canon[b]]+=cur[a];cnt[canon[b]]++;};for(let t=0;t<idx.length;t+=3){addv(idx[t],idx[t+1]);addv(idx[t+1],idx[t+2]);addv(idx[t+2],idx[t]);}const nx=new Float32Array(n);for(let i=0;i<n;i++){const c=canon[i];nx[i]=cnt[c]?(cur[i]*.5+.5*acc[c]/cnt[c]):cur[i];}cur=nx;}
  return cur;}
+// Height of the contact line between the lips at distance ax from the middle: nearly level, the corners a hair lower.
+export const mouthLine=(lm,ax)=>lm.ym-.0008*Math.pow(Math.min(1,ax/lm.xc),2)+.00035*Math.exp(-((ax/.004)**2));
 export function bakeSkin(geo,lip,{skin,hair,style,beard='',lm,W=1024,cav,eyeC}){
  const pos=geo.attributes.position,uv=geo.attributes.uv,idx=geo.index.array,cv=document.createElement('canvas');cv.width=cv.height=W;const c=cv.getContext('2d');
  const base=new T.Color(skin),hc=new T.Color(hair),dark=base.getHSL({}).l<.35,lipC=base.clone().lerp(new T.Color(dark?0x5a2a24:0xa8504a),dark?.5:.58),warm=new T.Color(dark?0x7a2a22:0xc4524a);
@@ -90,8 +92,9 @@ export function bakeSkin(geo,lip,{skin,hair,style,beard='',lm,W=1024,cav,eyeC}){
   col.lerp(warm,front*(dark?.06:.12)*Math.exp(-((ax/.012)**2)-(((y+.036)/.01)**2)));                  // nose tip
   col.multiplyScalar(1-.05*front*Math.exp(-(((ax-.031)/.02)**2)-(((y-.003)/.014)**2)));               // soft shadow around the eyes
   if(L>0){col.lerp(globalThis.MH_DEBUG_LIP?new T.Color(0xff00aa):lipC,L);const ol=4*L*(1-L);if(ol>0)col.multiplyScalar(1-.06*ol);}   // a barely darker border   // the vermilion border is a little darker
+  if(lm&&front>0)C*=1-.8*Math.exp(-(((y-mouthLine(lm,ax))/.0022)**2))*smooth(lm.xc+.002,lm.xc-.003,ax);   // the crease between the lips is drawn by the closing line, not by a black cavity
   col.multiplyScalar(1-.26*Math.max(0,C)*(1-.5*L)+.03*Math.max(0,-C));
-  if(lm&&front>0&&ax<.019){const dl=y-lm.ym;col.lerp(lipC.clone().multiplyScalar(.55),.38*Math.exp(-((dl/.0009)**2))*smooth(.0185,.0105,ax));}   // the fine closing line between the lips
+  if(lm&&front>0&&ax<lm.xc){const u=ax/lm.xc,dl=y-mouthLine(lm,ax),th=.00085*(.45+.55*smooth(1,.45,u)),k=.36*smooth(1,.8,u)*(.55+.45*smooth(.9,.3,u));col.lerp(lipC.clone().multiplyScalar(.55),k*Math.exp(-((dl/th)**2)));}   // the fine closing line: a very slight curve that ends at the corners of the mouth
   // eyebrows: an arch above the eye, made of many strands
   if(front>0){const t=(ax-.010)/.050;if(t>-.02&&t<1.02){const sg=Math.sign(x)||1,yc=.0203+.0042*Math.sin(Math.PI*Math.min(1,Math.max(0,t)*1.05))-.0035*t*t+.002*t,
      th=.0049*(.4+.6*smooth(0,.22,t))*(1-.62*smooth(.45,1,t))+.0005,en=.16*(hash3(ax*380,y*380,sg)-.5),d=Math.abs(y-yc)/th+en;if(d<1.2){
@@ -122,7 +125,7 @@ export function hairShell(geo,style,hairHex='#28231e'){if(style==='crane')return
  const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(P,3));g.setAttribute('uv',geo.attributes.uv);g.setAttribute('color',new T.BufferAttribute(A,4));g.setIndex(I);g.setAttribute('normal',geo.attributes.normal.clone());return g;}   // same normals as the skin underneath, so no shading band at the edge
 // Where the red of the lips goes: the vermilion only. The vertex sets of the lip targets also cover the philtrum and the chin
 // groove, so they are cut at the mouth line (found from the sets themselves) and at the real height of each lip.
-function lipMask(head,D){const n=head.attributes.position.count,w=new Float32Array(n);
+export function lipMask(head,D){const n=head.attributes.position.count,w=new Float32Array(n);
  // the lip-volume targets move each vertex in proportion to how much it belongs to the lip: use that as the weight
  for(const name of ['mouth-upperlip-volume-incr','mouth-lowerlip-volume-incr']){const t=D.targets[name];if(!t)continue;let mx=0;const m=[];for(let k=0;k<t.i.length;k++){const v=Math.hypot(t.d[k*3],t.d[k*3+1],t.d[k*3+2]);m.push(v);if(v>mx)mx=v;}
   for(let k=0;k<t.i.length;k++){const v=m[k]/mx;if(v>w[t.i[k]])w[t.i[k]]=v;}}
@@ -164,18 +167,18 @@ function calmEyeTexture(){const cv=document.createElement('canvas');cv.width=cv.
 // Everything the locker needs for one head: skin, eyes, hair. `p` as in buildMHHead; `look` = {skin,hair,style}.
 // The lips meet the skin gradually: positions in a ring around the mouth (outside the lips themselves) are blended with their
 // neighbours, and the two lips are brought together along the mouth line so that only a fine closing line remains.
-function integrateMouth(head,D,lipW,lm){const pos=head.attributes.position,idx=head.index.array,n=pos.count,key=new Map(),canon=new Int32Array(n);
+export function integrateMouth(head,D,lipW,lm){const pos=head.attributes.position,idx=head.index.array,n=pos.count,key=new Map(),canon=new Int32Array(n);
  for(let i=0;i<n;i++){const k=Math.round(pos.getX(i)*2e4)+'|'+Math.round(pos.getY(i)*2e4)+'|'+Math.round(pos.getZ(i)*2e4);if(!key.has(k))key.set(k,i);canon[i]=key.get(k);}
  const nb=Array.from({length:n},()=>new Set());for(let t=0;t<idx.length;t+=3)for(let k=0;k<3;k++){const a=canon[idx[t+k]],b=canon[idx[t+(k+1)%3]];nb[a].add(b);nb[b].add(a);}
  const ring=new Float32Array(n);for(let i=0;i<n;i++){const x=Math.abs(pos.getX(i)),dy=pos.getY(i)-lm.ym;ring[i]=smooth(.3,.0,lipW[i])*smooth(.03,.016,Math.hypot(x*.8,dy*1.25))*smooth(.03,-.01,pos.getZ(i));}
  for(let it=0;it<3;it++){const nx=new Float32Array(n*3);for(let i=0;i<n;i++){const c=canon[i];let ax=0,ay=0,az=0,m=0;for(const j of nb[c]){ax+=pos.getX(j);ay+=pos.getY(j);az+=pos.getZ(j);m++;}const w=ring[i]*.55;nx[i*3]=m&&w>0?pos.getX(i)+(ax/m-pos.getX(i))*w:pos.getX(i);nx[i*3+1]=m&&w>0?pos.getY(i)+(ay/m-pos.getY(i))*w:pos.getY(i);nx[i*3+2]=m&&w>0?pos.getZ(i)+(az/m-pos.getZ(i))*w:pos.getZ(i);}
   for(let i=0;i<n;i++){const c=canon[i];pos.setXYZ(i,nx[c*3],nx[c*3+1],nx[c*3+2]);}}   // seam duplicates move together
- for(const i of [...D.lipU,...D.lipL]){const x=Math.abs(pos.getX(i)),y=pos.getY(i);if(Math.abs(y-lm.ym)<.0024&&x<.025)pos.setY(i,lm.ym+(y-lm.ym)*.4);}
+ {const inSet=new Uint8Array(n),lk=new Set();for(const i of [...D.lipU,...D.lipL])lk.add(canon[i]);for(let i=0;i<n;i++)if(lk.has(canon[i]))inSet[i]=1;for(let i=0;i<n;i++){const x=Math.abs(pos.getX(i)),y=pos.getY(i);if(x<lm.xc+.007&&(inSet[i]||x>lm.xc-.003)){const yl=mouthLine(lm,Math.min(x,lm.xc)),k=.35*smooth(lm.xc+.002,lm.xc-.004,x),wt=smooth(.0065,.0022,Math.abs(y-lm.ym))*smooth(lm.xc+.007,lm.xc+.0015,x);pos.setY(i,y+(yl+(y-lm.ym)*k-y)*wt);}}}
  pos.needsUpdate=true;head.computeVertexNormals();weldNormals(head);}
-function landmarks(head,D){const pos=head.attributes.position;let up=1e9,lo=-1e9;for(const i of D.lipU)if(Math.abs(pos.getX(i))<.02)up=Math.min(up,pos.getY(i));for(const i of D.lipL)if(Math.abs(pos.getX(i))<.02)lo=Math.max(lo,pos.getY(i));const ym=(up+lo)/2;
+export function landmarks(head,D){const pos=head.attributes.position;let up=1e9,lo=-1e9;for(const i of D.lipU)if(Math.abs(pos.getX(i))<.02)up=Math.min(up,pos.getY(i));for(const i of D.lipL)if(Math.abs(pos.getX(i))<.02)lo=Math.max(lo,pos.getY(i));const ym=(up+lo)/2;
  let tz=1e9,ty=0,yc=1e9;for(let i=0;i<pos.count;i++){const x=Math.abs(pos.getX(i)),y=pos.getY(i),z=pos.getZ(i);if(x<.015&&y>ym&&y<ym+.05&&z<tz){tz=z;ty=y;}if(x<.02&&z<-.03&&y>-.16&&y<yc)yc=y;}
  return {ym,yn:ty-.011,yc};}
-export function mhHeadGroup(D,p,look,W=1024){const {head,eyes}=buildMHHead(D,p);const lipW=lipMask(head,D),lm=landmarks(head,D);integrateMouth(head,D,lipW,lm);
+export function mhHeadGroup(D,p,look,W=1024){const {head,eyes}=buildMHHead(D,p);const lipW=lipMask(head,D),lm=landmarks(head,D);{const pp=head.attributes.position;let mx=0;for(let i=0;i<pp.count;i++)if(lipW[i]>.35&&Math.abs(pp.getY(i)-lm.ym)<.004)mx=Math.max(mx,Math.abs(pp.getX(i)));lm.xc=mx+.0004;}integrateMouth(head,D,lipW,lm);
  const eyeC=[-1,1].map(sd=>{const pe=eyes.attributes.position;let sx=0,sy=0,sz=0,n=0;for(let i=0;i<pe.count;i++)if(Math.sign(pe.getX(i))===sd){sx+=pe.getX(i);sy+=pe.getY(i);sz+=pe.getZ(i);n++;}return {x:sx/n,y:sy/n,z:sz/n};});
  const map=bakeSkin(head,lipW,{skin:look.skin,hair:look.hair,style:look.style,beard:look.beard||'',lm,cav:cavity(head),W,eyeC}),g=new T.Group();
  const skinMat=new T.MeshStandardMaterial({map,roughness:.62,metalness:0}),m=new T.Mesh(head,skinMat);m.name='Visage';m.castShadow=true;g.add(m);
