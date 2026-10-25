@@ -19,7 +19,7 @@ Avec Node.js 20 ou supérieur et npm :
 npm run check
 ```
 
-229 tests (plus 71 tests de carrière dans `tests/career-qa/`) passent sur cette version (V20 · lot 11). Les tests ne remplacent pas un essai visuel et tactile sur téléphone.
+229 tests (plus 71 tests de carrière dans `tests/career-qa/`) passent sur cette version (V20 · lot 12). Les tests ne remplacent pas un essai visuel et tactile sur téléphone.
 
 Après une modification, change le numéro de version pour que les téléphones rechargent tous les fichiers :
 

@@ -18,7 +18,7 @@ test('le correctif de célébration s\'applique exactement une fois (ou est déj
 });
 
 function celebrationStop(startX,startZ){
- const {run}=boot(undefined,{transform:s=>already?s:s.replace(OLD,NEW)});run("$('play').onclick();");
+ const {run}=boot(undefined,{transform:s=>already?s:s.replace(OLD,NEW)});run("{let r=424242;Math.random=()=>{r=(Math.imul(r,1103515245)+12345)>>>0;return (r%2147483648)/2147483648;};}");run("$('play').onclick();");/* graine fixe : sans elle le premier match tirait au hasard une occasion qui ne se prête pas au scénario */
  for(let k=0;k<20000&&!run('!!action&&action.ready&&!action.ended');k++)run('action.phase==="interval"?(action.interval.fast=true,tick(.04)):tick(1/60)');
  run(`{const a=action;a.hero.x=${startX};a.hero.z=${startZ};a.hero.vx=0;a.hero.vz=-5;a.hero.speed=5;a.ready=false;a.started=true;a.phase='flight';a.flying=true;a.shotBy='hero';a.ball={x:0,y:1,z:-19,vx:0,vy:0,vz:-5,age:0,bounces:0};resolve(true,'BUT','hero','goal');}`);
  let t=0;while(t<14&&!run('action.celebration?.phase==="perform"')){run('tick(1/120)');t+=1/120;}

@@ -252,8 +252,8 @@ async def plus_gameplay(page, col, args, mobile, vp):
                     json.dumps(hist, ensure_ascii=False, sort_keys=True), 'plus')
         lev = [r for r in out['res'] if r[5] > 0.35]
         # Une déviation laisse un ballon libre et rend la main au joueur (phase « ready ») : c'est la conclusion prévue, pas une action bloquée.
-        rendues = [r for r in out['open'] if r[4] == 'ready']
-        bloquees = [r for r in out['open'] if r[4] != 'ready']
+        rendues = [r for r in out['open'] if r[4] in ('ready', 'ended')]
+        bloquees = [r for r in out['open'] if r[4] not in ('ready', 'ended')]
         if rendues:
             col.finding('INFO', f'Tirs : {len(rendues)} déviation(s) = ballon libre rendu au joueur (comportement prévu)', json.dumps(rendues, ensure_ascii=False), 'plus')
         bad = list(out['bad']) + [['bloquée'] + r for r in bloquees]

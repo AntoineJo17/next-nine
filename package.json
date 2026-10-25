@@ -6,7 +6,7 @@
   "scripts": {
     "mobile:ios": "cap sync ios && cap open ios",
     "mobile:android": "cap sync android && cap open android",
-    "check": "node --check dist/game.js && node --check dist/engine.js && node --check dist/commentary.js && node --check dist/audio.js && node --test tests/*.test.mjs",
+    "check": "node --check dist/game.js && node --check dist/engine.js && node --check dist/commentary.js && node --check dist/audio.js && node --test tests/*.test.mjs tests/lot12-*/*.test.mjs",
     "stamp": "node scripts/stamp.mjs"
   },
   "dependencies": {
