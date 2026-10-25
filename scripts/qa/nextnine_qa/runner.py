@@ -589,6 +589,9 @@ async def agent_body(agent, browser, args, col):
     context = await browser.new_context(viewport=vp, device_scale_factor=1, is_mobile=mobile, has_touch=mobile, accept_downloads=True)
     page = None
     try:
+        if args.plus:
+            from . import plus
+            await plus.install_hook(context)
         page = await fresh_page(context, col, args.url)
         if agent == 'equilibrage':
             await scenario_equilibrage(page, col, args)
@@ -596,6 +599,19 @@ async def agent_body(agent, browser, args, col):
             await SCENARIOS[agent](page, col)
         if agent == 'robustesse':
             await code_audit(col, args)
+        if args.plus:
+            if agent == 'gameplay':
+                await plus.plus_gameplay(page, col, args, mobile, vp)
+            elif agent == 'interface':
+                await plus.plus_interface(page, col, args, mobile, vp)
+            elif agent == 'equilibrage':
+                await plus.plus_equilibrage(page, col, args)
+            elif agent == 'sauvegarde':
+                await plus.plus_sauvegarde(page, col, args, mobile)
+            elif agent == 'robustesse':
+                await plus.plus_robustesse(page, col, args, mobile, vp)
+            elif agent == 'performance':
+                await plus.plus_performance(page, col, args)
         if args.ai:
             from .brain import explore
             await explore(page, agent, col.finding, args.ai_steps)
@@ -805,6 +821,10 @@ def main():
     ap.add_argument('--gl', choices=['auto', 'swiftshader'], default='auto', help='auto = réglages Chromium par défaut (GPU si dispo) ; swiftshader = WebGL logiciel forcé (lent)')
     ap.add_argument('--chromium-arg', action='append', help='argument Chromium supplémentaire (répétable), ex. --chromium-arg=--use-angle=metal')
     ap.add_argument('--ai', action='store_true')
+    ap.add_argument('--plus', action='store_true', help='Scénarios approfondis (vrais matchs, tirs vs gardien, enchaînements, équilibrage, perf GPU/logiciel)')
+    ap.add_argument('--plus-seconds', type=int, default=75, help='durée du match joué (s)')
+    ap.add_argument('--plus-matches', type=int, default=40, help='matchs par tactique et par côté (équilibrage)')
+    ap.add_argument('--perf-seconds', type=int, default=8, help='durée de mesure par phase (s)')
     ap.add_argument('--ai-steps', type=int, default=3)
     ap.add_argument('--parallel', type=int, default=1, help='Sessions concurrentes (défaut 1 = série)')
     ap.add_argument('--agents', nargs='+', choices=AGENTS + SELFTESTS, default=list(AGENTS))
