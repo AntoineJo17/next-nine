@@ -1,0 +1,11 @@
+[
+ {"id":"G1","file":"dist/game.js","why":"Phase pressing : les 20 autres joueurs sont figés (updateActors rend la main immédiatement ; patrol() n'est jamais appelée).",
+  "old":"function updateActors(a,dt){if(a.phase==='press')return;",
+  "new":"function updateActors(a,dt){if(a.phase==='press'){let k=0;for(const p of [...a.defenders,...(a.teammates||[])]){if(p===a.pressCarrier||p.tacticalId%11===0)continue;if(!p.home)p.home={x:p.x,z:p.z};patrol(p,k++,dt);}return;}"},
+ {"id":"G2","file":"dist/game.js","why":"Penalty : le gardien allié (teammates[0]) est posté au bord de la surface adverse.",
+  "old":"[...a.teammates,...a.defenders].forEach((p,i)=>{const side=i%2?1:-1,rank=Math.floor(i/2)%5;",
+  "new":"[...a.teammates.filter(t=>t.tacticalId%11!==0),...a.defenders].forEach((p,i)=>{const side=i%2?1:-1,rank=Math.floor(i/2)%5;"},
+ {"id":"G3","file":"dist/game.js","why":"Coup franc : le gardien allié est posté à (14 ; 18) m, au milieu du terrain.",
+  "old":"const mates=[...a.teammates].sort((p,q)=>Math.hypot(p.x,p.z+14)-Math.hypot(q.x,q.z+14))",
+  "new":"const mates=a.teammates.filter(t=>t.tacticalId%11!==0).sort((p,q)=>Math.hypot(p.x,p.z+14)-Math.hypot(q.x,q.z+14))"}
+]
