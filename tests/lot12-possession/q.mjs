@@ -1,0 +1,11 @@
+import {sweepScenario} from './scenario.mjs';
+const res=sweepScenario({n:300,angles:[-2.6,-1.57,1.57,2.6,3.14,0],dists:[0.9,1.3,2]});
+const lost=res.filter(r=>r.w);const q=(a,p)=>{a=a.slice().sort((x,y)=>x-y);return a[Math.min(a.length-1,Math.floor(a.length*p))].toFixed(3);};
+console.log('essais',res.length,'pertes',lost.length);
+console.log('saut en 1 pas (m): med',q(lost.map(r=>r.jump),.5),'max',q(lost.map(r=>r.jump),1));
+console.log('plus grand déplacement du ballon par pas de 1/120 s sur 1,5 s: med',q(lost.map(r=>r.maxStep),.5),'max',q(lost.map(r=>r.maxStep),1),'(9 m/s = .075)');
+console.log('distance min ballon-héros: min',q(lost.map(r=>r.minHero),0),' ballon dans le corps du héros (<.35):',lost.filter(r=>r.minHero<.35).length);
+console.log('ballon dans le corps du défenseur (<.3):',lost.filter(r=>r.minOwner<.3).length);
+console.log('perte sans pied/jambe sortis (ct<.14):',lost.filter(r=>!(r.w.ct>=.14)).length,' sans aucun challenge:',lost.filter(r=>!r.w.ch).length);
+console.log('ballon à > .8 m du possesseur après 1,5 s:',lost.filter(r=>r.own>.8).length);
+console.log('distance ballon-défenseur à la récupération: med',q(lost.map(r=>r.w.bd),.5),'p90',q(lost.map(r=>r.w.bd),.9),'max',q(lost.map(r=>r.w.bd),1),' > 1,0 m :',lost.filter(r=>r.w.bd>1).length);

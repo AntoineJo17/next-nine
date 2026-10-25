@@ -48,3 +48,15 @@ export function frameContact(before,ball){
   for(const c of candidates){const dx=x-c.x,dy=y-c.y,dz=z-c.z,d=Math.hypot(dx,dy,dz);if(d>radius||d<.00001)continue;const nx=dx/d,ny=dy/d,nz=dz/d,dot=ball.vx*nx+ball.vy*ny+ball.vz*nz;if(dot>=0)continue;ball.x=c.x+nx*(radius+.002);ball.y=Math.max(R,c.y+ny*(radius+.002));ball.z=c.z+nz*(radius+.002);ball.spin=0;ball.vx-=1.72*dot*nx;ball.vy-=1.72*dot*ny;ball.vz-=1.72*dot*nz;return c.kind;}
  }return null;
 }
+
+// Lot 12 · Possession : a ball won by a defender is never placed on him in one step. It rolls (at most `speed` m/s) towards the point
+// where he controls it, and is pushed out of the bodies it would cross (the defender himself, the player who lost it).
+export function followBall(ball,target,dt,speed=8,avoid=[]){
+ const ox=ball.x,oz=ball.z,dx=target.x-ball.x,dz=target.z-ball.z,d=Math.hypot(dx,dz),step=speed*dt;
+ if(d<=step){ball.x=target.x;ball.z=target.z;}else{ball.x+=dx/d*step;ball.z+=dz/d*step;}
+ ball.y+=((target.y??R)-ball.y)*Math.min(1,dt*14);if(ball.y<R)ball.y=R;
+ for(const q of avoid){const ex=ball.x-q.x,ez=ball.z-q.z,e=Math.hypot(ex,ez);if(e<q.r){const nx=e>1e-6?ex/e:(ox-q.x)/(Math.hypot(ox-q.x,oz-q.z)||1),nz=e>1e-6?ez/e:(oz-q.z)/(Math.hypot(ox-q.x,oz-q.z)||1);ball.x=q.x+nx*q.r;ball.z=q.z+nz*q.r;}}
+ {const mx=ball.x-ox,mz=ball.z-oz,m=Math.hypot(mx,mz),cap=speed*1.6*dt;if(m>cap){ball.x=ox+mx/m*cap;ball.z=oz+mz/m*cap;}}
+ ball.vx=dt>0?(ball.x-ox)/dt:0;ball.vz=dt>0?(ball.z-oz)/dt:0;ball.vy=0;
+ return Math.hypot(target.x-ball.x,target.z-ball.z)<.02;
+}
