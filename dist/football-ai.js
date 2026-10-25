@@ -48,3 +48,36 @@ export function refreshDefence(defenders,carrier,partners,current=-1){if(!defend
  const wasCover=defenders.find(d=>d.cover);for(const d of defenders)d.cover=false;const choices=defenders.filter((d,i)=>i!==selected&&d.z<carrier.z+.5).sort((a,b)=>distance(a,carrier)-distance(b,carrier));let cover=choices[0];if(wasCover&&choices.includes(wasCover)&&cover&&distance(wasCover,carrier)<distance(cover,carrier)+2.5)cover=wasCover;if(cover)cover.cover=true;
  const markable=partners.filter(p=>p!==carrier&&p.style!=='gardien'),used=new Set(),free=[],held=new Set(defenders.filter((x,i)=>i!==selected&&!x.cover&&x.mark).map(x=>x.mark));for(const [i,d] of defenders.entries()){if(i===selected||d.cover){d.mark=null;continue;}if(d.mark&&markable.includes(d.mark)&&!used.has(d.mark)&&keepsMark(d,d.mark,markable,used,held)){used.add(d.mark);continue;}d.mark=null;free.push(d);}
  pairUp(free,markable,used);return selected;}
+
+// Lot 12 · ia — Off the ball, a partner no longer waits on his post: around the place his shape gives him (anchor) he looks for the spot where he can really be found
+// (open lane from the ball, space from the markers, onside, not on a team-mate), a winger/full-back overlaps outside the carrier, and the forwards slide between the
+// defenders, level with the offside line. The spot is deterministic and sticky (kept unless clearly worse) so nobody jitters. Defenders stay behind the ball.
+export const roleOf=id=>{const i=(((id|0)%11)+11)%11;return i===0?'gk':i<=4?'def':i<=7?'mid':'fwd';};
+export function supportScore(c,carrier,defenders,o){
+ const role=o.role,lane=Math.min(4,laneClearance(carrier,c,defenders)),space=Math.min(7,defenders.reduce((m,d)=>Math.min(m,distance(d,c)),20)),dc=distance(c,carrier);
+ let s=lane*1.0+space*.55;if(space<1.4)s-=(1.4-space)*14;
+ if(dc<5)s-=(5-dc)*.9;else if(dc>24)s-=(dc-24)*.25;
+ const ahead=carrier.z-c.z;if(role!=='def'){s+=clamp(ahead,-4,10)*(role==='fwd'?.12:.07);if(ahead<-4)s-=(-4-ahead)*.7;if(c.z>o.anchor.z+1.5)s-=(c.z-o.anchor.z-1.5)*.9;}
+ s-=distance(c,o.anchor)*(role==='def'?.34:role==='mid'?.22:.18);
+ if(c.z<o.line+.3&&c.z<carrier.z&&c.z<(PITCH.far-20)/2)s-=8;
+ if(role==='def'&&c.z<carrier.z+1.5&&!o.fullback)s-=4;
+ if(role==='fwd'){const off=c.z-o.line;if(off>=.3&&off<3)s+=.7;}
+ for(const m of o.mates){const d=distance(c,m);if(d<4.5)s-=(4.5-d)*.8;}
+ return s;
+}
+export function supportSpot(t,carrier,defenders,o={}){
+ const role=roleOf(t.tacticalId??5);if(role==='gk'||!carrier)return null;
+ const anchor=o.anchor||t.home||t,line=o.line??-99,mates=o.mates||[],tactic=o.tactic||'';
+ const reach=(role==='def'?5:role==='mid'?8:10)*(tactic==='possession'?.85:1)*(tactic==='contre'&&role==='fwd'?1.15:1),W=PITCH.W-1.8;
+ const id=((t.tacticalId|0)%11+11)%11,ctx={role,anchor,line,mates,fullback:(id===1||id===4)&&carrier.z<(PITCH.far-20)/2&&Math.abs(carrier.x)>8},cands=[];
+ for(let ix=-2;ix<=2;ix++)for(let iz=-2;iz<=2;iz++)cands.push({x:anchor.x+ix*reach/2,z:anchor.z+iz*reach/2*(iz>0?.8:1)});
+ // Overlap: a wide player of the carrier's side runs past him on the outside.
+ if(Math.abs(carrier.x)>8&&Math.sign(carrier.x)===Math.sign(anchor.x||carrier.x)&&distance(t,carrier)<26)cands.push({x:carrier.x+Math.sign(carrier.x)*5,z:carrier.z-(role==='def'?0:3.5),overlap:true});
+ // Show for the ball between the lines: just behind the offside line, in the gap.
+ if(role==='fwd')for(const dx of [-8,-4,0,4,8])cands.push({x:carrier.x+dx,z:line+1});
+ let best=null,bs=-Infinity;
+ for(const c of cands){c.x=clamp(c.x,-W,W);c.z=clamp(c.z,-18,PITCH.far-2);if(distance(c,anchor)>(c.overlap?14:reach*1.45))continue;const s=supportScore(c,carrier,defenders,ctx)+(c.overlap?4.5:0);if(s>bs){bs=s;best=c;}}
+ if(!best)return null;
+ if(o.previous&&supportScore(o.previous,carrier,defenders,ctx)>=bs-.6)return {x:o.previous.x,z:o.previous.z};
+ return {x:best.x,z:best.z};
+}
