@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.js';
-import {mhHeadGroup,mhShapeParams} from './mh.js?v=20-10';
-import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-10';
-import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-10';
+import {mhHeadGroup,mhShapeParams} from './mh.js?v=20-11';
+import {R,clamp,launch,stepBall,PITCH,GOAL_Z} from './physics.js?v=20-11';
+import {catmull,smooth,gauss,weldNormals,FACE_SHAPES,HAIR_STYLES,HEAD_Y,headPoint,uvOf,buildHead,buildEar,earMount,buildHairShell,buildCurls,buildBun,paintFace,paintHair,buildEye,buildEyeRim,animateEyes} from './heads.js?v=20-11';
 export {FACE_SHAPES,HAIR_STYLES,headPoint,uvOf};
 // Drawn ball: 0.15 m radius (players looked like they kicked a beach ball). The physics keeps R=0.22,
 // so goal-line, post and goalkeeper contacts are exactly as before.
@@ -386,7 +386,7 @@ preview(start,end,mode,spin=0,power=null,ability=1){if(this.targetRing)this.targ
  this.aim.material.color.set(Math.abs(spin)>.1?0x8cdbff:0xd3f96a);this.aim.geometry.dispose();this.aim.geometry=new T.BufferGeometry().setFromPoints(pts);this.aim.computeLineDistances();this.aim.visible=true;
 }
 posePlayer(p,a,dt,now,frozen=false){
- /* Lot 4 · a small jump in position (a control, a header set-up) is shown as a quick step, never a teleport */{const jx=a.x-(p.sx??a.x),jz=a.z-(p.sz??a.z),j=Math.hypot(jx,jz);if((j>.22||p.glide&&j>.03)&&j<2.2&&dt>0){const k=Math.min(1,dt*13);p.sx+=jx*k;p.sz+=jz*k;p.glide=true;}else{p.sx=a.x;p.sz=a.z;p.glide=false;}}p.g.position.set(p.sx,a.y||0,p.sz);if(frozen&&p.posed&&!p.glide)return;p.posed=true;let angle=a.angle??0;let difference=Math.atan2(Math.sin(angle-p.lastAngle),Math.cos(angle-p.lastAngle));{/* QA mouvement · the drawn body turns at most 16 rad/s (a 180° turn takes at least 0.2 s): it was 24 × the angle, i.e. up to 75 rad/s (180° in ~4 frames) when a defender or a receiver is re-oriented by the game. The player's own character keeps its immediate response. */let turn=difference*Math.min(1,dt*(Math.abs(difference)>1.2?24:14));if(p!==this.hero){const cap=16*dt;turn=Math.max(-cap,Math.min(cap,turn));}p.lastAngle+=turn;}p.g.rotation.y=p.lastAngle;
+ /* Lot 4 · a small jump in position (a control, a header set-up) is shown as a quick step, never a teleport */{const jx=a.x-(p.sx??a.x),jz=a.z-(p.sz??a.z),j=Math.hypot(jx,jz);if((j>.22||p.glide&&j>.03)&&j<2.2&&dt>0){const k=Math.min(1,dt*13);p.sx+=jx*k;p.sz+=jz*k;p.glide=true;}else{p.sx=a.x;p.sz=a.z;p.glide=false;}}p.g.position.set(p.sx,a.y||0,p.sz);if(frozen&&p.posed&&!p.glide)return;p.posed=true;let angle=a.angle??0;let difference=Math.atan2(Math.sin(angle-p.lastAngle),Math.cos(angle-p.lastAngle));{/* QA mouvement · the drawn body turns at most 16 rad/s (a 180° turn takes at least 0.2 s): it was 24 × the angle, i.e. up to 75 rad/s (180° in ~4 frames) when a defender or a receiver is re-oriented by the game. The player's own character keeps its immediate response. */let turn=difference*Math.min(1,dt*(Math.abs(difference)>1.2?24:14));{const cap=(p!==this.hero?16:30)*dt;turn=Math.max(-cap,Math.min(cap,turn));}p.lastAngle+=turn;}p.g.rotation.y=p.lastAngle;
  const targetSpeed=a.speed||0;p.gaitSpeed=(p.gaitSpeed||0)+(targetSpeed-(p.gaitSpeed||0))*Math.min(1,dt*11);const speed=p.gaitSpeed,running=clamp((speed-.9)/2.6,0,1),moving=clamp(speed/1.1,0,1);
  // V14 gait: stride length grows with speed, so feet stay planted instead of pedalling; flight phase when running,
  // pelvis dips twice per cycle, trunk leans with speed and acceleration, arms swing opposite with bent elbows.

@@ -39,3 +39,9 @@ Code de sortie : 0 = PASS/SKIP, 1 = FAIL ou interruption (timeout global/agent, 
 ## Limites connues
 - WebKit : sur le Mac de test, `browser.launch` réussit mais `context.new_page()` ne répond jamais ; le sas le classe INFRA.
 - Le rendu 3D (vestiaire, terrain) peut prendre de 10 à plus de 70 s sous forte charge CPU ; les délais sont mesurés et consignés (observations INFO).
+
+## Protocole « tirs contre le gardien » (agent Gameplay, `--plus`)
+- **A. En jeu** : 18 visées x 3 modes = **54 séquences** (et non 99). Un défenseur tacle presque toujours avant le tir : ces séquences sont comptées à part comme « interrompues », pas comme des frappes. Seules les autres sont de vraies frappes.
+- **B. Conditions contrôlées** : défenseurs écartés, 36 visées x 3 modes x 3 graines aléatoires fixes = **324 frappes**. C'est la mesure à comparer entre deux versions (même graine = même protocole).
+- Une **déviation** laisse un ballon libre et rend la main au joueur (phase `ready`, ballon `loose`) : c'est la fin normale de l'action, pas un blocage.
+- Les animations sont mesurées sur deux plans : la **logique** du jeu (INFO : un repositionnement de règle, comme le mur d'un coup franc, peut y être brutal) et l'**affichage** (`engine.players`, ce que voit le joueur) qui seul fait échouer le test (> 28 m/s ou > 45 rad/s).

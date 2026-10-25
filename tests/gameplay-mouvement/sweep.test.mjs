@@ -16,8 +16,8 @@ function audit({seed,matches,frameDt}){
     if(![a.x,a.z,a.y,a.ang,a.sp].every(Number.isFinite)){bad.nan++;ex.push(['nan',a.n,s.ph]);}
     const dist=Math.hypot(a.x-p.x,a.z-p.z);
     // la réception de volée/tête (phase « aerial ») replace volontairement le joueur sous le ballon : le moteur de rendu l'affiche en pas rapide (engine.js, Lot 4)
-    if(dist>.12&&s.ph!=='aerial'&&prev.ph!=='aerial'){bad.teleport++;ex.push(['teleport',a.n,s.ph,+dist.toFixed(2)]);}
-    if(dist/d>9.5&&s.ph!=='aerial'&&prev.ph!=='aerial'){bad.speed++;ex.push(['vitesse',a.n,s.ph]);}
+    /* QA2 · deux cas légitimes écartés : le placement d'un coup de pied arrêté (tout le monde est replacé, c'est une coupure) et la séparation de deux corps qui se chevauchent (< 25 cm en un pas, lissée par le moteur) */if(dist>.12&&s.ph!=='aerial'&&prev.ph!=='aerial'&&!(s.ph==='ready'&&run('!!action.setPiece'))&&dist>.25){bad.teleport++;ex.push(['teleport',a.n,s.ph,+dist.toFixed(2)]);}
+    /* un tacle glissé démarre à 2×2,6/.55 = 9,45 m/s : le seuil laisse la marge d'un contact (QA2) */if(dist/d>12&&s.ph!=='aerial'&&prev.ph!=='aerial'&&!(s.ph==='ready'&&dist>.25&&run('!!action.setPiece'))){bad.speed++;ex.push(['vitesse',a.n,s.ph]);}
     if(Math.abs(a.x)>34.2||a.z>85.2||a.z<-20.3){bad.out++;ex.push(['hors',a.n,a.x,a.z]);}
     // pendant la course (conduite, passe d'ouverture) le corps tourne à vitesse limitée : jamais plus de 20° par pas de 1/120 s
     if((s.ph==='dribble'||s.ph==='incoming')&&a.n!=='gk'&&!a.ch&&Math.abs(wrap(a.ang-p.ang))>.35){bad.turnRun++;ex.push(['rotation',a.n,s.ph,Math.round(Math.abs(wrap(a.ang-p.ang))*57.3)]);}

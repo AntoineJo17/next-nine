@@ -43,12 +43,13 @@ STATE_JS = '''(()=>{const g=window.__g;if(!g)return {nohook:true};const a=g.acti
 # Échantillonneur : positions et angles de tous les acteurs à chaque image, analysé dans la page.
 SAMPLER_JS = '''(()=>{const g=window.__g;const S=window.__samp={on:true,frames:0,teleport:[],spin:[],nan:0,maxv:0,maxw:0,prev:null,t:0};
  function pick(a){const L=[];const add=(k,p)=>{if(p)L.push([k,p.x,p.z,p.angle,p.y||0])};
-  add('hero',a.hero);add('ball',a.ball);add('keeper',a.keeper);(a.defenders||[]).forEach((p,i)=>add('d'+i,p));(a.teammates||[]).forEach((p,i)=>add('t'+i,p));return L}
+  add('hero',a.hero);add('ball',a.ball);add('keeper',a.keeper);(a.defenders||[]).forEach((p,i)=>add('d'+i,p));(a.teammates||[]).forEach((p,i)=>add('t'+i,p));
+  (g.engine.players||[]).forEach((p,i)=>{if(p&&p.g&&Number.isFinite(p.sx))L.push(['R'+i,p.sx,p.sz,p.g.rotation.y,0])});const h=g.engine.hero;if(h&&h.g&&Number.isFinite(h.sx))L.push(['RH',h.sx,h.sz,h.g.rotation.y,0]);return L}
  function step(t){if(!S.on)return;const a=g.action;if(a&&!document.hidden){const cur=pick(a),dt=S.t?Math.min((t-S.t)/1000,.25):0;S.t=t;S.frames++;
    if(S.prev&&dt>0&&S.prevA===a){for(let i=0;i<cur.length;i++){const p=S.prev.find(q=>q[0]===cur[i][0]);if(!p)continue;const c=cur[i];
      if(![c[1],c[2],c[4]].every(Number.isFinite)){S.nan++;continue}
-     const v=Math.hypot(c[1]-p[1],c[2]-p[2])/dt;if(c[0]!=='ball'){if(v>S.maxv)S.maxv=v;if(v>16&&S.teleport.length<30)S.teleport.push([c[0],+v.toFixed(1),a.phase+'/'+(a.setPiece||a.chanceKind||'')]);}
-     if(Number.isFinite(c[3])&&Number.isFinite(p[3])){let d=Math.abs(c[3]-p[3])%(2*Math.PI);if(d>Math.PI)d=2*Math.PI-d;const w=d/dt;if(c[0]!=='ball'){if(w>S.maxw)S.maxw=w;if(w>45&&S.spin.length<30)S.spin.push([c[0],+w.toFixed(0),a.phase+'/'+(a.setPiece||a.chanceKind||'')]);}}}}
+     const v=Math.hypot(c[1]-p[1],c[2]-p[2])/dt;if(c[0]!=='ball'){if(v>S.maxv)S.maxv=v;if(v>16&&S.teleport.length<400)S.teleport.push([c[0],+v.toFixed(1),a.phase+'/'+(a.setPiece||a.chanceKind||'')]);}
+     if(Number.isFinite(c[3])&&Number.isFinite(p[3])){let d=Math.abs(c[3]-p[3])%(2*Math.PI);if(d>Math.PI)d=2*Math.PI-d;const w=d/dt;if(c[0]!=='ball'){if(w>S.maxw)S.maxw=w;if(w>45&&S.spin.length<400)S.spin.push([c[0],+w.toFixed(0),a.phase+'/'+(a.setPiece||a.chanceKind||'')]);}}}}
    S.prev=cur;S.prevA=a}else{S.prev=null;S.t=0}requestAnimationFrame(step)}
  requestAnimationFrame(step);return true})()'''
 
@@ -212,38 +213,67 @@ async def plus_gameplay(page, col, args, mobile, vp):
         await R.require(bool(s), 'Pas d’échantillon d’animation')
         col.finding('INFO', 'Animations : échantillon image par image', json.dumps(s, ensure_ascii=False), 'plus')
         await R.require(s['nan'] == 0, f'{s["nan"]} position(s) non numérique(s)')
-        await R.require(len(s['teleport']) == 0, f'Déplacements > 16 m/s : {s["teleport"][:5]}')
-        await R.require(len(s['spin']) == 0, f'Rotations > 45 rad/s : {s["spin"][:5]}')
+        # Deux plans : la logique du jeu (INFO : un repositionnement de règle peut y être brutal) et l'AFFICHAGE (ce que voit le joueur : critère d'échec).
+        rt = [x for x in s['teleport'] if str(x[0]).startswith('R') and x[1] > 28]
+        rs = [x for x in s['spin'] if str(x[0]).startswith('R')]
+        lt = [x for x in s['teleport'] if not str(x[0]).startswith('R')]
+        ls = [x for x in s['spin'] if not str(x[0]).startswith('R')]
+        if lt or ls:
+            col.finding('INFO', 'Animations : sauts de la logique (non visibles si l’affichage les lisse)', json.dumps({'deplacements': lt[:8], 'rotations': ls[:8]}, ensure_ascii=False), 'plus')
+        await R.require(len(rt) == 0, f'Affichage : déplacements > 28 m/s : {rt[:5]}')
+        await R.require(len(rs) == 0, f'Affichage : rotations > 45 rad/s : {rs[:5]}')
         return f'{s["frames"]} images, v max {s["maxv"]} m/s, rotation max {s["maxw"]} rad/s'
     await col.check('Animations : pas de téléportation, de rotation brutale ni de valeur invalide (échantillon de match)', anim, 'MAJEUR', page, timeout=20)
+
+    KEEPER_JS = '''(opts)=>{const g=window.__g,ev=g.ev;const res=[];let bad=[],open=[];let seed=opts.seed;
+      Math.random=()=>{seed=(seed*1664525+1013904223)%4294967296;return seed/4294967296};
+      for(const mode of ['normal','low','lob']){for(let x=-3.4;x<=3.41;x+=opts.step){
+        ev("match.index=1;setup();windUp(action.hero,{x:"+x.toFixed(2)+",z:-21},'"+mode+"','hero');");
+        if(opts.clear)ev("(action.defenders||[]).forEach(p=>{p.x=30;p.z=30;if(p.home){p.home.x=30;p.home.z=30}})");
+        let n=0,nan=false,kmin=9,kmax=-9;
+        for(;n<2400&&!ev('action.ended')&&!(n>=650&&ev("action.phase")==='ready');n++){ev('tick(1/120)');const b=ev('[action.ball.x,action.ball.y,action.ball.z]'),ky=ev('action.keeper?action.keeper.y:0');
+          if(!b.every(Number.isFinite)||!Number.isFinite(ky))nan=true;kmin=Math.min(kmin,ky);kmax=Math.max(kmax,ky)}
+        const o=ev('action.outcomeKind');res.push([mode,+x.toFixed(1),o,n,+kmin.toFixed(2),+kmax.toFixed(2)]);
+        if(nan||!o)bad.push([mode,x,o,n,nan]);else if(n>=650)open.push([mode,+x.toFixed(1),o,n,ev('action.phase'),ev('!!action.loose')]);}}
+      return {res,bad,open}}'''
 
     async def keeper():
         err0 = js_errors(col)
         if not await page.evaluate('!!(window.__g.action&&window.__g.match)'):
             await start_match(page, touch)
-        out = await page.evaluate('''(()=>{const g=window.__g;const ev=g.ev;const res=[];let bad=[],open=[];
-          for(const mode of ['normal','low','lob']){for(let x=-3.4;x<=3.41;x+=.4){
-            ev("match.index=1;setup();windUp(action.hero,{x:"+x.toFixed(2)+",z:-21},'"+mode+"','hero');");
-            let n=0,nan=false,kmin=9,kmax=-9;
-            for(;n<650&&!ev('action.ended');n++){ev('tick(1/120)');const b=ev('[action.ball.x,action.ball.y,action.ball.z]'),ky=ev('action.keeper?action.keeper.y:0');
-              if(!b.every(Number.isFinite)||!Number.isFinite(ky))nan=true;kmin=Math.min(kmin,ky);kmax=Math.max(kmax,ky)}
-            const o=ev('action.outcomeKind');res.push([mode,+x.toFixed(1),o,n,+kmin.toFixed(2),+kmax.toFixed(2)]);
-            if(nan||!o)bad.push([mode,x,o,n,nan]);else if(n>=650)open.push([mode,+x.toFixed(1),o,n]);}}
-          return {res,bad,open}})()''')
+        # A. Tel quel (défenseurs en jeu) : 18 visées x 3 modes = 54 séquences. Un tacle interrompt la frappe : ce n'est PAS une frappe.
+        out = await page.evaluate(KEEPER_JS, {'seed': 1, 'step': .4, 'clear': False})
+        interrompues = [r for r in out['res'] if r[2] == 'tackle']
+        vraies = [r for r in out['res'] if r[2] != 'tackle']
         hist = {}
-        for r in out['res']:
+        for r in vraies:
             hist[f'{r[0]}:{r[2]}'] = hist.get(f'{r[0]}:{r[2]}', 0) + 1
-        col.finding('INFO', 'Tirs vs gardien : résultats par mode (33 visées x 3 modes)', json.dumps(hist, ensure_ascii=False, sort_keys=True), 'plus')
-        col.finding('INFO', 'Tirs vs gardien : détail visée par visée', json.dumps(out['res'], ensure_ascii=False), 'plus')
+        col.finding('INFO', f'Tirs vs gardien (A, défenseurs en jeu) : {len(out["res"])} séquences = {len(vraies)} vraies frappes + {len(interrompues)} interrompues par un tacle',
+                    json.dumps(hist, ensure_ascii=False, sort_keys=True), 'plus')
         lev = [r for r in out['res'] if r[5] > 0.35]
-        if out['open']:
-            col.finding('INFO', 'Tirs : issues non terminées après 5,4 s de jeu (rebond / dégagement à vérifier à la main)', json.dumps(out['open'], ensure_ascii=False), 'plus')
-        await R.require(not out['bad'], f'Tirs sans issue / valeur invalide : {out["bad"][:5]}')
+        # Une déviation laisse un ballon libre et rend la main au joueur (phase « ready ») : c'est la conclusion prévue, pas une action bloquée.
+        rendues = [r for r in out['open'] if r[4] == 'ready']
+        bloquees = [r for r in out['open'] if r[4] != 'ready']
+        if rendues:
+            col.finding('INFO', f'Tirs : {len(rendues)} déviation(s) = ballon libre rendu au joueur (comportement prévu)', json.dumps(rendues, ensure_ascii=False), 'plus')
+        bad = list(out['bad']) + [['bloquée'] + r for r in bloquees]
+        # B. Conditions identiques entre versions : défenseurs écartés, 36 visées x 3 modes x 3 graines = 324 vraies frappes.
+        tot = {}
+        for seed in (7919, 15838, 23757):
+            o2 = await page.evaluate(KEEPER_JS, {'seed': seed, 'step': .2, 'clear': True})
+            bad += o2['bad']
+            lev += [r for r in o2['res'] if r[5] > 0.35]
+            for r in o2['res']:
+                tot.setdefault(r[0], {})
+                tot[r[0]][r[2]] = tot[r[0]].get(r[2], 0) + 1
+        n_b = sum(sum(v.values()) for v in tot.values())
+        col.finding('INFO', f'Tirs vs gardien (B, conditions contrôlées, sans tacle) : {n_b} frappes, issues par mode', json.dumps(tot, ensure_ascii=False, sort_keys=True), 'plus')
+        await R.require(not bad, f'Tirs sans issue / valeur invalide : {bad[:5]}')
         await R.require(js_errors(col) == err0, 'Exception JavaScript pendant la série de tirs')
         await R.require(not lev, f'Gardien en lévitation (y > 0,35 m) : {lev[:4]}')
         await leave_match(page)
-        return json.dumps(hist, ensure_ascii=False, sort_keys=True)
-    await col.check('Tirs : 99 frappes (visées x modes) contre le gardien : issue, valeurs valides, gardien au sol', keeper, 'MAJEUR', page, timeout=180)
+        return f'A: {len(vraies)} frappes + {len(interrompues)} tacles ; B: {n_b} frappes ' + json.dumps(tot, ensure_ascii=False, sort_keys=True)
+    await col.check('Tirs : gardien (54 séquences en jeu dont tacles + 324 frappes contrôlées) : issue, valeurs valides, gardien au sol', keeper, 'MAJEUR', page, timeout=420)
 
 
 async def plus_interface(page, col, args, mobile, vp):

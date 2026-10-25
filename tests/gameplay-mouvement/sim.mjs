@@ -12,7 +12,10 @@ export function sweep({seed=1,matches=1,frameDt=1/60,maxSteps=200000,onStep=()=>
  const {run}=boot();const rnd=rngOf(seed*7919+3);
  // Le Math.random du jeu vit dans le contexte vm : on le remplace par une suite déterministe.
  run(`{let r=${seed*104729+11};Math.random=()=>{r=(Math.imul(r,1103515245)+12345)>>>0;return (r%2147483648)/2147483648;};}`);
+ // QA2 · le gardien (movement.js) tire aussi au hasard, hors du vm : sans graine le balayage n'était pas reproductible.
+ const hostRandom=Math.random;{let h=seed*65537+5;Math.random=()=>{h=(Math.imul(h,1103515245)+12345)>>>0;return (h%2147483648)/2147483648;};}
  const stats={frames:0,substeps:0,actions:0,matches:0};
+ try{
  for(let m=0;m<matches;m++){
   run("$('play').onclick();");
   let guard=0;
@@ -28,6 +31,7 @@ export function sweep({seed=1,matches=1,frameDt=1/60,maxSteps=200000,onStep=()=>
   }
   stats.matches++;
  }
+ }finally{Math.random=hostRandom;}
  return stats;
 }
 

@@ -1,4 +1,4 @@
-import {clamp,GOAL_Z,G,R,PITCH} from './physics.js?v=20-10';
+import {clamp,GOAL_Z,G,R,PITCH} from './physics.js?v=20-11';
 // V19 · On the real 105 m pitch everybody runs 35 % faster: real sprint speeds, the same balance between players.
 export const PACE=1.35;
 /* QA mouvement · Body orientation follows the direction of travel at a limited turning rate (rad/s), like a real body:
@@ -18,7 +18,9 @@ export function updateKeeper(k,ball,dt,flying){k.elapsed+=dt;if(k.holding&&k.sta
  }else if(k.state==='ground'){/* QA mouvement · a dive that ends before the ball arrives leaves him in the air: he now falls to the ground (gravity) instead of hanging there, then rises from where he really is (no jump of 1 m at the start of the recovery) */k.speed=0;const floor=-.5*(k.lat??1);if(k.y>floor){k.fall=(k.fall||0)+G*dt;k.y=Math.max(floor,k.y-k.fall*dt);}if(k.elapsed>.7){k.state='recover';k.elapsed=0;k.rec={tilt:k.tilt,y:k.y,reach:k.reach};}}
  else if(k.state==='recover'){const p=clamp(k.elapsed/.8,0,1),r=k.rec||{tilt:k.dir*1.32,y:-.5,reach:.72};k.tilt=r.tilt*(1-p);k.y=r.y*(1-p);k.reach=r.reach*(1-p);if(p>=1){k.state='set';k.elapsed=0;k.shotTime=0;k.dir=0;k.rec=null;k.diveDX=undefined;k.diveT=undefined;k.lat=undefined;}}
 }
-export function keeperTouches(ball,k){if(k.state==='ground')return Math.abs(ball.z-k.z)<.6&&Math.abs(ball.x-(k.x+k.dir*.45))<1&&ball.y<.65;if(k.state==='dive'){const handX=k.x+k.dir*k.reach;const handY=clamp(1.65+k.y-Math.abs(k.tilt)*.5,.5,2.6);if(Math.abs(k.diveDX??1)<.6&&Math.abs(ball.z-k.z)<.55&&Math.abs(ball.x-k.x)<.5+R&&ball.y<2.25+Math.max(0,k.y))return true;if(Math.abs(ball.z-k.z)<.65&&Math.hypot(ball.x-handX,ball.y-handY)<.42+R)return true;const lean=Math.abs(k.tilt||0),side=Math.sign(k.tilt||k.dir)||1,fx=k.x,fy=Math.max(.1,.1+k.y),tx=k.x+side*Math.sin(lean)*1.7,ty=Math.max(.1,Math.cos(lean)*1.7+k.y),sx=tx-fx,sy=ty-fy,u=clamp(((ball.x-fx)*sx+(ball.y-fy)*sy)/(sx*sx+sy*sy||1),0,1);return Math.abs(ball.z-k.z)<.55&&Math.hypot(ball.x-(fx+sx*u),ball.y-(fy+sy*u))<.16+R;}
+/* Audit QA2 · the body of a diving keeper blocks the ball (before, a low shot went through him). Measured on 900 random shots: goals fall by 54 % (47 % -> 22 %). Left OFF until that balance change is validated on the phone. */
+export const KEEPER_BODY_BLOCK=false;
+export function keeperTouches(ball,k){if(k.state==='ground')return Math.abs(ball.z-k.z)<.6&&Math.abs(ball.x-(k.x+k.dir*.45))<1&&ball.y<.65;if(k.state==='dive'){const handX=k.x+k.dir*k.reach;const handY=clamp(1.65+k.y-Math.abs(k.tilt)*.5,.5,2.6);if(Math.abs(k.diveDX??1)<.6&&Math.abs(ball.z-k.z)<.55&&Math.abs(ball.x-k.x)<.5+R&&ball.y<2.25+Math.max(0,k.y))return true;if(Math.abs(ball.z-k.z)<.65&&Math.hypot(ball.x-handX,ball.y-handY)<.42+R)return true;const lean=Math.abs(k.tilt||0),side=Math.sign(k.tilt||k.dir)||1,fx=k.x,fy=Math.max(.1,.1+k.y),tx=k.x+side*Math.sin(lean)*1.7,ty=Math.max(.1,Math.cos(lean)*1.7+k.y),sx=tx-fx,sy=ty-fy,u=clamp(((ball.x-fx)*sx+(ball.y-fy)*sy)/(sx*sx+sy*sy||1),0,1);return KEEPER_BODY_BLOCK&&Math.abs(ball.z-k.z)<.55&&Math.hypot(ball.x-(fx+sx*u),ball.y-(fy+sy*u))<.16+R;}
 return Math.abs(ball.z-k.z)<.55&&Math.abs(ball.x-k.x)<.48+R&&ball.y<2.1;}
 // Touchscreen slingshot: pulling down sends the aim upwards on screen.
 export function slingPoint(start,current,anchor,gain=2.2){return {x:anchor.x+(start.x-current.x)*gain,y:anchor.y+(start.y-current.y)*gain};}
