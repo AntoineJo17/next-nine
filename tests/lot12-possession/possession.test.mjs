@@ -9,6 +9,7 @@ import {segDist} from './obs.mjs';
 
 const root=new URL('../../',import.meta.url).pathname;
 function patchedSource(){const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'poss-'));const f=path.join(tmp,'game.js');fs.copyFileSync(path.join(root,'dist/game.js'),f);
+ if(fs.readFileSync(f,'utf8').includes('followBall')&&!process.env.LOT12_AVANT){const t=fs.readFileSync(f,'utf8');fs.rmSync(tmp,{recursive:true,force:true});return t;}// correctif déjà intégré à dist/game.js
  if(process.env.LOT12_AVANT){const t=fs.readFileSync(f,'utf8');fs.rmSync(tmp,{recursive:true,force:true});return t;}// LOT12_AVANT=1 : mesure sans le correctif
  const r=spawnSync('python3',['-I',path.join(root,'docs/audit-gameplay2/possession-patch.py'),f],{encoding:'utf8'});assert.equal(r.status,0,r.stderr+r.stdout);
  const s=fs.readFileSync(f,'utf8');fs.rmSync(tmp,{recursive:true,force:true});return s;}
