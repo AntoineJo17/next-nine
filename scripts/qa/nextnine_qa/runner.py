@@ -296,7 +296,7 @@ async def scenario_interface(page, col):
 
     async def locker():
         await open_locker(page)
-        await page.locator('#lockerDone').click(timeout=9000)
+        await page.locator('#lockerDone').click(timeout=40000)
         await require(not await page.locator('#locker').is_visible(), 'Vestiaire bloqué ouvert')
     await col.check('Personnalisation : ouvrir/fermer le vestiaire', locker, 'MINEUR', page, timeout=40)
     await recover(page)

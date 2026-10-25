@@ -1,4 +1,4 @@
-import {clamp} from './physics.js?v=20-9s';
+import {clamp} from './physics.js?v=20-10';
 export const LEVEL_XP=700;
 // 21 · Playing position: it decides where the player's chances come from.
 export const POSITIONS={BU:{label:'Avant-centre',short:'BU'},AIL:{label:'Ailier droit',short:'AIL'},MOC:{label:'Meneur de jeu',short:'MOC'}};
@@ -17,6 +17,14 @@ export const FACE_PRESETS=Object.freeze([['Départ',{...FACE_DEFAULT}],
  ['Dur',{lipFull:-.5,lipHeight:-.3,chin:.4,jaw:.6,noseLength:.2,noseOut:.3,cheekFull:-.5,forehead:.2,neck:.3,age:.6,eyes:-.1,lipRed:.05}]].map(([n,f])=>[n,Object.freeze({...Object.fromEntries(FACE_KEYS.map(k=>[k,0])),...f})]));
 export function parseFace(f){const o={};for(const k of FACE_KEYS)o[k]=f&&Number.isFinite(f[k])?Math.round(clamp(f[k],-1,1)*20)/20:FACE_DEFAULT[k];return o;}
 export function parseCareer(input){const s=typeof input==='string'?JSON.parse(input):input;if(!s||typeof s.name!=='string'||!s.name.trim()||s.name.length>20||!['games','goals','assists','xp'].every(k=>Number.isSafeInteger(s[k])&&s[k]>=0&&s[k]<=10000000))throw Error('Sauvegarde invalide');return {energy:Number.isFinite(s.energy)?clamp(s.energy,0,100):100,baseXP:Number.isSafeInteger(s.baseXP)&&s.baseXP>=0&&s.baseXP<=s.xp?s.baseXP:s.xp,baseLevel:Number.isInteger(s.baseLevel)&&s.baseLevel>=0&&s.baseLevel<=39?s.baseLevel:Math.min(39,Math.floor(s.xp/100)),name:s.name,games:s.games,goals:s.goals,assists:s.assists,xp:s.xp,last:typeof s.last==='string'?s.last.slice(0,350):'',face:parseFace(s.face),skin:/^#[0-9a-f]{6}$/i.test(s.skin)?s.skin:'#c98b62',hair:/^#[0-9a-f]{6}$/i.test(s.hair)?s.hair:'#28231e',hairStyle:['court','degrade','boucles','afro','plaque','chignon','rase','crane'].includes(s.hairStyle)?s.hairStyle:'degrade',beard:['','barbe3j','barbe','bouc'].includes(s.beard)?s.beard:'',brow:/^#[0-9a-f]{6}$/i.test(s.brow)?s.brow:'',beardColor:/^#[0-9a-f]{6}$/i.test(s.beardColor)?s.beardColor:'',number:Number.isInteger(s.number)?clamp(s.number,1,99):9,position:typeof s.position==='string'&&Object.hasOwn(POSITIONS,s.position)?s.position:'BU',tactic:['equilibre','pressing','contre','possession'].includes(s.tactic)?s.tactic:'equilibre',sound:s.sound!==false,trust:Number.isFinite(s.trust)?clamp(Math.round(s.trust),0,100):50,weakFoot:Number.isFinite(s.weakFoot)?clamp(s.weakFoot,.3,.95):.45,chem:s.chem&&typeof s.chem==='object'?Object.fromEntries(Object.entries(s.chem).filter(([k,v])=>/^\d{1,2}$/.test(k)&&Number.isInteger(v)&&v>=0&&v<=60).slice(0,20)):{}};}
+// Unreadable saves are never lost: before the game can write over one, its raw text is copied (3 copies at most) under KEY+LOST_SUFFIX.
+export const LOST_SUFFIX='-illisible';
+export function readLost(storage,key){try{const p=JSON.parse(storage.getItem(key+LOST_SUFFIX)||'[]');return Array.isArray(p)?p.filter(x=>x&&typeof x.raw==='string'):[];}catch(e){return [];}}
+export function loadSavedCareer(storage,key,now=Date.now()){let raw;try{raw=storage.getItem(key);}catch(e){return {career:null,status:'blocked'};}
+ if(raw==null)return {career:null,status:'none'};
+ try{return {career:parseCareer(raw),status:'ok'};}catch(e){}
+ if(typeof raw!=='string'||/^\s*(null|\{\s*\})?\s*$/.test(raw))return {career:null,status:'none'};
+ try{const list=readLost(storage,key);if(!list.some(x=>x.raw===raw))list.push({at:now,raw:raw.slice(0,200000)});storage.setItem(key+LOST_SUFFIX,JSON.stringify(list.slice(-3)));return {career:null,status:'recovered'};}catch(e){return {career:null,status:'protected'};}}
 export function makeTimeline(random=Math.random){const events=[];for(const minute of [9,34,49,68,79,90]){const r=random();if(r<.16)events.push({minute,side:'us'});else if(r<.36)events.push({minute,side:'them'});}return events;}
 export function advanceMatch(m,minute){const lines=[];for(const e of m.events){if(e.minute>m.minute&&e.minute<=minute){m[e.side]++;lines.push(`${e.minute}′ · But ${e.side==='us'?'d’AC Rivage':'adverse'}`);}}m.minute=minute;return lines;}
 export const profiles=[{name:'Équilibrée',press:1,reach:1.7},{name:'Pressing haut',press:1.14,reach:1.9},{name:'Bloc prudent',press:.85,reach:1.5}];

@@ -4,13 +4,13 @@ import vm from 'node:vm';import fs from 'node:fs';
 import * as ai from '../../dist/football-ai.js';import * as tactical from '../../dist/tactical.js';import * as physics from '../../dist/physics.js';import * as movement from '../../dist/movement.js';import * as gestures from '../../dist/gestures.js';import * as progression from '../../dist/career.js';import * as commentary from '../../dist/commentary.js';import * as audio from '../../dist/audio.js';
 export const KEY='nextnine-career-v1';
 export {progression};
-export function boot(existing,{rawStore,storageThrows=false}={}){
+export function boot(existing,{rawStore,storageThrows=false,lostThrows=false}={}){
  const els=new Map(),modes=['dribble','low','normal','lob'].map(mode=>({dataset:{mode},classList:{toggle(){}},setAttribute(){}})),store={},blobs=[];
  if(rawStore!==undefined)store[KEY]=rawStore;else if(existing)store[KEY]=JSON.stringify(existing);
  const el=id=>{if(!els.has(id))els.set(id,{value:'',style:{},disabled:false,hidden:false,classList:{toggle(){}},handlers:{},addEventListener(name,fn){this.handlers[name]=fn;},setPointerCapture(){},getBoundingClientRect(){return{left:0,top:0,width:140,height:140};},setAttribute(){},textContent:'',click(){}});return els.get(id);};
  const c=vm.createContext({...ai,...tactical,...physics,...movement,...gestures,...progression,...commentary,...audio,makeTimeline:()=>[],console,setTimeout(){},clearTimeout(){},
   document:{getElementById:el,querySelectorAll:()=>modes,querySelector:()=>el('jersey'),createElement:()=>({click(){}}),body:{classList:{toggle(){}}}},window:{scrollTo(){}},
-  localStorage:{getItem:k=>{if(storageThrows)throw Error('stockage bloqué');return store[k]===undefined?null:store[k];},setItem:(k,v)=>{if(storageThrows)throw Error('stockage bloqué');store[k]=v;}},
+  localStorage:{getItem:k=>{if(storageThrows)throw Error('stockage bloqué');return store[k]===undefined?null:store[k];},setItem:(k,v)=>{if(storageThrows||(lostThrows&&k.endsWith('-illisible')))throw Error('stockage bloqué');store[k]=v;}},
   Blob:class{constructor(parts){this.text=parts.join('');blobs.push(this.text);}},URL:{createObjectURL:()=>'blob:test',revokeObjectURL(){}},requestAnimationFrame(){},confirm:()=>true});
  let source=fs.readFileSync(new URL('../../dist/game.js',import.meta.url),'utf8');source=source.replace(/^(import .*?;\n)+/,'').replace('});init();','});');vm.runInContext(source,c);
  const run=s=>vm.runInContext(s,c);
