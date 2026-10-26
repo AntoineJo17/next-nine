@@ -43,7 +43,7 @@ test('les remplacements de game.js s\'appliquent exactement une fois (ou sont d�
 });
 
 test('conduite réelle : le héros ne passe jamais de la course à l\'arrêt en un pas, et ne dépasse pas 6,2 m/s',()=>{
- const {run:r}=boot(undefined,{transform:s=>already?s:s.replace(OLD0,NEW0).replace(OLD1,NEW1).replace(OLD2,NEW2)});r("$('play').onclick();");r('career.baseLevel=39');/* niveau maximal : vitesse de carrière 5,2 au lieu de 4,4 */
+ const {run:r}=boot(undefined,{transform:s=>already?s:s.replace(OLD0,NEW0).replace(OLD1,NEW1).replace(OLD2,NEW2)});r("{let q=777;Math.random=()=>{q=(Math.imul(q,1103515245)+12345)>>>0;return (q%2147483648)/2147483648;};}");/* graine fixe (sinon une perte de balle aléatoire pouvait interrompre la conduite) */r("$('play').onclick();");r('career.baseLevel=39');/* niveau maximal : vitesse de carrière 5,2 au lieu de 4,4 */
  for(let k=0;k<20000&&!r('!!action&&action.ready&&!action.ended');k++)r('action.phase==="interval"?(action.interval.fast=true,tick(.04)):tick(1/60)');
  for(const [dx,dz] of [[0,-6],[3,-5],[-4,-3]]){
   r(`{const a=action,h=a.hero;h.x=0;h.z=10;h.vx=h.vz=0;h.speed=0;a.defenders.forEach((d,i)=>{d.x=-30+i;d.z=60;d.home={x:d.x,z:d.z};});beginDribble({x:${dx},z:${10+dz}});}`);

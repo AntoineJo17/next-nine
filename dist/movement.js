@@ -1,4 +1,4 @@
-import {clamp,GOAL_Z,G,R,PITCH} from './physics.js?v=20-12';
+import {clamp,GOAL_Z,G,R,PITCH} from './physics.js?v=20-13';
 // V19 · On the real 105 m pitch everybody runs 35 % faster: real sprint speeds, the same balance between players.
 export const PACE=1.35;
 /* QA mouvement · Body orientation follows the direction of travel at a limited turning rate (rad/s), like a real body:
